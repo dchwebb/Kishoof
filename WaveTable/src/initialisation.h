@@ -15,24 +15,24 @@ extern volatile uint32_t SysTickVal;
 #define ADC_OFFSET_DEFAULT 33800
 #define CPUCLOCK 400
 
+struct ADCValues {
+	uint16_t audio_L;
+	uint16_t audio_R;
+	uint16_t DelayPot_R;
+	uint16_t DelayCV_R;
+	uint16_t Mix;
+	uint16_t DelayPot_L;
+	uint16_t DelayCV_L;
+	uint16_t FeedbackPot;
+	uint16_t FeedbackCV;
+	uint16_t FilterCV;
+	uint16_t FilterPot;
+};
 
-extern volatile uint16_t ADC_array[ADC1_BUFFER_LENGTH + ADC2_BUFFER_LENGTH];
+extern volatile ADCValues adc;
 extern int32_t adcZeroOffset[2];
 
-// Define ADC array positions of various controls
-enum ADC_Controls {
-	ADC_Mix          = 4,
-	ADC_Delay_Pot_L  = 5,
-	ADC_Delay_Pot_R  = 2,
-	ADC_Delay_CV_L   = 6,
-	ADC_Delay_CV_R   = 3,
-	ADC_Feedback_Pot = 7,
-	ADC_Feedback_CV  = 8,
-	ADC_Filter_CV    = 9,
-	ADC_Filter_Pot   = 10
-};
 enum channel {left = 0, right = 1};
-
 
 void SystemClock_Config();
 void InitHardware();

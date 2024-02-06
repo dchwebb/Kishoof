@@ -15,7 +15,8 @@ public:
 	int32_t wavetable[2048];
 
 private:
-	uint32_t readPos = 0;
+	float pitchInc = 0.0f;
+	float readPos = 0;
 	int32_t oldReadPos;
 
 	// Private class functions

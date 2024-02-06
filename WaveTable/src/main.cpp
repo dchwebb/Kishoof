@@ -9,9 +9,8 @@
 volatile uint32_t SysTickVal;
 extern uint32_t SystemCoreClock;
 
-
 // Store buffers that need to live in special memory areas
-volatile uint16_t __attribute__((section (".dma_buffer"))) ADC_array[ADC1_BUFFER_LENGTH + ADC2_BUFFER_LENGTH];
+volatile ADCValues __attribute__((section (".dma_buffer"))) adc;
 int32_t __attribute__((section (".sdramSection"))) samples[SAMPLE_BUFFER_LENGTH];	// Place delay sample buffers in external SDRAM
 
 USB usb;

@@ -105,7 +105,6 @@ bool SerialHandler::Command()
 
 	} else if (ComCmd.compare("imp\n") == 0) {					// IIR Filter Print impulse response
 
-
 		IIRRegisters iirImpReg;									// Create a temporary set of shift registers for the filter
 		IIRFilter& currentFilter = (filter.passType == LowPass) ? filter.iirLPFilter[0] : filter.iirHPFilter[0];
 
@@ -118,9 +117,7 @@ bool SerialHandler::Command()
 		}
 
 
-
 	} else if (ComCmd.compare("fir\n") == 0) {					// Dump FIR filter coefficients
-
 
 		// NB to_string not working. Use sprintf with following: The float formatting support is not enabled, check your MCU Settings from "Project Properties > C/C++ Build > Settings > Tool Settings",
 		// or add manually "-u _printf_float" in linker flags

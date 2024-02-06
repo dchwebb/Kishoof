@@ -152,15 +152,14 @@ void InitHardware()
 	InitSDRAM_16160();				// Initialise 32MB SDRAM
 	InitCache();
 	InitIO();						// Initialise switches and LEDs
-
-//	InitADC2(reinterpret_cast<volatile uint16_t*>(&adc), 3);
+	InitADC();
 }
 
 void InitCache()
 {
 	// Use the Memory Protection Unit (MPU) to set up a region of memory with data caching disabled for use with DMA buffers
 	MPU->RNR = 0;									// Memory region number
-	MPU->RBAR = reinterpret_cast<uint32_t>(&ADC_array);	// Store the address of the ADC_array into the region base address register
+	MPU->RBAR = reinterpret_cast<uint32_t>(&adc);	// Store the address of the ADC_array into the region base address register
 
 	MPU->RASR = (0b11  << MPU_RASR_AP_Pos)   |		// All access permitted
 				(0b001 << MPU_RASR_TEX_Pos)  |		// Type Extension field: See truth table on p228 of Cortex M7 programming manual
@@ -329,7 +328,7 @@ void InitADC1()
 
 	DMA1_Stream1->NDTR |= ADC1_BUFFER_LENGTH;		// Number of data items to transfer (ie size of ADC buffer)
 	DMA1_Stream1->PAR = (uint32_t)(&(ADC1->DR));	// Configure the peripheral data register address 0x40022040
-	DMA1_Stream1->M0AR = (uint32_t)(ADC_array);		// Configure the memory address (note that M1AR is used for double-buffer mode) 0x24000040
+	DMA1_Stream1->M0AR = (uint32_t)(&adc);		// Configure the memory address (note that M1AR is used for double-buffer mode) 0x24000040
 
 	DMA1_Stream1->CR |= DMA_SxCR_EN;				// Enable DMA and wait
 	wait_loop_index = (SystemCoreClock / (100000UL * 2UL));
@@ -409,7 +408,7 @@ void InitADC2()
 
 	DMA1_Stream2->NDTR |= ADC2_BUFFER_LENGTH;		// Number of data items to transfer (ie size of ADC buffer)
 	DMA1_Stream2->PAR = reinterpret_cast<uint32_t>(&(ADC2->DR));	// Configure the peripheral data register address 0x40022040
-	DMA1_Stream2->M0AR = reinterpret_cast<uint32_t>(&ADC_array[ADC1_BUFFER_LENGTH]);		// Configure the memory address (note that M1AR is used for double-buffer mode) 0x24000040
+	DMA1_Stream2->M0AR = reinterpret_cast<uint32_t>(&adc.Mix);		// Configure the memory address (note that M1AR is used for double-buffer mode) 0x24000040
 
 	DMA1_Stream2->CR |= DMA_SxCR_EN;				// Enable DMA and wait
 	wait_loop_index = (SystemCoreClock / (100000UL * 2UL));
