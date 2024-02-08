@@ -4,6 +4,7 @@
 #include "mpu_armv7.h"		// Memory protection unit for selectively disabling cache for DMA transfers
 #include <algorithm>
 #include <cstdlib>
+#include <cmath>
 
 extern volatile uint32_t SysTickVal;
 
@@ -14,6 +15,9 @@ extern volatile uint32_t SysTickVal;
 #define SYSTICK 1000						// Set in uS so 1000uS = 1ms
 #define ADC_OFFSET_DEFAULT 33800
 #define CPUCLOCK 400
+
+constexpr float intToFloatMult = 1.0f / std::pow(2.0f, 31.0f);		// Multiple to convert 32 bit int to -1.0 - 1.0 float
+constexpr float floatToIntMult = std::pow(2.0f, 31.0f);				// Multiple to convert -1.0 - 1.0 float to 32 bit int
 
 struct ADCValues {
 	uint16_t audio_L;

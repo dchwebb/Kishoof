@@ -40,9 +40,19 @@ public:
 		port->OSPEEDR |= driveStrength << (pin * 2);
 	}
 
+	static void SetHigh(GPIO_TypeDef* port, uint32_t pin)
+	{
+		port->ODR |= (1 << pin);
+	}
+
 	void SetHigh()
 	{
 		port->ODR |= (1 << pin);
+	}
+
+	static void SetLow(GPIO_TypeDef* port, uint32_t pin)
+	{
+		port->ODR &= ~(1 << pin);
 	}
 
 	void SetLow()

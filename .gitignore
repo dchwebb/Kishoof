@@ -21,6 +21,7 @@
 *.map
 *.launch
 
+Hardware/_autosave*
 Hardware/\#auto_saved_files\#
 Hardware/jlcpcb/*
 *.cyclo

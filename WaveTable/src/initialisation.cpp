@@ -153,6 +153,9 @@ void InitHardware()
 	InitCache();
 	InitIO();						// Initialise switches and LEDs
 	InitADC();
+
+	RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;
+	RNG->CR |= RNG_CR_RNGEN;
 }
 
 void InitCache()

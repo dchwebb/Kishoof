@@ -88,33 +88,6 @@ bool SerialHandler::Command()
 		}
 
 
-	} else if (ComCmd.compare("iir\n") == 0) {					// Show IIR Coefficients
-
-		IIRFilter& activeFilter = (filter.passType == LowPass) ? filter.iirLPFilter[filter.activeFilter] : filter.iirHPFilter[filter.activeFilter];
-		usb->SendString(std::to_string(activeFilter.numPoles) + " Pole " + std::string((filter.passType == LowPass) ? "Low Pass\r\n" : "High Pass\r\n"));
-
-		// Output coefficients
-		for (int i = 0; i < activeFilter.numSections; ++i) {
-			usb->SendString("Stage " + std::to_string(i+1) + ": Cutoff: " + std::to_string(activeFilter.cutoffFreq)
-				+ "; Damping: " + std::to_string(activeFilter.iirProto.Coeff.D1[i] / (activeFilter.iirProto.Coeff.D2[i] == 0.0 ? 1.0 : 2.0)) + "\r\n");
-			usb->SendString("       Y(z)   " + std::to_string(activeFilter.iirCoeff.b2[i]) + " z^-2 + " + std::to_string(activeFilter.iirCoeff.b1[i]) + " z^-1 + " + std::to_string(activeFilter.iirCoeff.b0[i]) + "\r\n");
-			usb->SendString("H(z) = ---- = -----------------------------------------\r\n");
-			usb->SendString("       X(z)   " + std::to_string(activeFilter.iirCoeff.a2[i]) + " z^-2 + " + std::to_string(activeFilter.iirCoeff.a1[i]) + " z^-1 + " + std::to_string(activeFilter.iirCoeff.a0[i]) + "\r\n\r\n");
-		}
-
-
-	} else if (ComCmd.compare("imp\n") == 0) {					// IIR Filter Print impulse response
-
-		IIRRegisters iirImpReg;									// Create a temporary set of shift registers for the filter
-		IIRFilter& currentFilter = (filter.passType == LowPass) ? filter.iirLPFilter[0] : filter.iirHPFilter[0];
-
-		float out = currentFilter.FilterSample(500, iirImpReg);	// Impulse
-		usb->SendString(std::to_string(out) + "\r\n");
-
-		for (int i = 1; i < 500; ++i) {
-			out = currentFilter.FilterSample(0, iirImpReg);
-			usb->SendString(std::to_string(out) + "\r\n");
-		}
 
 
 	} else if (ComCmd.compare("fir\n") == 0) {					// Dump FIR filter coefficients
@@ -136,16 +109,6 @@ bool SerialHandler::Command()
 		for (int f = 0; f < filter.firTaps; ++f) {
 			sprintf(buf, "%0.10f", filter.winCoeff[f]);			// 10dp
 			usb->SendString(std::string(buf) + "\r\n");
-		}
-
-
-	} else if (ComCmd.compare("fdl\n") == 0) {					// Dump left filter buffer
-
-		uint16_t pos = filter.filterBuffPos[0];
-		for (int f = 0; f < filter.firTaps; ++f) {
-			usb->SendString(std::to_string(filter.filterBuffer[0][pos]) + "\r\n");
-			if (++pos == filter.firTaps)
-				pos = 0;
 		}
 
 

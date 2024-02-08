@@ -7,18 +7,13 @@ void __attribute__((optimize("O0"))) TinyDelay() {
 }
 
 // I2S Interrupt
-void SPI2_IRQHandler() {
-
-	if (calculatingFilter) {
-		GPIOB->ODR |= GPIO_ODR_OD7;
-	}
-
+void SPI2_IRQHandler()
+{
 	wavetable.CalcSample();
 
 	// NB It appears we need something here to add a slight delay or the interrupt sometimes fires twice
 	TinyDelay();
 
-	GPIOB->ODR &= ~GPIO_ODR_OD7;  	// Clear red to show calc sample has finished
 	TriggerADC1();
 }
 

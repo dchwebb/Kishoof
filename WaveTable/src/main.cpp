@@ -13,9 +13,10 @@ extern uint32_t SystemCoreClock;
 volatile ADCValues __attribute__((section (".dma_buffer"))) adc;
 int32_t __attribute__((section (".sdramSection"))) samples[SAMPLE_BUFFER_LENGTH];	// Place delay sample buffers in external SDRAM
 
+
 USB usb;
 SerialHandler serial(usb);
-Filter filter;
+
 
 
 extern "C" {
@@ -30,9 +31,9 @@ int main(void) {
 	SystemCoreClockUpdate();		// Update SystemCoreClock (system clock frequency)
 	InitHardware();
 
-	wavetable.Init();
-//	filter.Init();					// Initialise filter coefficients, windows etc
+	filter.Init();					// Initialise filter coefficients, windows etc
 	usb.InitUSB();
+	wavetable.Init();
 	InitI2S();						// Initialise I2S which will start main sample interrupts
 
 	while (1) {
