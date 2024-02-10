@@ -21,8 +21,9 @@ struct Filter {
 public:
 
 	void Init();
-	void Update(bool reset);
+	void Update(bool reset = false);
 	float CalcFilter(int32_t pos, float* wavetable);
+	float CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio);
 private:
 	uint8_t firTaps = 93;	// value must be divisble by four + 1 (eg 93 = 4*23 + 1) or will cause phase reversal when switching between LP and HP
 

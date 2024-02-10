@@ -17,20 +17,17 @@ void WaveTable::CalcSample()
 
 	readPos += pitch;
 	if (readPos >= 2048) { readPos -= 2048; }
-	uint32_t readPos2 = (uint32_t)readPos + 1;
-	if (readPos2 >= 2048) { readPos2 -= 2048; }
 
-	float sample1 = wavetable[(uint32_t)readPos];
-//	float sample2 = wavetable[readPos2];
-//	float outputSample = std::lerp(sample1, sample2, readPos - (uint32_t)readPos);
+
+//	float outputSample1 =  filter.CalcInterpolatedFilter((uint32_t)readPos, wavetable, readPos - (uint32_t)readPos);
 
 	float filtered1 = filter.CalcFilter((uint32_t)readPos, wavetable);
 	float filtered2 = filter.CalcFilter((uint32_t)(readPos + 1) & 0x7FF, wavetable);
-	float outputSample = std::lerp(filtered1, filtered2, readPos - (uint32_t)readPos);
+	float outputSample2 = std::lerp(filtered1, filtered2, readPos - (uint32_t)readPos);
 
 
-	SPI2->TXDR = (int32_t)(outputSample * floatToIntMult);
-	SPI2->TXDR = sample1 * floatToIntMult;//outputSample;
+	SPI2->TXDR = (int32_t)(outputSample2 * floatToIntMult);
+	SPI2->TXDR = (int32_t)(outputSample2 * floatToIntMult);;
 
 	GpioPin::SetLow(GPIOC, 10);			// Debug off
 }

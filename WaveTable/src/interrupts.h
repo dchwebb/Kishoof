@@ -9,6 +9,11 @@ void __attribute__((optimize("O0"))) TinyDelay() {
 // I2S Interrupt
 void SPI2_IRQHandler()
 {
+	if ((SPI2->SR & SPI_SR_UDR) == SPI_SR_UDR) {		// Check for Underrun condition
+		SPI2->IFCR |= SPI_IFCR_UDRC;					// Clear underrun condition
+		return;
+	}
+
 	wavetable.CalcSample();
 
 	// NB It appears we need something here to add a slight delay or the interrupt sometimes fires twice

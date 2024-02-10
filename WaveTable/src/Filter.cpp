@@ -5,22 +5,23 @@ Filter filter;
 void Filter::Init()
 {
 	filter.FIRFilterWindow();
-	filter.Update();
 	currentCutoff = (float)adc.FilterPot / 65536.0f;
 	cutoff = currentCutoff;
+	filter.Update(true);
 }
 
 
-void Filter::Update()
+void Filter::Update(bool reset)
 {
 	cutoff = 0.999f * cutoff + 0.001 * (float)adc.FilterPot / 65536.0f;
 
-	if (std::abs(cutoff - currentCutoff) > 0.001) {
+	if (reset || std::abs(cutoff - currentCutoff) > 0.001) {
 		// round cutoff to 3dp
 		float omega = std::round(cutoff * 1000.0f) / 1000.0f;
 		InitFIRFilter(omega);
+		activeFilter = !activeFilter;
 	}
-	activeFilter = !activeFilter;
+
 }
 
 
@@ -42,28 +43,130 @@ void Filter::InitFIRFilter(float omega)
 	currentCutoff = omega;
 }
 
+/*
+float Filter::CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio)
+{
+	// FIR Convolution routine using folded FIR structure
+	float outputSample = 0.0f;
 
-//print filter.firCoeff[1]
+	// pos = position of sample N, N-1, N-2 etc
+	int32_t revpos = (pos - firTaps + 1) & 0x7FF;		// position of sample 1, 2, 3 etc
+
+	const float invertedRatio = 1.0f / ratio - 1.0f;			// half the samples are interpolated during filtering, and them the total normalised
+
+	for (uint8_t i = 0; i < firTaps / 2; ++i) {
+		// Folded FIR structure - as coefficients are symmetrical we can multiple the sample 1 + sample N by the 1st coefficient, sample 2 + sample N - 1 by 2nd coefficient etc
+		float interp = (waveTable[revpos] + waveTable[pos]) +
+				invertedRatio * (waveTable[(revpos + 1) & 0x7FF] + waveTable[(pos + 1) & 0x7FF]);
+		outputSample += firCoeff[activeFilter][i] * interp;
+		revpos = (revpos + 1) & 0x7FF;
+		pos = (pos - 1) & 0x7FF;
+	}
+
+	outputSample += firCoeff[activeFilter][firTaps / 2] *
+			(waveTable[revpos] + invertedRatio * waveTable[(revpos + 1) & 0x7FF]);
+
+	return outputSample * ratio;
+}
+*/
+
+volatile struct {float os; float osr;} dbg[2048];
+uint32_t idx = 0;
+float Filter::CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio)
+{
+	// FIR Convolution routine using folded FIR structure
+	float outputSample1 = 0.0f;
+	float outputSample2 = 0.0f;
+
+	// pos = position of sample N, N-1, N-2 etc
+	int32_t revpos = (pos - firTaps + 1) & 0x7FF;		// position of sample 1, 2, 3 etc
+
+	for (uint8_t i = 0; i < firTaps / 2; ++i) {
+		// Folded FIR structure - as coefficients are symmetrical we can multiple the sample 1 + sample N by the 1st coefficient, sample 2 + sample N - 1 by 2nd coefficient etc
+		int32_t pos2 = (pos + 1) & 0x7FF;
+		int32_t revpos2 = (revpos + 1) & 0x7FF;
+
+		outputSample1 += firCoeff[activeFilter][i] * (waveTable[revpos] + waveTable[pos]);
+		outputSample2 += firCoeff[activeFilter][i] * (waveTable[revpos2] + waveTable[pos2]);
+		revpos = (revpos + 1) & 0x7FF;
+		pos = (pos - 1) & 0x7FF;
+	}
+
+	outputSample1 += firCoeff[activeFilter][firTaps / 2] * waveTable[revpos];
+	outputSample2 += firCoeff[activeFilter][firTaps / 2] * waveTable[(revpos + 1) & 0x7FF];
+
+	//return std::lerp(outputSample1, outputSample2, ratio);
+
+	return outputSample1 * (1.0f - ratio ) + outputSample2 * ratio;
+}
+
+/*
+// Only samplePos
+float Filter::CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio)
+{
+	// FIR Convolution routine using folded FIR structure
+	float outputSample = 0.0f;
+
+	// pos = position of sample N, N-1, N-2 etc
+	int32_t revpos = (pos - firTaps + 1) & 0x7FF;		// position of sample 1, 2, 3 etc
+
+	const float invertedRatio = 0.5f;			// half the samples are interpolated during filtering, and them the total normalised
+
+	for (uint8_t i = 0; i < firTaps / 2; ++i) {
+		// Folded FIR structure - as coefficients are symmetrical we can multiple the sample 1 + sample N by the 1st coefficient, sample 2 + sample N - 1 by 2nd coefficient etc
+		float interp = (waveTable[revpos] + waveTable[pos]);
+		outputSample += firCoeff[activeFilter][i] * interp;
+		revpos = (revpos + 1) & 0x7FF;
+		pos = (pos - 1) & 0x7FF;
+	}
+
+	outputSample += firCoeff[activeFilter][firTaps / 2] * waveTable[revpos];
+
+	return outputSample;
+}
+
+
+/*
+// Only samplePos + 1
+float Filter::CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio)
+{
+	// FIR Convolution routine using folded FIR structure
+	float outputSample = 0.0f;
+
+	// pos = position of sample N, N-1, N-2 etc
+	int32_t revpos = (pos - firTaps + 1) & 0x7FF;		// position of sample 1, 2, 3 etc
+
+	//const float invertedRatio = 1.0f / ratio - 1.0f;			// half the samples are interpolated during filtering, and them the total normalised
+	ratio = 0.5f;
+	const float invertedRatio = 1.0f / ratio - 1.0f;			// half the samples are interpolated during filtering, and them the total normalised
+
+	for (uint8_t i = 0; i < firTaps / 2; ++i) {
+		// Folded FIR structure - as coefficients are symmetrical we can multiple the sample 1 + sample N by the 1st coefficient, sample 2 + sample N - 1 by 2nd coefficient etc
+		float interp = invertedRatio * (waveTable[(revpos + 1) & 0x7FF] + waveTable[(pos + 1) & 0x7FF]);
+		outputSample += firCoeff[activeFilter][i] * interp;
+		revpos = (revpos + 1) & 0x7FF;
+		pos = (pos - 1) & 0x7FF;
+	}
+
+	outputSample += firCoeff[activeFilter][firTaps / 2] * (invertedRatio * waveTable[(revpos + 1) & 0x7FF]);
+
+	return outputSample;
+}
+*/
+
 float Filter::CalcFilter(int32_t pos, float* waveTable)
 {
 	// FIR Convolution routine using folded FIR structure
 	float outputSample = 0.0f;
 
 	// pos = position of sample N, N-1, N-2 etc
-	int32_t revpos = pos - firTaps + 1;		// position of sample 1, 2, 3 etc
-	if (revpos < 0) {
-		revpos += 2048;
-	};
+	int32_t revpos = (pos - firTaps + 1) & 0x7FF;		// position of sample 1, 2, 3 etc
 
 	for (uint8_t i = 0; i < firTaps / 2; ++i) {
 		// Folded FIR structure - as coefficients are symmetrical we can multiple the sample 1 + sample N by the 1st coefficient, sample 2 + sample N - 1 by 2nd coefficient etc
-		outputSample += firCoeff[activeFilter][i] * (waveTable[revpos++] + waveTable[pos--]);
-		if (revpos == 2048) {
-			revpos = 0;
-		};
-		if (pos < 0) {
-			pos = 2047;
-		};
+		outputSample += firCoeff[activeFilter][i] * (waveTable[revpos] + waveTable[pos]);
+		revpos = (revpos + 1) & 0x7FF;
+		pos = (pos - 1) & 0x7FF;
 	}
 
 	outputSample += firCoeff[activeFilter][firTaps / 2] * waveTable[revpos];
