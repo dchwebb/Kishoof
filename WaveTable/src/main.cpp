@@ -1,9 +1,9 @@
+#include <CDCHandler.h>
 #include "initialisation.h"
 #include "USB.h"
 #include "WaveTable.h"
 #include "Filter.h"
 #include "sdram.h"
-#include "SerialHandler.h"
 
 
 volatile uint32_t SysTickVal;
@@ -15,9 +15,6 @@ int32_t __attribute__((section (".sdramSection"))) samples[SAMPLE_BUFFER_LENGTH]
 
 
 USB usb;
-SerialHandler serial(usb);
-
-
 
 extern "C" {
 #include "interrupts.h"
@@ -32,13 +29,13 @@ int main(void) {
 	InitHardware();
 
 	filter.Init();					// Initialise filter coefficients, windows etc
-	usb.InitUSB();
+	usb.Init(false);
 	wavetable.Init();
 	InitI2S();						// Initialise I2S which will start main sample interrupts
 
 	while (1) {
 		filter.Update();			// Check if filter coefficients need to be updated
-		serial.Command();			// Check for incoming CDC commands
+		usb.cdc.ProcessCommand();	// Check for incoming USB serial commands
 
 #if (USB_DEBUG)
 		if ((GPIOB->IDR & GPIO_IDR_ID4) == 0 && USBDebug) {

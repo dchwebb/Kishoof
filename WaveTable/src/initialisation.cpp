@@ -2,6 +2,7 @@
 #include "stm32h743xx.h"
 #include "initialisation.h"
 #include "GpioPin.h"
+#include "sdram.h"
 
 // Clock overview:
 // Main clock 4MHz: 8MHz (HSE) / 2 (M) * 200 (N) / 2 (P) = 400MHz
