@@ -6,6 +6,9 @@
 WaveTable wavetable;
 
 
+volatile int susp = 0;
+volatile float dbg[5000];
+int idx = 0;
 void WaveTable::CalcSample()
 {
 
@@ -18,16 +21,24 @@ void WaveTable::CalcSample()
 	readPos += pitch;
 	if (readPos >= 2048) { readPos -= 2048; }
 
+	float outputSample1;
+	float ratio = readPos - (uint32_t)readPos;
+	if (ratio > 0.00001f) {
+		outputSample1 = filter.CalcInterpolatedFilter((uint32_t)readPos, wavetable, ratio);
+	} else {
+		outputSample1 = filter.CalcFilter((uint32_t)readPos, wavetable);
+	}
 
-//	float outputSample1 =  filter.CalcInterpolatedFilter((uint32_t)readPos, wavetable, readPos - (uint32_t)readPos);
+//	float filtered1 = filter.CalcFilter((uint32_t)readPos, wavetable);
+//	float filtered2 = filter.CalcFilter((uint32_t)(readPos + 1) & 0x7FF, wavetable);
+//	float outputSample2 = std::lerp(filtered1, filtered2, readPos - (uint32_t)readPos);
 
-	float filtered1 = filter.CalcFilter((uint32_t)readPos, wavetable);
-	float filtered2 = filter.CalcFilter((uint32_t)(readPos + 1) & 0x7FF, wavetable);
-	float outputSample2 = std::lerp(filtered1, filtered2, readPos - (uint32_t)readPos);
+	if (std::isnan(outputSample1)) {
+		++susp;
+	}
 
-
-	SPI2->TXDR = (int32_t)(outputSample2 * floatToIntMult);
-	SPI2->TXDR = (int32_t)(outputSample2 * floatToIntMult);;
+	SPI2->TXDR = (int32_t)(outputSample1 * floatToIntMult);
+	SPI2->TXDR = (int32_t)(outputSample1 * floatToIntMult);;
 
 	GpioPin::SetLow(GPIOC, 10);			// Debug off
 }
