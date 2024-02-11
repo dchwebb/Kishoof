@@ -11,14 +11,27 @@ volatile float dbg[5000];
 int idx = 0;
 void WaveTable::CalcSample()
 {
-
 	GpioPin::SetHigh(GPIOC, 10);
 
-	float newInc = static_cast<float>(adc.FeedbackPot) / 65536.0f;		// Convert 16 bit int to float 0 -> 1000
-	pitchInc = 0.99 * pitchInc + 0.01 * newInc;
-	float pitch = std::max(pitchInc * 20.0f, 1.0f);
 
-	readPos += pitch;
+	// 0v = 61200; 1v = 50110; 2v = 39020; 3v = 27910; 4v = 16790; 5v = 5670
+	// C: 16.35 Hz 32.70 Hz; 65.41 Hz; 130.81 Hz; 261.63 Hz; 523.25 Hz; 1046.50 Hz; 2093.00 Hz; 4186.01 Hz
+	// 61200 > 65.41 Hz; 50110 > 130.81 Hz; 39020 > 261.63 Hz
+
+	// Increment = Hz * (2048 / 48000) = Hz * (wavetablesize / samplerate)
+	// Pitch calculations - Increase pitchBase to increase pitch; Reduce ABS(cvMult) to increase spread
+
+	// Calculations: 11090 is difference in cv between two octaves; 50110 is cv at 1v and 130.81 is desired Hz at 1v
+	constexpr float pitchBase = (130.81f * (2048.0f / sampleRate)) / std::pow(2.0, -50120.0f / 11090.0f);
+	constexpr float cvMult = -1.0f / 11090.0f;
+	float newInc = pitchBase * std::pow(2.0f, (float)adc.FilterCV * cvMult);			// for cycle length matching sample rate (48k)
+	pitchInc = 0.99 * pitchInc + 0.01 * newInc;
+
+//	float newInc = static_cast<float>(adc.FeedbackPot) / 65536.0f;		// Convert 16 bit int to float 0 -> 1000
+//	pitchInc = 0.99 * pitchInc + 0.01 * newInc;
+//	float pitch = std::max(pitchInc * 20.0f, 1.0f);
+
+	readPos += pitchInc;
 	if (readPos >= 2048) { readPos -= 2048; }
 
 	float outputSample1;

@@ -11,11 +11,12 @@ extern volatile uint32_t SysTickVal;
 #define ADC1_BUFFER_LENGTH 4
 #define ADC2_BUFFER_LENGTH 7
 #define SAMPLE_BUFFER_LENGTH 1048576		// Currently 2^20 (4MB of 16MB)
-#define SAMPLE_RATE 48000
+//#define SAMPLE_RATE 48000
 #define SYSTICK 1000						// Set in uS so 1000uS = 1ms
 #define ADC_OFFSET_DEFAULT 33800
 #define CPUCLOCK 400
 
+constexpr uint32_t sampleRate = 48000;
 constexpr float intToFloatMult = 1.0f / std::pow(2.0f, 31.0f);		// Multiple to convert 32 bit int to -1.0 - 1.0 float
 constexpr float floatToIntMult = std::pow(2.0f, 31.0f);				// Multiple to convert -1.0 - 1.0 float to 32 bit int
 
