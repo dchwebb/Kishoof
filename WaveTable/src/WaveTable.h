@@ -10,16 +10,29 @@ struct WaveTable {
 public:
 	void CalcSample();						// Called by interrupt handler to generate next sample
 	void Init();							// Initialise caches, buffers etc
+	bool LoadWaveTable(uint32_t* startAddr);
 
-	float wavetable[2048];
+	float testWavetable[2048];
+
+	struct WavFile {
+		const uint8_t* startAddr;			// Address of data section
+		const uint8_t* endAddr;				// End Address of data section
+		uint32_t dataSize;					// Size of data section in bytes
+		uint32_t sampleCount;				// Number of samples (stereo samples only counted once)
+		uint32_t sampleRate;
+		uint8_t byteDepth;
+		uint16_t dataFormat;				// 1 = PCM; 3 = Float
+		uint8_t channels;					// 1 = mono, 2 = stereo
+		bool valid;							// false if header cannot be processed
+	} wavFile;
 
 private:
-	enum class TestData {noise, twintone};
+	enum class TestData {noise, twintone, wavetable};
 
 	float pitchInc = 0.0f;
 	float readPos = 0;
 	int32_t oldReadPos;
-	TestData wavetableType = TestData::twintone;
+	TestData wavetableType = TestData::wavetable;
 
 	// Private class functions
 	int32_t OutputMix(float wetSample);

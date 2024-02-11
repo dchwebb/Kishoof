@@ -27,3 +27,4 @@ Hardware/jlcpcb/*
 *.cyclo
 *.kicad_sch-bak
 *.lck
+Serum_Wavetables.lnk

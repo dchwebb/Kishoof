@@ -5,13 +5,14 @@
 
 WaveTable wavetable;
 
+// C:\Users\Dominic\Documents\Xfer\Serum Presets\Tables
 
 volatile int susp = 0;
 volatile float dbg[5000];
 int idx = 0;
 void WaveTable::CalcSample()
 {
-	GpioPin::SetHigh(GPIOC, 10);
+	GpioPin::SetHigh(GPIOC, 10);		// Debug
 
 
 	// 0v = 61200; 1v = 50110; 2v = 39020; 3v = 27910; 4v = 16790; 5v = 5670
@@ -37,9 +38,9 @@ void WaveTable::CalcSample()
 	float outputSample1;
 	float ratio = readPos - (uint32_t)readPos;
 	if (ratio > 0.00001f) {
-		outputSample1 = filter.CalcInterpolatedFilter((uint32_t)readPos, wavetable, ratio);
+		outputSample1 = filter.CalcInterpolatedFilter((uint32_t)readPos, testWavetable, ratio);
 	} else {
-		outputSample1 = filter.CalcFilter((uint32_t)readPos, wavetable);
+		outputSample1 = filter.CalcFilter((uint32_t)readPos, testWavetable);
 	}
 
 //	float filtered1 = filter.CalcFilter((uint32_t)readPos, wavetable);
@@ -78,12 +79,15 @@ void WaveTable::Init()
 	for (uint32_t i = 0; i < 2048; ++i) {
 
 		switch (wavetableType) {
+		case TestData::wavetable:
+			LoadWaveTable((uint32_t*)0x08100000);
+			break;
 		case TestData::noise:
 			while ((RNG->SR & RNG_SR_DRDY) == 0) {};
-			wavetable[i] = intToFloatMult * static_cast<int32_t>(RNG->DR);
+			testWavetable[i] = intToFloatMult * static_cast<int32_t>(RNG->DR);
 			break;
 		case TestData::twintone:
-			wavetable[i] = 0.5f * (std::sin((float)i * M_PI * 2.0f / 2048.0f) +
+			testWavetable[i] = 0.5f * (std::sin((float)i * M_PI * 2.0f / 2048.0f) +
 					std::sin(430.0f * (float)i * M_PI * 2.0f / 2048.0f));
 			break;
 		}
@@ -104,6 +108,46 @@ float WaveTable::FastTanh(float x)
 }
 
 
+bool WaveTable::LoadWaveTable(uint32_t* startAddr)
+{
+	// populate the sample object with sample rate, number of channels etc
+	// Parsing the .wav format is a pain because the header is split into a variable number of chunks and sections are not word aligned
+
+	const uint8_t* wavHeader = (uint8_t*)startAddr;
+
+	// Check validity
+	if (*(uint32_t*)wavHeader != 0x46464952) {					// wav file should start with letters 'RIFF'
+		return false;
+	}
+
+	// Jump through chunks looking for 'fmt' chunk
+	uint32_t pos = 12;											// First chunk ID at 12 byte (4 word) offset
+	while (*(uint32_t*)&(wavHeader[pos]) != 0x20746D66) {		// Look for string 'fmt '
+		pos += (8 + *(uint32_t*)&(wavHeader[pos + 4]));			// Each chunk title is followed by the size of that chunk which can be used to locate the next one
+		if  (pos > 1000) {
+			return false;
+		}
+	}
+
+	wavFile.dataFormat = *(uint16_t*)&(wavHeader[pos + 8]);
+	wavFile.sampleRate = *(uint32_t*)&(wavHeader[pos + 12]);
+	wavFile.channels   = *(uint16_t*)&(wavHeader[pos + 10]);
+	wavFile.byteDepth  = *(uint16_t*)&(wavHeader[pos + 22]) / 8;
+
+	// Navigate forward to find the start of the data area
+	while (*(uint32_t*)&(wavHeader[pos]) != 0x61746164) {		// Look for string 'data'
+		pos += (8 + *(uint32_t*)&(wavHeader[pos + 4]));
+		if (pos > 1200) {
+			return false;
+		}
+	}
+
+	wavFile.dataSize = *(uint32_t*)&(wavHeader[pos + 4]);		// Num Samples * Num Channels * Bits per Sample / 8
+	wavFile.sampleCount = wavFile.dataSize / (wavFile.channels * wavFile.byteDepth);
+	wavFile.startAddr = (uint8_t*)&(wavHeader[pos + 8]);
+	//wavFile.endAddr = ;
+	return true;
+}
 
 
 
