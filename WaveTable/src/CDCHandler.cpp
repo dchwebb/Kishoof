@@ -1,6 +1,7 @@
 #include "USB.h"
 #include "CDCHandler.h"
 #include "Filter.h"
+#include "WaveTable.h"
 #include "sdram.h"
 #include <stdio.h>
 
@@ -24,6 +25,9 @@ void CDCHandler::ProcessCommand()
 		usb->SendString("Mountjoy Kishoof\r\n"
 				"\r\nSupported commands:\r\n"
 				"info        -  Show diagnostic information\r\n"
+				"noise       -  Use noise wavetable\r\n"
+				"sine        -  Use sine wavetable\r\n"
+				"wav         -  Use wav file wavetable\r\n"
 				"\r\n"
 #if (USB_DEBUG)
 				"usbdebug    -  Start USB debugging\r\n"
@@ -38,7 +42,17 @@ void CDCHandler::ProcessCommand()
 #endif
 
 
+	} else if (cmd.compare("noise") == 0) {
+		wavetable.wavetableType = WaveTable::TestData::noise;
+		wavetable.Init();
 
+	} else if (cmd.compare("sine") == 0) {
+			wavetable.wavetableType = WaveTable::TestData::twintone;
+			wavetable.Init();
+
+	} else if (cmd.compare("wav") == 0) {
+			wavetable.wavetableType = WaveTable::TestData::wavetable;
+			wavetable.Init();
 
 	} else if (cmd.compare("mem16") == 0 || cmd.compare("mem32") == 0) {		// Memory test
 		extern bool runMemTest;

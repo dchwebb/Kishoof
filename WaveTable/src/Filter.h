@@ -24,12 +24,15 @@ public:
 	void Update(bool reset = false);
 	float CalcFilter(int32_t pos, float* wavetable);
 	float CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio);
+
+	float cutoff;
+	float windowBeta = 4;					// between 0.0 and 10.0
+
 private:
 	uint8_t firTaps = 93;	// value must be divisble by four + 1 (eg 93 = 4*23 + 1) or will cause phase reversal when switching between LP and HP
 
 	bool activateFilter = true;				// For debug
 	bool activeFilter = 0;					// choose which set of coefficients to use (so coefficients can be calculated without interfering with current filtering)
-	float cutoff;
 	float currentCutoff;
 
 	// FIR Settings

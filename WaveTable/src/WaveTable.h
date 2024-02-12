@@ -5,7 +5,7 @@
 
 
 struct WaveTable {
-	friend class SerialHandler;				// Allow the serial handler access to private data for debug printing
+	friend class CDCHandler;				// Allow the serial handler access to private data for debug printing
 	friend class Config;					// Allow the config access to private data to save settings
 public:
 	void CalcSample();						// Called by interrupt handler to generate next sample
@@ -23,16 +23,22 @@ public:
 		uint8_t byteDepth;
 		uint16_t dataFormat;				// 1 = PCM; 3 = Float
 		uint8_t channels;					// 1 = mono, 2 = stereo
+		uint16_t tableCount;				// Number of 2048 sample wavetables in file
 		bool valid;							// false if header cannot be processed
 	} wavFile;
 
 private:
 	enum class TestData {noise, twintone, wavetable};
+	TestData wavetableType = TestData::wavetable;
+
+	float* activeWaveTable;
+	float wavetableIdx;
 
 	float pitchInc = 0.0f;
 	float readPos = 0;
 	int32_t oldReadPos;
-	TestData wavetableType = TestData::wavetable;
+
+
 
 	// Private class functions
 	int32_t OutputMix(float wetSample);

@@ -13,7 +13,7 @@ void Filter::Init()
 
 void Filter::Update(bool reset)
 {
-	cutoff = 0.999f * cutoff + 0.001 * (float)adc.FilterPot / 65536.0f;
+	//cutoff = 0.999f * cutoff + 0.001 * (float)adc.FilterPot / 65536.0f;
 
 	if (reset || std::abs(cutoff - currentCutoff) > 0.001) {
 		// round cutoff to 3dp
@@ -105,12 +105,10 @@ float Filter::Sinc(float x)
 
 void Filter::FIRFilterWindow()
 {
-	constexpr float beta = 0.4f;			// between 0.0 and 10.0
-
 	// Kaiser window
 	for (uint8_t j = 0; j < firTaps; j++) {
-		float arg = beta * sqrt(1.0f - pow( (static_cast<float>(2 * j) + 1 - firTaps) / (firTaps + 1), 2.0) );
-		winCoeff[j] = Bessel(arg) / Bessel(beta);
+		float arg = windowBeta * sqrt(1.0f - pow( (static_cast<float>(2 * j) + 1 - firTaps) / (firTaps + 1), 2.0) );
+		winCoeff[j] = Bessel(arg) / Bessel(windowBeta);
 	}
 }
 

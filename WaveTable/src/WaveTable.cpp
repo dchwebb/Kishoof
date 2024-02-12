@@ -28,31 +28,34 @@ void WaveTable::CalcSample()
 	float newInc = pitchBase * std::pow(2.0f, (float)adc.FilterCV * cvMult);			// for cycle length matching sample rate (48k)
 	pitchInc = 0.99 * pitchInc + 0.01 * newInc;
 
-//	float newInc = static_cast<float>(adc.FeedbackPot) / 65536.0f;		// Convert 16 bit int to float 0 -> 1000
-//	pitchInc = 0.99 * pitchInc + 0.01 * newInc;
-//	float pitch = std::max(pitchInc * 20.0f, 1.0f);
+	// Set filter for recalculation
+	filter.cutoff = 1.0f / pitchInc;
 
 	readPos += pitchInc;
 	if (readPos >= 2048) { readPos -= 2048; }
 
-	float outputSample1;
+	// Get wavetable position
+	float wtPos = ((float)(wavFile.tableCount - 1) / 43000.0f) * (65536 - adc.DelayCV_L);
+	wavetableIdx = std::clamp((float)(0.99f * wavetableIdx + 0.01f * wtPos), 0.0f, (float)(wavFile.tableCount - 1));
+	uint32_t sampleOffset = 2048 * std::floor(wavetableIdx);
+
+	float outputSample;
 	float ratio = readPos - (uint32_t)readPos;
 	if (ratio > 0.00001f) {
-		outputSample1 = filter.CalcInterpolatedFilter((uint32_t)readPos, testWavetable, ratio);
+		outputSample = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset, ratio);
 	} else {
-		outputSample1 = filter.CalcFilter((uint32_t)readPos, testWavetable);
+		outputSample = filter.CalcFilter((uint32_t)readPos, activeWaveTable + sampleOffset);
 	}
 
-//	float filtered1 = filter.CalcFilter((uint32_t)readPos, wavetable);
-//	float filtered2 = filter.CalcFilter((uint32_t)(readPos + 1) & 0x7FF, wavetable);
-//	float outputSample2 = std::lerp(filtered1, filtered2, readPos - (uint32_t)readPos);
-
-	if (std::isnan(outputSample1)) {
-		++susp;
+	// Interpolate between wavetables
+	ratio = wavetableIdx - (uint32_t)wavetableIdx;
+	if (ratio > 0.0001f) {
+		float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset + 2048, ratio);
+		outputSample = std::lerp(outputSample, outputSample2, ratio);
 	}
 
-	SPI2->TXDR = (int32_t)(outputSample1 * floatToIntMult);
-	SPI2->TXDR = (int32_t)(outputSample1 * floatToIntMult);;
+	SPI2->TXDR = (int32_t)(outputSample * floatToIntMult);
+	SPI2->TXDR = (int32_t)(outputSample * floatToIntMult);;
 
 	GpioPin::SetLow(GPIOC, 10);			// Debug off
 }
@@ -76,21 +79,33 @@ int32_t WaveTable::OutputMix(float wetSample)
 
 void WaveTable::Init()
 {
-	for (uint32_t i = 0; i < 2048; ++i) {
-
-		switch (wavetableType) {
-		case TestData::wavetable:
-			LoadWaveTable((uint32_t*)0x08100000);
-			break;
-		case TestData::noise:
-			while ((RNG->SR & RNG_SR_DRDY) == 0) {};
-			testWavetable[i] = intToFloatMult * static_cast<int32_t>(RNG->DR);
-			break;
-		case TestData::twintone:
-			testWavetable[i] = 0.5f * (std::sin((float)i * M_PI * 2.0f / 2048.0f) +
-					std::sin(430.0f * (float)i * M_PI * 2.0f / 2048.0f));
-			break;
+	if (wavetableType == TestData::wavetable) {
+		LoadWaveTable((uint32_t*)0x08100000);
+		activeWaveTable = (float*)wavFile.startAddr;
+	} else {
+		// Generate test waves
+		for (uint32_t i = 0; i < 2048; ++i) {
+			switch (wavetableType) {
+			case TestData::noise:
+				while ((RNG->SR & RNG_SR_DRDY) == 0) {};
+				testWavetable[i] = intToFloatMult * static_cast<int32_t>(RNG->DR);
+				activeWaveTable = testWavetable;
+				break;
+			case TestData::twintone:
+				testWavetable[i] = 0.5f * (std::sin((float)i * M_PI * 2.0f / 2048.0f) +
+						std::sin(200.0f * (float)i * M_PI * 2.0f / 2048.0f));
+				activeWaveTable = testWavetable;
+				break;
+			}
 		}
+
+		// Populate wavFile info
+		wavFile.dataFormat = 3;
+		wavFile.channels   = 1;
+		wavFile.byteDepth  = 4;
+		wavFile.sampleCount = 2048;
+		wavFile.tableCount = 1;
+		wavFile.startAddr = (uint8_t*)&testWavetable;
 	}
 
 	DAC1->DHR12R2 = 4095;				// Wet level
@@ -144,6 +159,7 @@ bool WaveTable::LoadWaveTable(uint32_t* startAddr)
 
 	wavFile.dataSize = *(uint32_t*)&(wavHeader[pos + 4]);		// Num Samples * Num Channels * Bits per Sample / 8
 	wavFile.sampleCount = wavFile.dataSize / (wavFile.channels * wavFile.byteDepth);
+	wavFile.tableCount = wavFile.sampleCount / 2048;
 	wavFile.startAddr = (uint8_t*)&(wavHeader[pos + 8]);
 	//wavFile.endAddr = ;
 	return true;
