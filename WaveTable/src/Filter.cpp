@@ -34,8 +34,7 @@ void Filter::InitFIRFilter(float omega)
 	// cycle between two sets of coefficients so one can be changed without affecting the other
 	const bool inactiveFilter = !activeFilter;
 
-	//for (int8_t j = 0; j < firTaps / 2 + 1; ++j) {
-	for (int8_t j = 0; j < firTaps; ++j) {
+	for (int8_t j = 0; j < firTaps / 2 + 1; ++j) {
 		int8_t  arg = j - (firTaps - 1) / 2;
 		firCoeff[inactiveFilter][j] = omega * Sinc(omega * arg * M_PI) * winCoeff[j];
 	}

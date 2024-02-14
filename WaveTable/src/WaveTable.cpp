@@ -2,6 +2,7 @@
 #include "Filter.h"
 #include "GpioPin.h"
 #include <cmath>
+#include <cstring>
 
 WaveTable wavetable;
 
@@ -13,7 +14,7 @@ int idx = 0;
 void WaveTable::CalcSample()
 {
 	GpioPin::SetHigh(GPIOC, 10);		// Debug
-
+	StartDebugTimer();
 
 	// 0v = 61200; 1v = 50110; 2v = 39020; 3v = 27910; 4v = 16790; 5v = 5670
 	// C: 16.35 Hz 32.70 Hz; 65.41 Hz; 130.81 Hz; 261.63 Hz; 523.25 Hz; 1046.50 Hz; 2093.00 Hz; 4186.01 Hz
@@ -23,7 +24,7 @@ void WaveTable::CalcSample()
 	// Pitch calculations - Increase pitchBase to increase pitch; Reduce ABS(cvMult) to increase spread
 
 	// Calculations: 11090 is difference in cv between two octaves; 50110 is cv at 1v and 130.81 is desired Hz at 1v
-	constexpr float pitchBase = (130.81f * (2048.0f / sampleRate)) / std::pow(2.0, -50120.0f / 11090.0f);
+	constexpr float pitchBase = (65.41f * (2048.0f / sampleRate)) / std::pow(2.0, -50120.0f / 11090.0f);
 	constexpr float cvMult = -1.0f / 11090.0f;
 	float newInc = pitchBase * std::pow(2.0f, (float)adc.FilterCV * cvMult);			// for cycle length matching sample rate (48k)
 	pitchInc = 0.99 * pitchInc + 0.01 * newInc;
@@ -57,6 +58,8 @@ void WaveTable::CalcSample()
 	SPI2->TXDR = (int32_t)(outputSample * floatToIntMult);
 	SPI2->TXDR = (int32_t)(outputSample * floatToIntMult);;
 
+	debugTiming = StopDebugTimer();
+
 	GpioPin::SetLow(GPIOC, 10);			// Debug off
 }
 
@@ -80,6 +83,9 @@ int32_t WaveTable::OutputMix(float wetSample)
 void WaveTable::Init()
 {
 	if (wavetableType == TestData::wavetable) {
+
+		//memcpy((uint8_t*)0x24000000, (uint8_t*)0x08100000, 131208);		// Copy wavetable to ram
+
 		LoadWaveTable((uint32_t*)0x08100000);
 		activeWaveTable = (float*)wavFile.startAddr;
 	} else {
@@ -95,6 +101,8 @@ void WaveTable::Init()
 				testWavetable[i] = 0.5f * (std::sin((float)i * M_PI * 2.0f / 2048.0f) +
 						std::sin(200.0f * (float)i * M_PI * 2.0f / 2048.0f));
 				activeWaveTable = testWavetable;
+				break;
+			default:
 				break;
 			}
 		}
@@ -161,7 +169,7 @@ bool WaveTable::LoadWaveTable(uint32_t* startAddr)
 	wavFile.sampleCount = wavFile.dataSize / (wavFile.channels * wavFile.byteDepth);
 	wavFile.tableCount = wavFile.sampleCount / 2048;
 	wavFile.startAddr = (uint8_t*)&(wavHeader[pos + 8]);
-	//wavFile.endAddr = ;
+	wavFile.fileSize = pos + 8 + wavFile.dataSize;		// header size + data size
 	return true;
 }
 

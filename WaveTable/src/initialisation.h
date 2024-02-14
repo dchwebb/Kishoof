@@ -56,4 +56,5 @@ void resumeI2S();
 void InitTempoClock();
 void InitIO();
 void InitDebugTimer();
-
+void StartDebugTimer();
+float StopDebugTimer();

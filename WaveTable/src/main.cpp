@@ -3,7 +3,6 @@
 #include "USB.h"
 #include "WaveTable.h"
 #include "Filter.h"
-#include "sdram.h"
 
 
 volatile uint32_t SysTickVal;
@@ -11,7 +10,6 @@ extern uint32_t SystemCoreClock;
 
 // Store buffers that need to live in special memory areas
 volatile ADCValues __attribute__((section (".dma_buffer"))) adc;
-int32_t __attribute__((section (".sdramSection"))) samples[SAMPLE_BUFFER_LENGTH];	// Place delay sample buffers in external SDRAM
 
 
 USB usb;

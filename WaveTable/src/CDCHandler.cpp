@@ -2,7 +2,6 @@
 #include "CDCHandler.h"
 #include "Filter.h"
 #include "WaveTable.h"
-#include "sdram.h"
 #include <stdio.h>
 
 
@@ -53,18 +52,6 @@ void CDCHandler::ProcessCommand()
 	} else if (cmd.compare("wav") == 0) {
 			wavetable.wavetableType = WaveTable::TestData::wavetable;
 			wavetable.Init();
-
-	} else if (cmd.compare("mem16") == 0 || cmd.compare("mem32") == 0) {		// Memory test
-		extern bool runMemTest;
-		if (!runMemTest) {
-			usb->SendString("Entering memory test mode - clears, writes and reads external RAM. Type 'mem' again to stop\r\n");
-			cmdPending = false;
-			MemoryTest(cmd.compare("mem16") == 0);
-		} else {
-			usb->SendString("Memory test complete\r\n");
-			runMemTest = false;
-		}
-
 
 	} else {
 		printf("Unrecognised command: %s\r\nType 'help' for supported commands\r\n", cmd.data());

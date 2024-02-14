@@ -2,7 +2,7 @@
 #include "stm32h743xx.h"
 #include "initialisation.h"
 #include "GpioPin.h"
-#include "sdram.h"
+
 
 // Clock overview:
 // Main clock 4MHz: 8MHz (HSE) / 2 (M) * 200 (N) / 2 (P) = 400MHz
@@ -150,10 +150,10 @@ void InitHardware()
 {
 	InitSysTick();
 	InitDAC();
-	InitSDRAM_16160();				// Initialise 32MB SDRAM
 	InitCache();
 	InitIO();						// Initialise switches and LEDs
 	InitADC();
+	InitDebugTimer();
 
 	RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;
 	RNG->CR |= RNG_CR_RNGEN;
@@ -530,12 +530,28 @@ void InitI2S() {
 
 void InitDebugTimer()
 {
-	// Configure timer to use in internal debug timing
+	// Configure timer to use in internal debug timing - uses APB1 timer clock which is 200MHz -
+	// Each tick is 5ns with PSC 10nS - full range is 655.350 uS
 	RCC->APB1LENR |= RCC_APB1LENR_TIM3EN;
 	TIM3->ARR = 65535;
 	TIM3->PSC = 1;
+
+}
+
+
+void StartDebugTimer() {
+	TIM3->EGR |= TIM_EGR_UG;
 	TIM3->CR1 |= TIM_CR1_CEN;
 }
+
+
+float StopDebugTimer() {
+	// Return time running in microseconds
+	const uint32_t count = TIM3->CNT;
+	TIM3->CR1 &= ~TIM_CR1_CEN;
+	return 0.01f * count;
+}
+
 
 
 void InitIO()

@@ -10,10 +10,7 @@
 #include <complex>
 #include <array>
 
-
-#define MAX_FIR_TAPS 93
-
-typedef std::complex<double> complex_t;
+static constexpr int maxFIRTaps = 93;
 
 struct Filter {
 	friend class SerialHandler;				// Allow the serial handler access to private data for debug printing
@@ -26,18 +23,18 @@ public:
 	float CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio);
 
 	float cutoff;
-	float windowBeta = 4;					// between 0.0 and 10.0
+	float windowBeta = 4;					// between 0.0 and 10.0 - trade-off between stop band attenuation and filter transistion width
 
 private:
-	uint8_t firTaps = 93;	// value must be divisble by four + 1 (eg 93 = 4*23 + 1) or will cause phase reversal when switching between LP and HP
+	uint8_t firTaps = 45;
 
 	bool activateFilter = true;				// For debug
-	bool activeFilter = 0;					// choose which set of coefficients to use (so coefficients can be calculated without interfering with current filtering)
+	bool activeFilter = 0;					// For double-buffering coefficients (so coefficient calculation won't interfere with current filter)
 	float currentCutoff;
 
 	// FIR Settings
-	float firCoeff[2][MAX_FIR_TAPS];
-	float winCoeff[MAX_FIR_TAPS];
+	float firCoeff[2][maxFIRTaps];
+	float winCoeff[maxFIRTaps];
 
 	void InitFIRFilter(float tone);
 	float Sinc(float x);

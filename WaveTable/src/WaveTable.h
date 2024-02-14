@@ -16,7 +16,7 @@ public:
 
 	struct WavFile {
 		const uint8_t* startAddr;			// Address of data section
-		const uint8_t* endAddr;				// End Address of data section
+		uint32_t fileSize;
 		uint32_t dataSize;					// Size of data section in bytes
 		uint32_t sampleCount;				// Number of samples (stereo samples only counted once)
 		uint32_t sampleRate;
@@ -38,7 +38,7 @@ private:
 	float readPos = 0;
 	int32_t oldReadPos;
 
-
+	float debugTiming;
 
 	// Private class functions
 	int32_t OutputMix(float wetSample);
