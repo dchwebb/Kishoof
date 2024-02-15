@@ -58,7 +58,9 @@ private:
 	float readPos = 0;
 	int32_t oldReadPos;
 
+	// Debug timers
 	float debugTiming;
+	float memLoad;
 
 	// Private class functions
 	int32_t OutputMix(float wetSample);

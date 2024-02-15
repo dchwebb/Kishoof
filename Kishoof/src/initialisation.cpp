@@ -449,7 +449,8 @@ void InitI2S() {
 	SPI2->I2SCFGR |= SPI_I2SCFGR_CHLEN;				// Channel Length = 32bits
 
 	SPI2->CFG1 |= SPI_CFG1_UDRCFG_1;				// In the event of underrun resend last transmitted data frame
-	SPI2->CFG1 |= SPI_CFG1_FTHLV_1;					// FIFO threshold level. 0001: 2-data
+//	SPI2->CFG1 |= SPI_CFG1_FTHLV_1;					// FIFO threshold level. 0001: 2-data
+	SPI2->CFG1 |= 1 << SPI_CFG1_FTHLV_Pos;			// FIFO threshold level. 0001: 2-data, 0011: 4 data
 
 	/* I2S Clock
 	000: pll1_q_ck clock selected as SPI/I2S1,2 and 3 kernel clock (default after reset)

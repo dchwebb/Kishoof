@@ -415,7 +415,7 @@ void InitI2S()
 	SPI2->I2SCFGR |= SPI_I2SCFGR_CHLEN;				// Channel Length = 32 bits
 
 	SPI2->CFG1 |= SPI_CFG1_UDRCFG_1;				// In the event of underrun resend last transmitted data frame
-	SPI2->CFG1 |= SPI_CFG1_FTHLV_1;					// FIFO threshold level. 0001: 2-data
+	SPI2->CFG1 |= 1 << SPI_CFG1_FTHLV_Pos;			// FIFO threshold level. 0001: 2-data, 0011: 4 data
 
 	/* I2S Clock
 	000: pll1_q_ck clock selected as SPI/I2S1,2 and 3 kernel clock (default after reset)
@@ -547,20 +547,21 @@ void InitQSPI()
 	RCC->D1CCIPR &= ~RCC_D1CCIPR_QSPISEL;			// 00: hsi_ker_ck clock selected as per_ck clock
 	RCC->AHB3ENR |= RCC_AHB3ENR_QSPIEN;				// Enable QSPI clock
 
-	GpioPin::Init(GPIOB, 2,  GpioPin::Type::AlternateFunction, 9, 3);		// PB2:  CLK Flash 1
-	GpioPin::Init(GPIOD, 11, GpioPin::Type::AlternateFunction, 9, 3);		// PD11: IO0 Flash 1
-	GpioPin::Init(GPIOD, 12, GpioPin::Type::AlternateFunction, 9, 3);		// PD12: IO1 Flash 1
-	GpioPin::Init(GPIOD, 13, GpioPin::Type::AlternateFunction, 9, 3);		// PD13: IO3 Flash 1
-	GpioPin::Init(GPIOE, 2,  GpioPin::Type::AlternateFunction, 9, 3);		// PE2:  IO2 Flash 1
-	GpioPin::Init(GPIOG, 6,  GpioPin::Type::AlternateFunction, 10, 3);		// PG6:  NCS Flash 1
+	// NB - use v high drive strength or does not work
+	GpioPin::Init(GPIOB, 2,  GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);		// PB2:  CLK Flash 1
+	GpioPin::Init(GPIOD, 11, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);		// PD11: IO0 Flash 1
+	GpioPin::Init(GPIOD, 12, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);		// PD12: IO1 Flash 1
+	GpioPin::Init(GPIOD, 13, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);		// PD13: IO3 Flash 1
+	GpioPin::Init(GPIOE, 2,  GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);		// PE2:  IO2 Flash 1
+	GpioPin::Init(GPIOG, 6,  GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh);		// PG6:  NCS Flash 1
 
-	GpioPin::Init(GPIOE, 7,  GpioPin::Type::AlternateFunction, 10, 3);		// PE7:  IO0 Flash 2
-	GpioPin::Init(GPIOE, 8,  GpioPin::Type::AlternateFunction, 10, 3);		// PE8:  IO1 Flash 2
-	GpioPin::Init(GPIOE, 9,  GpioPin::Type::AlternateFunction, 10, 3);		// PE9:  IO2 Flash 2
-	GpioPin::Init(GPIOE, 10, GpioPin::Type::AlternateFunction, 10, 3);		// PE10: IO3 Flash 2
-	GpioPin::Init(GPIOC, 11, GpioPin::Type::AlternateFunction, 9, 3);		// PC11: NCS Flash 2
+	GpioPin::Init(GPIOE, 7,  GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh);		// PE7:  IO0 Flash 2
+	GpioPin::Init(GPIOE, 8,  GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh);		// PE8:  IO1 Flash 2
+	GpioPin::Init(GPIOE, 9,  GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh);		// PE9:  IO2 Flash 2
+	GpioPin::Init(GPIOE, 10, GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh);		// PE10: IO3 Flash 2
+	GpioPin::Init(GPIOC, 11, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);		// PC11: NCS Flash 2
 
-	QUADSPI->CR |= 1 << QUADSPI_CR_PRESCALER_Pos;	// Set prescaler to n + 1 => 200MHz / 7 = ~29MHz
+	QUADSPI->CR |= 1 << QUADSPI_CR_PRESCALER_Pos;	// Set prescaler to n + 1 => 200MHz / 2 = 100MHz
 
 	if (dualFlashMode) {
 		QUADSPI->DCR |= 24 << QUADSPI_DCR_FSIZE_Pos;// Set bytes in Flash memory to 2^(FSIZE + 1) = 2^25 = 32 Mbytes

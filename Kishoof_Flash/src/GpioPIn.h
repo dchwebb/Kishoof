@@ -3,14 +3,15 @@
 class GpioPin {
 public:
 	enum class Type {Input, InputPullup, Output, AlternateFunction};
+	enum class DriveStrength {Low, Medium, High, VeryHigh};
 
-	GpioPin(GPIO_TypeDef* port, uint32_t pin, Type pinType, uint32_t alternateFunction = 0, uint32_t driveStrength = 0) :
+	GpioPin(GPIO_TypeDef* port, uint32_t pin, Type pinType, uint32_t alternateFunction = 0, DriveStrength driveStrength = DriveStrength::Low) :
 		port(port), pin(pin), pinType(pinType)
 	{
 		Init(port, pin, pinType, alternateFunction, driveStrength);		// Init function is static so can be called without instantiating object
 	}
 
-	static void Init(GPIO_TypeDef* port, uint32_t pin, Type pinType, uint32_t alternateFunction = 0, uint32_t driveStrength = 0)
+	static void Init(GPIO_TypeDef* port, uint32_t pin, Type pinType, uint32_t alternateFunction = 0, DriveStrength driveStrength = DriveStrength::Low)
 	{
 		// maths to calculate RCC clock to enable
 		uint32_t portPos = ((uint32_t)port - D3_AHB1PERIPH_BASE) >> 10;
@@ -37,7 +38,7 @@ public:
 			}
 		}
 
-		port->OSPEEDR |= driveStrength << (pin * 2);
+		port->OSPEEDR |= static_cast<uint32_t>(driveStrength) << (pin * 2);
 	}
 
 	static void SetHigh(GPIO_TypeDef* port, uint32_t pin)

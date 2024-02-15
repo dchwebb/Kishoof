@@ -14,7 +14,7 @@ volatile float dbg[5000];
 int idx = 0;
 void WaveTable::CalcSample()
 {
-	GpioPin::SetHigh(GPIOC, 10);		// Debug
+	GpioPin::SetHigh(GPIOD, 9);		// Debug
 	StartDebugTimer();
 
 	// 0v = 61200; 1v = 50110; 2v = 39020; 3v = 27910; 4v = 16790; 5v = 5670
@@ -61,24 +61,8 @@ void WaveTable::CalcSample()
 
 	debugTiming = StopDebugTimer();
 
-	GpioPin::SetLow(GPIOC, 10);			// Debug off
+	GpioPin::SetLow(GPIOD, 9);			// Debug off
 }
-
-
-
-int32_t WaveTable::OutputMix(float wetSample)
-{
-	// Output mix level
-	float dryLevel = 1.0f;		// Convert 16 bit int to float 0 -> 1
-
-	DAC1->DHR12R2 = (1.0f - dryLevel) * 4095.0f;		// Wet level
-	DAC1->DHR12R1 = dryLevel * 4095.0f;					// Dry level
-
-	int16_t outputSample = std::clamp(static_cast<int32_t>(wetSample), -32767L, 32767L);
-
-	return outputSample;
-}
-
 
 
 void WaveTable::Init()
@@ -86,9 +70,13 @@ void WaveTable::Init()
 	if (wavetableType == TestData::wavetable) {
 
 		//memcpy((uint8_t*)0x24000000, (uint8_t*)0x08100000, 131208);		// Copy wavetable to ram
-
+		StartDebugTimer();
+		//memcpy((uint8_t*)0x24000000, (uint8_t*)0x90843000, 467080);		// Copy wavetable to ram
+		memcpy((uint8_t*)0x24000000, (uint8_t*)0x90822800, 467080);		// Copy wavetable to ram
+		memLoad = StopDebugTimer();
 		//LoadWaveTable((uint32_t*)0x08100000);
 		LoadWaveTable((uint32_t*)0x90822800);
+		//LoadWaveTable((uint32_t*)0x24000000);
 		activeWaveTable = (float*)wavFile.startAddr;
 	} else {
 		// Generate test waves
