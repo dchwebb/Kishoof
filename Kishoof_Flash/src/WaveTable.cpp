@@ -72,10 +72,10 @@ void WaveTable::Init()
 		//memcpy((uint8_t*)0x24000000, (uint8_t*)0x08100000, 131208);		// Copy wavetable to ram
 		StartDebugTimer();
 		//memcpy((uint8_t*)0x24000000, (uint8_t*)0x90843000, 467080);		// Copy wavetable to ram
-		memcpy((uint8_t*)0x24000000, (uint8_t*)0x90822800, 467080);		// Copy wavetable to ram
+		memcpy((uint8_t*)0x24000000, (uint8_t*)0x90843000, 467080);		// Copy wavetable to ram
 		memLoad = StopDebugTimer();
 		//LoadWaveTable((uint32_t*)0x08100000);
-		LoadWaveTable((uint32_t*)0x90822800);
+		LoadWaveTable((uint32_t*)0x90843000);
 		//LoadWaveTable((uint32_t*)0x24000000);
 		activeWaveTable = (float*)wavFile.startAddr;
 	} else {
