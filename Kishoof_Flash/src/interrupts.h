@@ -7,6 +7,9 @@ void OTG_FS_IRQHandler(void)
 // Detailed debug timings
 uint32_t loopTime = 0, maxLoopTime = 0, outputTime = 0, maxOutputTime = 0, reverbTime = 0, maxReverbTime = 0;
 
+void __attribute__((optimize("O0"))) TinyDelay() {
+	for (int x = 0; x < 100; ++x);
+}
 
 void SPI2_IRQHandler()									// I2S Interrupt
 {
@@ -18,6 +21,7 @@ void SPI2_IRQHandler()									// I2S Interrupt
 
 	wavetable.CalcSample();
 
+	TinyDelay();			// NB It appears we need something here to add a slight delay or the interrupt sometimes fires twice
 }
 
 
