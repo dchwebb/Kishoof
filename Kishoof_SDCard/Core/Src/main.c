@@ -69,7 +69,7 @@ int main(void)
 {
 	/* USER CODE BEGIN 1 */
 	FRESULT res; 									// FatFs function common result code
-	uint32_t byteswritten;				// File write/read counts
+	uint32_t byteswritten, bytesread;				// File write/read counts
 	uint8_t wtext[] = "STM32 FATFS works great!";	// File write buffer
 	uint8_t rtext[_MAX_SS];							// File read buffer
 	/* USER CODE END 1 */
@@ -95,29 +95,52 @@ int main(void)
 	MX_SDMMC1_SD_Init();
 	MX_FATFS_Init();
 	/* USER CODE BEGIN 2 */
-
-	if (f_mount(&SDFatFS, (TCHAR const*)SDPath, 0) != FR_OK)	{
-		Error_Handler();
-	} else {
-		res = f_mkfs((TCHAR const*)SDPath, FM_ANY, 0, rtext, sizeof(rtext));
-		if (res != FR_OK) {
+	//if (0) {
+		if (f_mount(&SDFatFS, (TCHAR const*)SDPath, 0) != FR_OK)	{
 			Error_Handler();
 		} else {
-			//Open file for writing (Create)
-			if (f_open(&SDFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
+			res = f_mkfs((TCHAR const*)SDPath, FM_ANY, 0, rtext, sizeof(rtext));
+			if (res != FR_OK) {
 				Error_Handler();
 			} else {
-				//Write to the text file
-				res = f_write(&SDFile, wtext, strlen((char*)wtext), (void*)&byteswritten);
-				if ((byteswritten == 0) || (res != FR_OK)) {
+				//Open file for writing (Create)
+				if (f_open(&SDFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
 					Error_Handler();
 				} else {
-					f_close(&SDFile);
+					//Write to the text file
+					res = f_write(&SDFile, wtext, strlen((char*)wtext), (void*)&byteswritten);
+					if ((byteswritten == 0) || (res != FR_OK)) {
+						Error_Handler();
+					} else {
+						f_close(&SDFile);
+
+						// Open the text file object with read access
+						if (f_open(&SDFile, "STM32.TXT", FA_READ) == FR_OK) {
+
+							// Read data from the text file
+							res = f_read(&SDFile, rtext, sizeof(rtext), (unsigned int *)&bytesread);
+
+							if ((bytesread > 0) && (res == FR_OK)) {
+
+								//Close the open text file
+								f_close(&SDFile);
+							}
+						}
+					}
 				}
+
 			}
+
 		}
-	}
-	f_mount(&SDFatFS, (TCHAR const*)NULL, 0);
+	//}
+//	res = f_mount(&SDFatFS, (TCHAR const*)NULL, 0);
+
+	DIR dp;						// Pointer to the directory object structure
+	FILINFO fno;				// File information structure
+	res = f_opendir(&dp, "");	// second parm is directory name (root)
+	res = f_readdir(&dp, &fno);
+	uint8_t dummy = 1;
+
 
 	/* USER CODE END 2 */
 
