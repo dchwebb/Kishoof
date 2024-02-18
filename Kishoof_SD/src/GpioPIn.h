@@ -41,6 +41,16 @@ public:
 		port->OSPEEDR |= static_cast<uint32_t>(driveStrength) << (pin * 2);
 	}
 
+	bool IsHigh()
+	{
+		return (port->IDR & (1 << pin));
+	}
+
+	bool IsLow()
+	{
+		return ((port->IDR & (1 << pin)) == 0);
+	}
+
 	static void SetHigh(GPIO_TypeDef* port, uint32_t pin)
 	{
 		port->ODR |= (1 << pin);

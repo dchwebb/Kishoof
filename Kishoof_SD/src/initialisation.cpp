@@ -115,25 +115,9 @@ void InitSSD()
     NVIC_SetPriority(SDMMC1_IRQn, 2);
     NVIC_EnableIRQ(SDMMC1_IRQn);
 
-	#define SD_INIT_FREQ 400000
-    uint32_t sdmmc_clk = 50000000;
-    uint32_t clockDiv = sdmmc_clk / (2U * SD_INIT_FREQ);
-    SDMMC1->CLKCR |= clockDiv;
 
-    SDMMC1->POWER |= SDMMC_POWER_PWRCTRL;			// Power-on: the card is clocked
 
-    // Wait 74 Cycles: required power up waiting time before starting the SD initialization sequence
-    sdmmc_clk = sdmmc_clk / (2U * clockDiv);
-    DelayMS(1U + (74U * 1000U / (sdmmc_clk)));
 
-    /* Identify card operating voltage */
-    uint32_t errorstate = SD_PowerON(hsd);
-    if (errorstate != HAL_SD_ERROR_NONE)
-    {
-      hsd->State = HAL_SD_STATE_READY;
-      hsd->ErrorCode |= errorstate;
-      return HAL_ERROR;
-    }
 }
 
 

@@ -38,34 +38,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := Kishoof_SDCard
+BUILD_ARTIFACT_NAME := Kishoof_SDCard_HAL
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-Kishoof_SDCard.elf \
+Kishoof_SDCard_HAL.elf \
 
 MAP_FILES += \
-Kishoof_SDCard.map \
+Kishoof_SDCard_HAL.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-Kishoof_SDCard.list \
+Kishoof_SDCard_HAL.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: Kishoof_SDCard.elf secondary-outputs
+main-build: Kishoof_SDCard_HAL.elf secondary-outputs
 
 # Tool invocations
-Kishoof_SDCard.elf Kishoof_SDCard.map: $(OBJS) $(USER_OBJS) D:\Eurorack\Kishoof\Kishoof_SDCard\STM32H743ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Kishoof_SDCard.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\Eurorack\Kishoof\Kishoof_SDCard\STM32H743ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Kishoof_SDCard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Kishoof_SDCard_HAL.elf Kishoof_SDCard_HAL.map: $(OBJS) $(USER_OBJS) D:\Eurorack\Kishoof\Kishoof_SDCard\STM32H743ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Kishoof_SDCard_HAL.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\Eurorack\Kishoof\Kishoof_SDCard\STM32H743ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Kishoof_SDCard_HAL.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -74,14 +74,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-Kishoof_SDCard.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "Kishoof_SDCard.list"
+Kishoof_SDCard_HAL.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "Kishoof_SDCard_HAL.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) Kishoof_SDCard.elf Kishoof_SDCard.list Kishoof_SDCard.map default.size.stdout
+	-$(RM) Kishoof_SDCard_HAL.elf Kishoof_SDCard_HAL.list Kishoof_SDCard_HAL.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)

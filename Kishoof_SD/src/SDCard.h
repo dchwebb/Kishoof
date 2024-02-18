@@ -1,9 +1,7 @@
 #pragma once
 #include "initialisation.h"
+#include "GpioPin.h"
 
-
-
-#define BLOCKSIZE   ((uint32_t)512U) /*!< Block size is 512 bytes */
 
 #define SDMMC_ERROR_NONE                     ((uint32_t)0x00000000U)   /*!< No error                                                      */
 #define SDMMC_ERROR_CMD_CRC_FAIL             ((uint32_t)0x00000001U)   /*!< Command response received (but CRC check failed)              */
@@ -249,12 +247,102 @@
 
 #define SDMMC_STATIC_CMD_FLAGS         ((uint32_t)(SDMMC_STA_CCRCFAIL | SDMMC_STA_CTIMEOUT  | SDMMC_STA_CMDREND | SDMMC_STA_CMDSENT  | SDMMC_STA_BUSYD0END))
 
+#define SDMMC_FLAG_CMDACT                    SDMMC_STA_CPSMACT
+
+#define SDMMC_DATABLOCK_SIZE_1B               ((uint32_t)0x00000000U)
+#define SDMMC_DATABLOCK_SIZE_2B               SDMMC_DCTRL_DBLOCKSIZE_0
+#define SDMMC_DATABLOCK_SIZE_4B               SDMMC_DCTRL_DBLOCKSIZE_1
+#define SDMMC_DATABLOCK_SIZE_8B               (SDMMC_DCTRL_DBLOCKSIZE_0|SDMMC_DCTRL_DBLOCKSIZE_1)
+#define SDMMC_DATABLOCK_SIZE_16B              SDMMC_DCTRL_DBLOCKSIZE_2
+#define SDMMC_DATABLOCK_SIZE_32B              (SDMMC_DCTRL_DBLOCKSIZE_0|SDMMC_DCTRL_DBLOCKSIZE_2)
+#define SDMMC_DATABLOCK_SIZE_64B              (SDMMC_DCTRL_DBLOCKSIZE_1|SDMMC_DCTRL_DBLOCKSIZE_2)
+#define SDMMC_DATABLOCK_SIZE_128B             (SDMMC_DCTRL_DBLOCKSIZE_0| \
+                                               SDMMC_DCTRL_DBLOCKSIZE_1|SDMMC_DCTRL_DBLOCKSIZE_2)
+#define SDMMC_DATABLOCK_SIZE_256B             SDMMC_DCTRL_DBLOCKSIZE_3
+#define SDMMC_DATABLOCK_SIZE_512B             (SDMMC_DCTRL_DBLOCKSIZE_0|SDMMC_DCTRL_DBLOCKSIZE_3)
+#define SDMMC_DATABLOCK_SIZE_1024B            (SDMMC_DCTRL_DBLOCKSIZE_1|SDMMC_DCTRL_DBLOCKSIZE_3)
+#define SDMMC_DATABLOCK_SIZE_2048B            (SDMMC_DCTRL_DBLOCKSIZE_0| \
+                                               SDMMC_DCTRL_DBLOCKSIZE_1|SDMMC_DCTRL_DBLOCKSIZE_3)
+#define SDMMC_DATABLOCK_SIZE_4096B            (SDMMC_DCTRL_DBLOCKSIZE_2|SDMMC_DCTRL_DBLOCKSIZE_3)
+#define SDMMC_DATABLOCK_SIZE_8192B            (SDMMC_DCTRL_DBLOCKSIZE_0| \
+                                               SDMMC_DCTRL_DBLOCKSIZE_2|SDMMC_DCTRL_DBLOCKSIZE_3)
+#define SDMMC_DATABLOCK_SIZE_16384B           (SDMMC_DCTRL_DBLOCKSIZE_1| \
+                                               SDMMC_DCTRL_DBLOCKSIZE_2|SDMMC_DCTRL_DBLOCKSIZE_3)
+#define SDMMC_TRANSFER_DIR_TO_CARD            ((uint32_t)0x00000000U)
+#define SDMMC_TRANSFER_DIR_TO_SDMMC            SDMMC_DCTRL_DTDIR
+
+#define SDMMC_TRANSFER_MODE_BLOCK             ((uint32_t)0x00000000U)
+#define SDMMC_TRANSFER_MODE_STREAM            SDMMC_DCTRL_DTMODE_1
+
+#define SDMMC_TRANSFER_MODE_BLOCK             ((uint32_t)0x00000000U)
+#define SDMMC_TRANSFER_MODE_STREAM            SDMMC_DCTRL_DTMODE_1
+
+#define SDMMC_DPSM_DISABLE                    ((uint32_t)0x00000000U)
+#define SDMMC_DPSM_ENABLE                     SDMMC_DCTRL_DTEN
+
+#define DCTRL_CLEAR_MASK         ((uint32_t)(SDMMC_DCTRL_DTEN    | SDMMC_DCTRL_DTDIR |\
+                                             SDMMC_DCTRL_DTMODE  | SDMMC_DCTRL_DBLOCKSIZE))
+
+typedef struct {
+	uint32_t DataTimeOut;         // Specifies the data timeout period in card bus clock periods.
+	uint32_t DataLength;          // Specifies the number of data bytes to be transferred.
+	uint32_t DataBlockSize;       // Specifies the data block size for block transfer.
+	uint32_t TransferDir;         // Specifies the data transfer direction, whether the transfer is a read or write.
+	uint32_t TransferMode;        // Specifies whether data transfer is in stream or block mode.
+	uint32_t DPSM;                // Specifies whether SDMMC Data path state machine (DPSM) is enabled or disabled.
+} SDMMC_DataInitTypeDef;
+
 class SDCard
 {
+	typedef struct {
+		uint8_t  DataBusWidth;           // Shows the currently defined data bus width
+		uint8_t  SecuredMode;            // Card is in secured mode of operation
+		uint16_t CardType;               // Carries information about card type
+		uint32_t ProtectedAreaSize;      // Carries information about the capacity of protected area
+		uint8_t  SpeedClass;             // Carries information about the speed class of the card
+		uint8_t  PerformanceMove;        // Carries information about the card's performance move
+		uint8_t  AllocationUnitSize;     // Carries information about the card's allocation unit size
+		uint16_t EraseSize;              // Determines the number of AUs to be erased in one operation
+		uint8_t  EraseTimeout;           // Determines the timeout for any number of AU erase
+		uint8_t  EraseOffset;            // Carries information about the erase offset
+		uint8_t  UhsSpeedGrade;          // Carries information about the speed grade of UHS card
+		uint8_t  UhsAllocationUnitSize;  // Carries information about the UHS card's allocation unit size
+		uint8_t  VideoSpeedClass;        // Carries information about the Video Speed Class of UHS card
+	} HAL_SD_CardStatusTypeDef;
+
+	bool Init();
 	uint32_t PowerON();
+	uint32_t InitCard();
+	uint32_t GetCardStatus(HAL_SD_CardStatusTypeDef *pStatus);
+
 	uint32_t CmdGoIdleState();
 	uint32_t CmdOperCond();
-	uint32_t CmdAppCommand(uint32_t Argument);
+	uint32_t CmdAppCommand(uint32_t argument);
+	uint32_t CmdAppOperCommand(uint32_t argument);
+	uint32_t CmdSendCID();
+	uint32_t CmdSetRelAdd(uint16_t *rca);
+	uint32_t CmdSendCSD(uint32_t argument);
+	uint32_t GetCardCSD();
+	uint32_t CmdSelDesel(uint32_t addr);
+	uint32_t CmdBlockLength(uint32_t blockSize);
+	uint32_t CmdStatusRegister();
+	uint32_t SendSDStatus(uint32_t *pSDstatus);
+
+	uint32_t GetCmdError();
+	uint32_t GetCmdResp1(uint8_t SD_CMD, uint32_t Timeout);
+	uint32_t GetCmdResp2();
+	uint32_t GetCmdResp3();
+	uint32_t GetCmdResp4();
+	uint32_t GetCmdResp5();
+	uint32_t GetCmdResp6(uint8_t SD_CMD, uint16_t *pRCA);
+	uint32_t GetCmdResp7();
+	void ConfigData(SDMMC_DataInitTypeDef *Data);
+
+	static inline void ClearStaticFlags() {
+		SDMMC1->ICR = SDMMC_STATIC_CMD_FLAGS;
+	}
+
+	static constexpr uint32_t blockSize = 512;
 
 	uint32_t CardType;                     // card Type
 	uint32_t CardVersion;                  // card version
@@ -265,6 +353,62 @@ class SDCard
 	uint32_t LogBlockNbr;                  // Card logical Capacity in blocks
 	uint32_t LogBlockSize;                 // logical block size in bytes
 	uint32_t CardSpeed;                    // Card Speed
+
+	enum CardState {
+		HAL_SD_STATE_RESET        = 0x00000000U,  // SD not yet initialized or disabled
+		HAL_SD_STATE_READY        = 0x00000001U,  // SD initialized and ready for use
+		HAL_SD_STATE_TIMEOUT      = 0x00000002U,  // SD Timeout state
+		HAL_SD_STATE_BUSY         = 0x00000003U,  // SD process ongoing
+		HAL_SD_STATE_PROGRAMMING  = 0x00000004U,  // SD Programming State
+		HAL_SD_STATE_RECEIVING    = 0x00000005U,  // SD Receiving State
+		HAL_SD_STATE_TRANSFER     = 0x00000006U,  // SD Transfer State
+		HAL_SD_STATE_ERROR        = 0x0000000FU   // SD is in error state
+	} State;           						// SD card State
+	uint32_t ErrorCode;						// SD Card Error codes
+	uint32_t CID[4];						// Card ID
+	uint32_t CSD[4];						// Card Specific Data
+
+	struct {
+	  uint8_t  CSDStruct;            // CSD structure
+	  uint8_t  SysSpecVersion;       // System specification version
+	  uint8_t  Reserved1;            // Reserved
+	  uint8_t  TAAC;                 // Data read access time 1
+	  uint8_t  NSAC;                 // Data read access time 2 in CLK cycles
+	  uint8_t  MaxBusClkFrec;        // Max. bus clock frequency
+	  uint16_t CardComdClasses;      // Card command classes
+	  uint8_t  RdBlockLen;           // Max. read data block length
+	  uint8_t  PartBlockRead;        // Partial blocks for read allowed
+	  uint8_t  WrBlockMisalign;      // Write block misalignment
+	  uint8_t  RdBlockMisalign;      // Read block misalignment
+	  uint8_t  DSRImpl;              // DSR implemented
+	  uint8_t  Reserved2;            // Reserved
+	  uint32_t DeviceSize;           // Device Size
+	  uint8_t  MaxRdCurrentVDDMin;   // Max. read current @ VDD min
+	  uint8_t  MaxRdCurrentVDDMax;   // Max. read current @ VDD max
+	  uint8_t  MaxWrCurrentVDDMin;   // Max. write current @ VDD min
+	  uint8_t  MaxWrCurrentVDDMax;   // Max. write current @ VDD max
+	  uint8_t  DeviceSizeMul;        // Device size multiplier
+	  uint8_t  EraseGrSize;          // Erase group size
+	  uint8_t  EraseGrMul;           // Erase group size multiplier
+	  uint8_t  WrProtectGrSize;      // Write protect group size
+	  uint8_t  WrProtectGrEnable;    // Write protect group enable
+	  uint8_t  ManDeflECC;           // Manufacturer default ECC
+	  uint8_t  WrSpeedFact;          // Write speed factor
+	  uint8_t  MaxWrBlockLen;        // Max. write data block length
+	  uint8_t  WriteBlockPaPartial;  // Partial blocks for write allowed
+	  uint8_t  Reserved3;            // Reserved
+	  uint8_t  ContentProtectAppli;  // Content protection application
+	  uint8_t  FileFormatGroup;      // File format group
+	  uint8_t  CopyFlag;             // Copy flag (OTP)
+	  uint8_t  PermWrProtect;        // Permanent write protection
+	  uint8_t  TempWrProtect;        // Temporary write protection
+	  uint8_t  FileFormat;           // File format
+	  uint8_t  ECC;                  // ECC code
+	  uint8_t  CSD_CRC;              // CSD CRC
+	  uint8_t  Reserved4;            // Always 1
+	} parsedCSD;
+
+
 
 	struct  {
 		uint32_t Argument;            // Specifies the SDMMC command argument
@@ -280,6 +424,8 @@ class SDCard
 			  SDMMC1->CMD = (SDMMC1->CMD &(~clear)) | set;
 		}
 	} sdCmd;
+
+	GpioPin cardDetect {GPIOG, 3, GpioPin::Type::Input};
 };
 
 
