@@ -21,6 +21,8 @@ constexpr float floatToIntMult = std::pow(2.0f, 31.0f);				// Multiple to conver
 static constexpr uint32_t sampleRate = 48000;
 static constexpr float systemMaxFreq = 22000.0f;
 
+static constexpr uint32_t sdmmcClock = 50000000;
+
 extern volatile uint16_t ADC_array[ADC1_BUFFER_LENGTH + ADC2_BUFFER_LENGTH];
 extern uint32_t i2sUnderrun;					// Debug counter for I2S underruns
 

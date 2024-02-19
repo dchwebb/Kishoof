@@ -283,6 +283,17 @@
 #define DCTRL_CLEAR_MASK         ((uint32_t)(SDMMC_DCTRL_DTEN    | SDMMC_DCTRL_DTDIR |\
                                              SDMMC_DCTRL_DTMODE  | SDMMC_DCTRL_DBLOCKSIZE))
 
+
+#define HAL_SD_CARD_READY          0x00000001U  /*!< Card state is ready                     */
+#define HAL_SD_CARD_IDENTIFICATION 0x00000002U  /*!< Card is in identification state         */
+#define HAL_SD_CARD_STANDBY        0x00000003U  /*!< Card is in standby state                */
+#define HAL_SD_CARD_TRANSFER       0x00000004U  /*!< Card is in transfer state               */
+#define HAL_SD_CARD_SENDING        0x00000005U  /*!< Card is sending an operation            */
+#define HAL_SD_CARD_RECEIVING      0x00000006U  /*!< Card is receiving operation information */
+#define HAL_SD_CARD_PROGRAMMING    0x00000007U  /*!< Card is in programming state            */
+#define HAL_SD_CARD_DISCONNECTED   0x00000008U  /*!< Card is disconnected                    */
+#define HAL_SD_CARD_ERROR          0x000000FFU  /*!< Card response Error                     */
+
 typedef struct {
 	uint32_t DataTimeOut;         // Specifies the data timeout period in card bus clock periods.
 	uint32_t DataLength;          // Specifies the number of data bytes to be transferred.
@@ -294,6 +305,7 @@ typedef struct {
 
 class SDCard
 {
+public:
 	typedef struct {
 		uint8_t  DataBusWidth;           // Shows the currently defined data bus width
 		uint8_t  SecuredMode;            // Card is in secured mode of operation
@@ -314,6 +326,11 @@ class SDCard
 	uint32_t PowerON();
 	uint32_t InitCard();
 	uint32_t GetCardStatus(HAL_SD_CardStatusTypeDef *pStatus);
+	uint32_t ConfigWideBusOperation();
+	uint32_t WideBus_Enable();
+	uint32_t FindSCR(uint32_t *pSCR);
+	uint32_t GetCardState();
+	uint32_t SendStatus(uint32_t *pCardStatus);
 
 	uint32_t CmdGoIdleState();
 	uint32_t CmdOperCond();
@@ -326,6 +343,9 @@ class SDCard
 	uint32_t CmdSelDesel(uint32_t addr);
 	uint32_t CmdBlockLength(uint32_t blockSize);
 	uint32_t CmdStatusRegister();
+	uint32_t CmdSendSCR();
+	uint32_t CmdBusWidth(uint32_t busWidth);
+	uint32_t CmdSendStatus(uint32_t argument);
 	uint32_t SendSDStatus(uint32_t *pSDstatus);
 
 	uint32_t GetCmdError();
