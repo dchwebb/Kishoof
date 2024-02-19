@@ -283,6 +283,10 @@
 #define DCTRL_CLEAR_MASK         ((uint32_t)(SDMMC_DCTRL_DTEN    | SDMMC_DCTRL_DTDIR |\
                                              SDMMC_DCTRL_DTMODE  | SDMMC_DCTRL_DBLOCKSIZE))
 
+#define SDMMC_DISABLE_IDMA              ((uint32_t)0x00000000)
+#define SDMMC_ENABLE_IDMA_SINGLE_BUFF   (SDMMC_IDMA_IDMAEN)
+#define SDMMC_ENABLE_IDMA_DOUBLE_BUFF0  (SDMMC_IDMA_IDMAEN | SDMMC_IDMA_IDMABMODE)
+#define SDMMC_ENABLE_IDMA_DOUBLE_BUFF1  (SDMMC_IDMA_IDMAEN | SDMMC_IDMA_IDMABMODE | SDMMC_IDMA_IDMABACT)
 
 #define HAL_SD_CARD_READY          0x00000001U  /*!< Card state is ready                     */
 #define HAL_SD_CARD_IDENTIFICATION 0x00000002U  /*!< Card is in identification state         */
@@ -331,6 +335,9 @@ public:
 	uint32_t FindSCR(uint32_t *pSCR);
 	uint32_t GetCardState();
 	uint32_t SendStatus(uint32_t *pCardStatus);
+	uint32_t WriteBlocks_DMA(const uint8_t *pData, uint32_t blockAdd, uint32_t NoBlocks);
+	void InterruptHandler();
+	void Read_IT();
 
 	uint32_t CmdGoIdleState();
 	uint32_t CmdOperCond();
@@ -346,6 +353,10 @@ public:
 	uint32_t CmdSendSCR();
 	uint32_t CmdBusWidth(uint32_t busWidth);
 	uint32_t CmdSendStatus(uint32_t argument);
+	uint32_t CmdWriteSingleBlock(uint32_t writeAdd);
+	uint32_t CmdWriteMultiBlock(uint32_t writeAdd);
+
+
 	uint32_t SendSDStatus(uint32_t *pSDstatus);
 
 	uint32_t GetCmdError();
@@ -385,6 +396,12 @@ public:
 		HAL_SD_STATE_ERROR        = 0x0000000FU   // SD is in error state
 	} State;           						// SD card State
 	uint32_t ErrorCode;						// SD Card Error codes
+	uint32_t Context;          				// SD transfer context
+	const uint8_t *pTxBuffPtr;    // Pointer to SD Tx transfer Buffer
+	uint32_t      TxXferSize;     // SD Tx Transfer size
+	uint8_t       *pRxBuffPtr;    // Pointer to SD Rx transfer Buffer
+	uint32_t      RxXferSize;     // SD Rx Transfer size
+
 	uint32_t CID[4];						// Card ID
 	uint32_t CSD[4];						// Card Specific Data
 

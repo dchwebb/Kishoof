@@ -488,6 +488,32 @@ uint32_t SDCard::CmdSendStatus(uint32_t argument)
 }
 
 
+uint32_t SDCard::CmdWriteSingleBlock(uint32_t writeAdd)
+{
+	sdCmd.Argument         = writeAdd;
+	sdCmd.CmdIndex         = SDMMC_CMD_WRITE_SINGLE_BLOCK;
+	sdCmd.Response         = SDMMC_RESPONSE_SHORT;
+	sdCmd.WaitForInterrupt = 0;
+	sdCmd.CPSM             = SDMMC_CPSM_ENABLE;
+	sdCmd.Send();
+
+	return GetCmdResp1(SDMMC_CMD_WRITE_SINGLE_BLOCK, SDMMC_CMDTIMEOUT);
+}
+
+
+uint32_t SDCard::CmdWriteMultiBlock(uint32_t writeAdd)
+{
+	sdCmd.Argument         = writeAdd;
+	sdCmd.CmdIndex         = SDMMC_CMD_WRITE_MULT_BLOCK;
+	sdCmd.Response         = SDMMC_RESPONSE_SHORT;
+	sdCmd.WaitForInterrupt = 0;
+	sdCmd.CPSM             = SDMMC_CPSM_ENABLE;
+	sdCmd.Send();
+
+	return GetCmdResp1(SDMMC_CMD_WRITE_MULT_BLOCK, SDMMC_CMDTIMEOUT);
+}
+
+
 void SDCard::ConfigData(SDMMC_DataInitTypeDef *Data)
 {
 	SDMMC1->DTIMER = Data->DataTimeOut;		// Set the SDMMC Data TimeOut value
@@ -765,7 +791,7 @@ uint32_t SDCard::SendSDStatus(uint32_t *pSDstatus)
 		return SDMMC_ERROR_LOCK_UNLOCK_FAILED;
 	}
 
-	// Set block size for card if it is not equal to current block size for card
+	// Set block size for card if MASK is not equal to current block size for card
 	errorstate = CmdBlockLength(64);
 	if (errorstate != 0) {
 		ErrorCode |= errorstate;
@@ -980,4 +1006,230 @@ uint32_t SDCard::GetCardState()
 }
 
 
+uint32_t SDCard::WriteBlocks_DMA(const uint8_t *pData, uint32_t BlockAdd, uint32_t NumberOfBlocks)
+{
+	SDMMC_DataInitTypeDef config;
+	uint32_t errorstate;
+	uint32_t add = BlockAdd;
 
+
+	if (State == HAL_SD_STATE_READY) {
+		ErrorCode = 0;
+
+		if ((add + NumberOfBlocks) > (LogBlockNbr)) {
+			ErrorCode |= SDMMC_ERROR_ADDR_OUT_OF_RANGE;
+			return 1;
+		}
+
+		State = HAL_SD_STATE_BUSY;
+
+		// Initialize data control register
+		SDMMC1->DCTRL = 0U;
+
+		pTxBuffPtr = pData;
+		TxXferSize = blockSize * NumberOfBlocks;
+
+		if (CardType != CARD_SDHC_SDXC) {
+			add *= 512U;
+		}
+
+		// Configure the SD DPSM (Data Path State Machine)
+		config.DataTimeOut   = SDMMC_DATATIMEOUT;
+		config.DataLength    = blockSize * NumberOfBlocks;
+		config.DataBlockSize = SDMMC_DATABLOCK_SIZE_512B;
+		config.TransferDir   = SDMMC_TRANSFER_DIR_TO_CARD;
+		config.TransferMode  = SDMMC_TRANSFER_MODE_BLOCK;
+		config.DPSM          = SDMMC_DPSM_DISABLE;
+		ConfigData(&config);
+
+		SDMMC1->CMD |= SDMMC_CMD_CMDTRANS;
+		SDMMC1->IDMABASE0 = (uint32_t)pData;
+		SDMMC1->IDMACTRL = SDMMC_ENABLE_IDMA_SINGLE_BUFF;
+
+		if (NumberOfBlocks > 1) {		// Write Blocks in Polling mode
+			Context = SD_CONTEXT_WRITE_MULTIPLE_BLOCK | SD_CONTEXT_DMA;
+			errorstate = CmdWriteMultiBlock(add);			// Write Multi Block command
+		} else {
+			Context = (SD_CONTEXT_WRITE_SINGLE_BLOCK | SD_CONTEXT_DMA);
+			errorstate = CmdWriteSingleBlock(add);			// Write Single Block command
+		}
+
+		if (errorstate != 0) {
+			ClearStaticFlags();
+			ErrorCode |= errorstate;
+			State = HAL_SD_STATE_READY;
+			Context = SD_CONTEXT_NONE;
+			return 1;
+		}
+
+		// Enable transfer interrupts
+		SDMMC1->MASK |= SDMMC_MASK_DCRCFAILIE | SDMMC_MASK_DTIMEOUTIE | SDMMC_MASK_TXUNDERRIE | SDMMC_MASK_DATAENDIE;
+
+		return 0;
+	} else {
+		return 2;
+	}
+}
+
+void SDCard::Read_IT()
+{
+  uint32_t count;
+  uint32_t data;
+  uint8_t *tmp;
+
+  tmp = pRxBuffPtr;
+
+  if (RxXferSize >= 32U)
+  {
+    /* Read data from SDMMC Rx FIFO */
+    for (count = 0U; count < 8U; count++) {
+      data = SDMMC1->FIFO;
+      *tmp = (uint8_t)(data & 0xFFU);
+      tmp++;
+      *tmp = (uint8_t)((data >> 8U) & 0xFFU);
+      tmp++;
+      *tmp = (uint8_t)((data >> 16U) & 0xFFU);
+      tmp++;
+      *tmp = (uint8_t)((data >> 24U) & 0xFFU);
+      tmp++;
+    }
+
+    pRxBuffPtr = tmp;
+    RxXferSize -= 32U;
+  }
+}
+
+void SDCard::InterruptHandler()
+{
+	uint32_t errorstate;
+	uint32_t context = Context;
+
+	/* Check for SDMMC interrupt flags */
+	if (((SDMMC1->STA & SDMMC_STA_RXFIFOHF) != 0) && ((context & SD_CONTEXT_IT) != 0)) {
+		Read_IT();
+	} else if ((SDMMC1->STA & SDMMC_STA_DATAEND) != 0) {
+		SDMMC1->ICR = SDMMC_ICR_DATAENDC;
+
+		SDMMC1->MASK &= ~(SDMMC_MASK_DATAENDIE | SDMMC_MASK_DCRCFAILIE | SDMMC_MASK_DTIMEOUTIE |
+				SDMMC_MASK_TXUNDERRIE | SDMMC_MASK_RXOVERRIE | SDMMC_MASK_TXFIFOHEIE |
+				SDMMC_MASK_RXFIFOHFIE | SDMMC_MASK_IDMABTCIE);
+		SDMMC1->CMD &= ~SDMMC_CMD_CMDTRANS;
+
+		if ((context & SD_CONTEXT_IT) != 0) {
+			if (((context & SD_CONTEXT_READ_MULTIPLE_BLOCK) != 0) || ((context & SD_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0)) {
+				errorstate = SDMMC_CmdStopTransfer(hsd->Instance);
+				if (errorstate != 0)  {
+					hsd->ErrorCode |= errorstate;
+					HAL_SD_ErrorCallback(hsd);
+				}
+			}
+
+			ClearStaticFlags();
+
+
+			State = HAL_SD_STATE_READY;
+			Context = 0;
+			if (((context & SD_CONTEXT_READ_SINGLE_BLOCK) != 0) || ((context & SD_CONTEXT_READ_MULTIPLE_BLOCK) != 0)) {
+				HAL_SD_RxCpltCallback(hsd);
+			} else {
+				HAL_SD_TxCpltCallback(hsd);
+			}
+		} else if ((context & SD_CONTEXT_DMA) != 0) {
+			hsd->Instance->DLEN = 0;
+			hsd->Instance->DCTRL = 0;
+			hsd->Instance->IDMACTRL = SDMMC_DISABLE_IDMA;
+
+			/* Stop Transfer for Write Multi blocks or Read Multi blocks */
+			if (((context & SD_CONTEXT_READ_MULTIPLE_BLOCK) != 0) || ((context & SD_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0)) {
+				errorstate = SDMMC_CmdStopTransfer(hsd->Instance);
+				if (errorstate != 0) {
+					hsd->ErrorCode |= errorstate;
+					HAL_SD_ErrorCallback(hsd);
+				}
+			}
+
+			State = HAL_SD_STATE_READY;
+			Context = SD_CONTEXT_NONE;
+			if (((context & SD_CONTEXT_WRITE_SINGLE_BLOCK) != 0) || ((context & SD_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0)) {
+
+				HAL_SD_TxCpltCallback(hsd);
+
+			}
+			if (((context & SD_CONTEXT_READ_SINGLE_BLOCK) != 0) || ((context & SD_CONTEXT_READ_MULTIPLE_BLOCK) != 0))  {
+
+				HAL_SD_RxCpltCallback(hsd);
+
+			}
+		}
+
+	} else if ((__HAL_SD_GET_FLAG(hsd, SDMMC_FLAG_TXFIFOHE) != 0) && ((context & SD_CONTEXT_IT) != 0)) {
+		SD_Write_IT(hsd);
+	} else if (__HAL_SD_GET_FLAG(hsd, SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT | SDMMC_FLAG_RXOVERR | SDMMC_FLAG_TXUNDERR) != 0) {
+		if (__HAL_SD_GET_FLAG(hsd, SDMMC_IT_DCRCFAIL) != 0) {
+			hsd->ErrorCode |= HAL_SD_ERROR_DATA_CRC_FAIL;
+		}
+		if (__HAL_SD_GET_FLAG(hsd, SDMMC_IT_DTIMEOUT) != 0) {
+			hsd->ErrorCode |= HAL_SD_ERROR_DATA_TIMEOUT;
+		}
+		if (__HAL_SD_GET_FLAG(hsd, SDMMC_IT_RXOVERR) != 0) {
+			hsd->ErrorCode |= HAL_SD_ERROR_RX_OVERRUN;
+		}
+		if (__HAL_SD_GET_FLAG(hsd, SDMMC_IT_TXUNDERR) != 0) {
+			hsd->ErrorCode |= HAL_SD_ERROR_TX_UNDERRUN;
+		}
+
+		ClearStaticFlags();
+
+
+		/* Disable all interrupts */
+		__HAL_SD_DISABLE_IT(hsd, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT | SDMMC_IT_TXUNDERR | SDMMC_IT_RXOVERR);
+
+		SDMMC1->CMD &= ~SDMMC_CMD_CMDTRANS;
+		SDMMC1->DCTRL |= SDMMC_DCTRL_FIFORST;
+		hsd->Instance->CMD |= SDMMC_CMD_CMDSTOP;
+		hsd->ErrorCode |= SDMMC_CmdStopTransfer(hsd->Instance);
+		hsd->Instance->CMD &= ~(SDMMC_CMD_CMDSTOP);
+		SDMMC1->ICR = SDMMC_ICR_DABORTC;
+
+		if ((context & SD_CONTEXT_IT) != 0)
+		{
+			/* Set the SD state to ready to be able to start again the process */
+			hsd->State = HAL_SD_STATE_READY;
+			hsd->Context = SD_CONTEXT_NONE;
+			HAL_SD_ErrorCallback(hsd);
+
+		} else if ((context & SD_CONTEXT_DMA) != 0) {
+			if (hsd->ErrorCode != 0)
+			{
+				/* Disable Internal DMA */
+				__HAL_SD_DISABLE_IT(hsd, SDMMC_IT_IDMABTC);
+				hsd->Instance->IDMACTRL = SDMMC_DISABLE_IDMA;
+
+				/* Set the SD state to ready to be able to start again the process */
+				hsd->State = HAL_SD_STATE_READY;
+				HAL_SD_ErrorCallback(hsd);
+
+			}
+		}
+	} else if (__HAL_SD_GET_FLAG(hsd, SDMMC_FLAG_IDMABTC) != 0) {
+		SDMMC1->ICR = SDMMC_ICR_IDMABTCC;
+		if (READ_BIT(hsd->Instance->IDMACTRL, SDMMC_IDMA_IDMABACT) == 0) {
+			/* Current buffer is buffer0, Transfer complete for buffer1 */
+			if ((context & SD_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0) {
+				HAL_SDEx_Write_DMADoubleBuf1CpltCallback(hsd);
+
+			} else {
+
+				HAL_SDEx_Read_DMADoubleBuf1CpltCallback(hsd);
+
+			}
+		} else {
+			/* Current buffer is buffer1, Transfer complete for buffer0 */
+			if ((context & SD_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0) {
+				HAL_SDEx_Write_DMADoubleBuf0CpltCallback(hsd);
+			} else {
+				HAL_SDEx_Read_DMADoubleBuf0CpltCallback(hsd);
+			}
+		}
+	}
+}

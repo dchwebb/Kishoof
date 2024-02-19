@@ -302,7 +302,6 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 DRESULT SD_ioctl(BYTE lun, BYTE cmd, void *buff)
 {
 	DRESULT res = RES_ERROR;
-	BSP_SD_CardInfo CardInfo;
 
 	if (Stat & STA_NOINIT) return RES_NOTRDY;
 
@@ -315,22 +314,19 @@ DRESULT SD_ioctl(BYTE lun, BYTE cmd, void *buff)
 
 		/* Get number of sectors on the disk (DWORD) */
 	case GET_SECTOR_COUNT :
-		BSP_SD_GetCardInfo(&CardInfo);
-		*(DWORD*)buff = CardInfo.LogBlockNbr;
+		*(DWORD*)buff = sdCard.LogBlockNbr;
 		res = RES_OK;
 		break;
 
 		/* Get R/W sector size (WORD) */
 	case GET_SECTOR_SIZE :
-		BSP_SD_GetCardInfo(&CardInfo);
-		*(WORD*)buff = CardInfo.LogBlockSize;
+		*(WORD*)buff = sdCard.LogBlockSize;
 		res = RES_OK;
 		break;
 
 		/* Get erase block size in unit of sector (DWORD) */
 	case GET_BLOCK_SIZE :
-		BSP_SD_GetCardInfo(&CardInfo);
-		*(DWORD*)buff = CardInfo.LogBlockSize / SD_DEFAULT_BLOCK_SIZE;
+		*(DWORD*)buff = sdCard.LogBlockSize / SD_DEFAULT_BLOCK_SIZE;
 		res = RES_OK;
 		break;
 

@@ -1,6 +1,6 @@
 void SDMMC1_IRQHandler(void)
 {
-	//HAL_SD_IRQHandler(&hsd1);
+	sdCard.InterruptHandler();
 }
 
 
