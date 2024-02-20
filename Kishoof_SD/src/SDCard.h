@@ -247,6 +247,19 @@
 
 #define SDMMC_STATIC_CMD_FLAGS         ((uint32_t)(SDMMC_STA_CCRCFAIL | SDMMC_STA_CTIMEOUT  | SDMMC_STA_CMDREND | SDMMC_STA_CMDSENT  | SDMMC_STA_BUSYD0END))
 
+#define SDMMC_STATIC_DATA_FLAGS        ((uint32_t)(SDMMC_STA_DCRCFAIL | SDMMC_STA_DTIMEOUT | SDMMC_STA_TXUNDERR   |\
+                                                   SDMMC_STA_RXOVERR  | SDMMC_STA_DATAEND  | SDMMC_STA_DHOLD      |\
+                                                   SDMMC_STA_DBCKEND  | SDMMC_STA_DABORT   | SDMMC_STA_IDMATE     |\
+                                                   SDMMC_STA_IDMABTC))
+
+#define SDMMC_STATIC_FLAGS             ((uint32_t)(SDMMC_STA_CCRCFAIL   | SDMMC_STA_DCRCFAIL | SDMMC_STA_CTIMEOUT |\
+                                                   SDMMC_STA_DTIMEOUT   | SDMMC_STA_TXUNDERR | SDMMC_STA_RXOVERR  |\
+                                                   SDMMC_STA_CMDREND    | SDMMC_STA_CMDSENT  | SDMMC_STA_DATAEND  |\
+                                                   SDMMC_STA_DHOLD      | SDMMC_STA_DBCKEND  | SDMMC_STA_DABORT   |\
+                                                   SDMMC_STA_BUSYD0END  | SDMMC_STA_SDIOIT   | SDMMC_STA_ACKFAIL  |\
+                                                   SDMMC_STA_ACKTIMEOUT | SDMMC_STA_VSWEND   | SDMMC_STA_CKSTOP   |\
+                                                   SDMMC_STA_IDMATE     | SDMMC_STA_IDMABTC))
+
 #define SDMMC_FLAG_CMDACT                    SDMMC_STA_CPSMACT
 
 #define SDMMC_DATABLOCK_SIZE_1B               ((uint32_t)0x00000000U)
@@ -336,8 +349,10 @@ public:
 	uint32_t GetCardState();
 	uint32_t SendStatus(uint32_t *pCardStatus);
 	uint32_t WriteBlocks_DMA(const uint8_t *pData, uint32_t blockAdd, uint32_t NoBlocks);
+	uint32_t ReadBlocks_DMA(uint8_t *pData, uint32_t blockAdd, uint32_t NoBlocks);
 	void InterruptHandler();
 	void Read_IT();
+	void Write_IT();
 
 	uint32_t CmdGoIdleState();
 	uint32_t CmdOperCond();
@@ -353,9 +368,11 @@ public:
 	uint32_t CmdSendSCR();
 	uint32_t CmdBusWidth(uint32_t busWidth);
 	uint32_t CmdSendStatus(uint32_t argument);
+	uint32_t CmdReadSingleBlock(uint32_t readAdd);
+	uint32_t CmdReadMultiBlock(uint32_t readAdd);
 	uint32_t CmdWriteSingleBlock(uint32_t writeAdd);
 	uint32_t CmdWriteMultiBlock(uint32_t writeAdd);
-
+	uint32_t CmdStopTransfer();
 
 	uint32_t SendSDStatus(uint32_t *pSDstatus);
 
@@ -369,10 +386,15 @@ public:
 	uint32_t GetCmdResp7();
 	void ConfigData(SDMMC_DataInitTypeDef *Data);
 
-	static inline void ClearStaticFlags() {
+	static inline void ClearStaticCmdFlags() {
 		SDMMC1->ICR = SDMMC_STATIC_CMD_FLAGS;
 	}
-
+	static inline void ClearStaticDataFlags() {
+		SDMMC1->ICR = SDMMC_STATIC_DATA_FLAGS;
+	}
+	static inline void ClearAllStaticFlags() {
+		SDMMC1->ICR = SDMMC_STATIC_FLAGS;
+	}
 	static constexpr uint32_t blockSize = 512;
 
 	uint32_t CardType;                     // card Type

@@ -41,7 +41,3 @@ uint32_t get_fattime();
 #ifdef __cplusplus
 }
 #endif
-
-
-
-

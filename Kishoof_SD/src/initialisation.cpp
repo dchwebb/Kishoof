@@ -126,6 +126,7 @@ void InitHardware()
 	InitSysTick();
 	InitDebugTimer();				// Timer 3 used for performance testing
 	InitCache();					// Configure MPU to not cache memory regions where DMA buffers reside
+	InitSSD();
 }
 
 void InitCache()

@@ -1,6 +1,5 @@
 #include "initialisation.h"
-//#include "FatTools.h"
-#include "fatfs.h"
+#include "FatTools.h"
 #include "SDCard.h"
 
 volatile uint32_t SysTickVal;		// 1 ms resolution
@@ -17,8 +16,9 @@ int main(void) {
 	InitClocks();					// Configure the clock and PLL
 	InitHardware();
 
-	uint8_t retSD = FATFS_LinkDriver(&SD_Driver, SDPath);
-	f_mount(&SDFatFS, (TCHAR const*)SDPath, 0);
+//	uint8_t retSD = FATFS_LinkDriver(&SD_Driver, SDPath);
+//	f_mount(&SDFatFS, (TCHAR const*)SDPath, 0);
+	fatTools.InitFatFS();
 
 	while (1) {
 
