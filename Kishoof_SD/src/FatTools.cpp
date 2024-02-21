@@ -5,12 +5,19 @@ FatTools fatTools;
 
 bool FatTools::InitFatFS()
 {
-	const FRESULT res = f_mount(&fatFs, fatPath, 1) ;		// Register the file system object to the FatFs module
+	FRESULT res = f_mount(&fatFs, fatPath, 1) ;		// Register the file system object to the FatFs module
 	if (res == FR_NO_FILESYSTEM) {
 		return false;
 
 	}
 	noFileSystem = false;
+
+
+	DIR dp;						// Pointer to the directory object structure
+	FILINFO fno;				// File information structure
+	res = f_opendir(&dp, "");	// second parm is directory name (root)
+	res = f_readdir(&dp, &fno);
+
 
 	return true;
 }

@@ -1,6 +1,12 @@
 #include "SDCard.h"
+#include <bit>
 
 SDCard sdCard;
+
+
+static inline uint32_t ByteSwap(uint32_t val) {
+	return ((val & 0xFF) << 24) | ((val & 0xFF00) << 8) | ((val & 0xFF0000) >> 8) | ((val & 0xFF000000) >> 24);
+}
 
 bool SDCard::Init()
 {
@@ -96,7 +102,7 @@ uint32_t SDCard::GetCmdError()
 	} while ((SDMMC1->STA & SDMMC_STA_CMDSENT) == 0);
 
 	ClearStaticCmdFlags();
-	return SDMMC_ERROR_NONE;
+	return 0;
 }
 
 
@@ -128,7 +134,7 @@ uint32_t SDCard::GetCmdResp7()
 		SDMMC1->ICR = SDMMC_STA_CMDREND;		// Card is SD V2.0 compliant
 	}
 
-	return SDMMC_ERROR_NONE;
+	return 0;
 }
 
 
@@ -158,7 +164,7 @@ uint32_t SDCard::GetCmdResp2()
 		ClearStaticCmdFlags();
 	}
 
-	return SDMMC_ERROR_NONE;
+	return 0;
 }
 
 uint32_t SDCard::GetCmdResp3()
@@ -183,7 +189,7 @@ uint32_t SDCard::GetCmdResp3()
 		ClearStaticCmdFlags();
 	}
 
-	return SDMMC_ERROR_NONE;
+	return 0;
 }
 
 
@@ -221,7 +227,7 @@ uint32_t SDCard::GetCmdResp6(uint8_t SD_CMD, uint16_t *pRCA)
 
 	if ((response_r1 & (SDMMC_R6_GENERAL_UNKNOWN_ERROR | SDMMC_R6_ILLEGAL_CMD | SDMMC_R6_COM_CRC_FAILED)) == 0) {
 		*pRCA = (uint16_t)(response_r1 >> 16);
-		return SDMMC_ERROR_NONE;
+		return 0;
 	} else if ((response_r1 & SDMMC_R6_ILLEGAL_CMD) == SDMMC_R6_ILLEGAL_CMD) {
 		return SDMMC_ERROR_ILLEGAL_CMD;
 	} else if ((response_r1 & SDMMC_R6_COM_CRC_FAILED) == SDMMC_R6_COM_CRC_FAILED) {
@@ -259,51 +265,51 @@ uint32_t SDCard::GetCmdResp1(uint8_t SD_CMD, uint32_t Timeout)
 
 	ClearStaticCmdFlags();
 
-	if (SDMMC1->RESPCMD != SD_CMD)  {		// Check response received is of desired command
+	if (SDMMC1->RESPCMD != SD_CMD) {		// Check response received is of desired command
 		return SDMMC_ERROR_CMD_CRC_FAIL;
 	}
 
 	response_r1 = SDMMC1->RESP1;
 
-	if ((response_r1 & SDMMC_OCR_ERRORBITS) == SDMMC_ALLZERO)  {
-		return SDMMC_ERROR_NONE;
-	} else if ((response_r1 & SDMMC_OCR_ADDR_OUT_OF_RANGE) == SDMMC_OCR_ADDR_OUT_OF_RANGE)  {
+	if ((response_r1 & SDMMC_OCR_ERRORBITS) == 0) {
+		return 0;
+	} else if ((response_r1 & SDMMC_OCR_ADDR_OUT_OF_RANGE) == SDMMC_OCR_ADDR_OUT_OF_RANGE) {
 		return SDMMC_ERROR_ADDR_OUT_OF_RANGE;
-	} else if ((response_r1 & SDMMC_OCR_ADDR_MISALIGNED) == SDMMC_OCR_ADDR_MISALIGNED)  {
+	} else if ((response_r1 & SDMMC_OCR_ADDR_MISALIGNED) == SDMMC_OCR_ADDR_MISALIGNED) {
 		return SDMMC_ERROR_ADDR_MISALIGNED;
-	} else if ((response_r1 & SDMMC_OCR_BLOCK_LEN_ERR) == SDMMC_OCR_BLOCK_LEN_ERR)  {
+	} else if ((response_r1 & SDMMC_OCR_BLOCK_LEN_ERR) == SDMMC_OCR_BLOCK_LEN_ERR) {
 		return SDMMC_ERROR_BLOCK_LEN_ERR;
-	} else if ((response_r1 & SDMMC_OCR_ERASE_SEQ_ERR) == SDMMC_OCR_ERASE_SEQ_ERR)  {
+	} else if ((response_r1 & SDMMC_OCR_ERASE_SEQ_ERR) == SDMMC_OCR_ERASE_SEQ_ERR) {
 		return SDMMC_ERROR_ERASE_SEQ_ERR;
-	} else if ((response_r1 & SDMMC_OCR_BAD_ERASE_PARAM) == SDMMC_OCR_BAD_ERASE_PARAM)  {
+	} else if ((response_r1 & SDMMC_OCR_BAD_ERASE_PARAM) == SDMMC_OCR_BAD_ERASE_PARAM) {
 		return SDMMC_ERROR_BAD_ERASE_PARAM;
-	} else if ((response_r1 & SDMMC_OCR_WRITE_PROT_VIOLATION) == SDMMC_OCR_WRITE_PROT_VIOLATION)  {
+	} else if ((response_r1 & SDMMC_OCR_WRITE_PROT_VIOLATION) == SDMMC_OCR_WRITE_PROT_VIOLATION) {
 		return SDMMC_ERROR_WRITE_PROT_VIOLATION;
-	} else if ((response_r1 & SDMMC_OCR_LOCK_UNLOCK_FAILED) == SDMMC_OCR_LOCK_UNLOCK_FAILED)  {
+	} else if ((response_r1 & SDMMC_OCR_LOCK_UNLOCK_FAILED) == SDMMC_OCR_LOCK_UNLOCK_FAILED) {
 		return SDMMC_ERROR_LOCK_UNLOCK_FAILED;
-	} else if ((response_r1 & SDMMC_OCR_COM_CRC_FAILED) == SDMMC_OCR_COM_CRC_FAILED)  {
+	} else if ((response_r1 & SDMMC_OCR_COM_CRC_FAILED) == SDMMC_OCR_COM_CRC_FAILED) {
 		return SDMMC_ERROR_COM_CRC_FAILED;
-	} else if ((response_r1 & SDMMC_OCR_ILLEGAL_CMD) == SDMMC_OCR_ILLEGAL_CMD)  {
+	} else if ((response_r1 & SDMMC_OCR_ILLEGAL_CMD) == SDMMC_OCR_ILLEGAL_CMD) {
 		return SDMMC_ERROR_ILLEGAL_CMD;
-	} else if ((response_r1 & SDMMC_OCR_CARD_ECC_FAILED) == SDMMC_OCR_CARD_ECC_FAILED)  {
+	} else if ((response_r1 & SDMMC_OCR_CARD_ECC_FAILED) == SDMMC_OCR_CARD_ECC_FAILED) {
 		return SDMMC_ERROR_CARD_ECC_FAILED;
-	} else if ((response_r1 & SDMMC_OCR_CC_ERROR) == SDMMC_OCR_CC_ERROR)  {
+	} else if ((response_r1 & SDMMC_OCR_CC_ERROR) == SDMMC_OCR_CC_ERROR) {
 		return SDMMC_ERROR_CC_ERR;
-	} else if ((response_r1 & SDMMC_OCR_STREAM_READ_UNDERRUN) == SDMMC_OCR_STREAM_READ_UNDERRUN)  {
+	} else if ((response_r1 & SDMMC_OCR_STREAM_READ_UNDERRUN) == SDMMC_OCR_STREAM_READ_UNDERRUN) {
 		return SDMMC_ERROR_STREAM_READ_UNDERRUN;
-	} else if ((response_r1 & SDMMC_OCR_STREAM_WRITE_OVERRUN) == SDMMC_OCR_STREAM_WRITE_OVERRUN)  {
+	} else if ((response_r1 & SDMMC_OCR_STREAM_WRITE_OVERRUN) == SDMMC_OCR_STREAM_WRITE_OVERRUN) {
 		return SDMMC_ERROR_STREAM_WRITE_OVERRUN;
-	} else if ((response_r1 & SDMMC_OCR_CID_CSD_OVERWRITE) == SDMMC_OCR_CID_CSD_OVERWRITE)  {
+	} else if ((response_r1 & SDMMC_OCR_CID_CSD_OVERWRITE) == SDMMC_OCR_CID_CSD_OVERWRITE) {
 		return SDMMC_ERROR_CID_CSD_OVERWRITE;
-	} else if ((response_r1 & SDMMC_OCR_WP_ERASE_SKIP) == SDMMC_OCR_WP_ERASE_SKIP)  {
+	} else if ((response_r1 & SDMMC_OCR_WP_ERASE_SKIP) == SDMMC_OCR_WP_ERASE_SKIP) {
 		return SDMMC_ERROR_WP_ERASE_SKIP;
-	} else if ((response_r1 & SDMMC_OCR_CARD_ECC_DISABLED) == SDMMC_OCR_CARD_ECC_DISABLED)  {
+	} else if ((response_r1 & SDMMC_OCR_CARD_ECC_DISABLED) == SDMMC_OCR_CARD_ECC_DISABLED) {
 		return SDMMC_ERROR_CARD_ECC_DISABLED;
-	} else if ((response_r1 & SDMMC_OCR_ERASE_RESET) == SDMMC_OCR_ERASE_RESET)  {
+	} else if ((response_r1 & SDMMC_OCR_ERASE_RESET) == SDMMC_OCR_ERASE_RESET) {
 		return SDMMC_ERROR_ERASE_RESET;
-	} else if ((response_r1 & SDMMC_OCR_AKE_SEQ_ERROR) == SDMMC_OCR_AKE_SEQ_ERROR)  {
+	} else if ((response_r1 & SDMMC_OCR_AKE_SEQ_ERROR) == SDMMC_OCR_AKE_SEQ_ERROR) {
 		return SDMMC_ERROR_AKE_SEQ_ERR;
-	} else  {
+	} else {
 		return SDMMC_ERROR_GENERAL_UNKNOWN_ERR;
 	}
 }
@@ -559,7 +565,7 @@ uint32_t SDCard::CmdStopTransfer()
 
 	// Ignore Address Out Of Range Error, Not relevant at end of memory
 	if (errorstate == SDMMC_ERROR_ADDR_OUT_OF_RANGE) {
-		errorstate = SDMMC_ERROR_NONE;
+		errorstate = 0;
 	}
 
 	return errorstate;
@@ -583,7 +589,6 @@ uint32_t SDCard::PowerON()
 	// Enquires cards about their operating voltage and configures clock controls
 	volatile uint32_t count = 0;
 	uint32_t response = 0;
-	uint32_t validvoltage = 0;
 	uint32_t errorstate;
 
 
@@ -595,18 +600,16 @@ uint32_t SDCard::PowerON()
 
 	// CMD8: SEND_IF_COND: Command available only on V2.0 cards
 	if (CmdOperCond() == SDMMC_ERROR_TIMEOUT) {		// No response to CMD8
-		CardVersion = CARD_V1_X;
+		cardVersion = CardVersion::CARD_V1_X;
 
 		errorstate = CmdGoIdleState();				// CMD0: GO_IDLE_STATE
-		if (errorstate != SDMMC_ERROR_NONE) {
+		if (errorstate != 0) {
 			return errorstate;
 		}
 
 	} else {
-		CardVersion = CARD_V2_X;
-	}
+		cardVersion = CardVersion::CARD_V2_X;
 
-	if (CardVersion == CARD_V2_X) {
 		errorstate = CmdAppCommand(0);		// SEND CMD55 APP_CMD with RCA as 0
 		if (errorstate) {
 			return SDMMC_ERROR_UNSUPPORTED_FEATURE;
@@ -614,7 +617,7 @@ uint32_t SDCard::PowerON()
 	}
 
 	// Send ACMD41 SD_APP_OP_COND with Argument 0x80100000
-	while ((count < SDMMC_MAX_VOLT_TRIAL) && (validvoltage == 0)) {
+	while ((count < SDMMC_MAX_VOLT_TRIAL)) {
 
 		errorstate = CmdAppCommand(0);		// SEND CMD55 APP_CMD with RCA as 0
 		if (errorstate)	{
@@ -629,22 +632,18 @@ uint32_t SDCard::PowerON()
 
 		response = SDMMC1->RESP1;			// Get command response
 
-		validvoltage = (((response >> 31) == 1) ? 1 : 0);		// Get operating voltage
+		if (response >> 31) {				// Get operating voltage
+			break;
+		}
 
 		count++;
 	}
-
 	if (count >= SDMMC_MAX_VOLT_TRIAL) {
 		return SDMMC_ERROR_INVALID_VOLTRANGE;
 	}
 
-	CardType = CARD_SDSC;		// Set default card type
-
-	if ((response & SDMMC_HIGH_CAPACITY) == SDMMC_HIGH_CAPACITY) {
-		CardType = CARD_SDHC_SDXC;
-	}
-
-	return SDMMC_ERROR_NONE;
+	CardType = (response & SDMMC_HIGH_CAPACITY) ? CARD_SDHC_SDXC : CARD_SDSC;
+	return 0;
 }
 
 
@@ -661,7 +660,7 @@ uint32_t SDCard::InitCard()
 
 	if (CardType != CARD_SECURED) {
 		errorstate = CmdSendCID();		// Send CMD2 ALL_SEND_CID
-		if (errorstate != SDMMC_ERROR_NONE) {
+		if (errorstate != 0) {
 			return errorstate;
 		}
 
@@ -674,7 +673,7 @@ uint32_t SDCard::InitCard()
 		// Send CMD3 SET_REL_ADDR with argument 0; SD Card publishes its RCA.
 		while (sd_rca == 0) {
 			errorstate = CmdSetRelAdd(&sd_rca);
-			if (errorstate != SDMMC_ERROR_NONE) {
+			if (errorstate != 0) {
 				return errorstate;
 			}
 			if ((SysTickVal - tickstart) >= SDMMC_CMDTIMEOUT) {
@@ -682,11 +681,11 @@ uint32_t SDCard::InitCard()
 			}
 		}
 
-		RelCardAdd = sd_rca;		// Get the SD card RCA
+		RelCardAdd = sd_rca;			// Store the SD card RCA
 
 		// Send CMD9 SEND_CSD with argument as card's RCA
 		errorstate = CmdSendCSD(RelCardAdd << 16);
-		if (errorstate != SDMMC_ERROR_NONE) {
+		if (errorstate != 0) {
 			return errorstate;
 		}
 
@@ -706,50 +705,50 @@ uint32_t SDCard::InitCard()
 
 	// Select the Card
 	errorstate = CmdSelDesel(RelCardAdd << 16);
-	if (errorstate != SDMMC_ERROR_NONE) {
+	if (errorstate != 0) {
 		return errorstate;
 	}
 
 	// All cards are initialized
-	return SDMMC_ERROR_NONE;
+	return 0;
 }
 
 
 uint32_t SDCard::GetCardCSD()
 {
 	// Parse the raw CSD data - this does not actually seem to be used except to store some block info
-	parsedCSD.CSDStruct = 		(uint8_t)((CSD[0] & 0xC0000000) >> 30);
-	parsedCSD.SysSpecVersion = 	(uint8_t)((CSD[0] & 0x3C000000) >> 26);
-	parsedCSD.Reserved1 = 		(uint8_t)((CSD[0] & 0x03000000) >> 24);
-	parsedCSD.TAAC = 			(uint8_t)((CSD[0] & 0x00FF0000) >> 16);
-	parsedCSD.NSAC = 			(uint8_t)((CSD[0] & 0x0000FF00) >> 8);
-	parsedCSD.MaxBusClkFrec = 	(uint8_t)(CSD[0] & 0x000000FF);
-	parsedCSD.CardComdClasses = (uint16_t)((CSD[1] & 0xFFF00000) >> 20);
-	parsedCSD.RdBlockLen = 		(uint8_t)((CSD[1] & 0x000F0000) >> 16);
-	parsedCSD.PartBlockRead   = (uint8_t)((CSD[1] & 0x00008000) >> 15);
-	parsedCSD.WrBlockMisalign = (uint8_t)((CSD[1] & 0x00004000) >> 14);
-	parsedCSD.RdBlockMisalign = (uint8_t)((CSD[1] & 0x00002000) >> 13);
-	parsedCSD.DSRImpl = 		(uint8_t)((CSD[1] & 0x00001000) >> 12);
+	parsedCSD.CSDStruct = 		((CSD[0] & 0xC0000000) >> 30);
+	parsedCSD.SysSpecVersion = 	((CSD[0] & 0x3C000000) >> 26);
+	parsedCSD.Reserved1 = 		((CSD[0] & 0x03000000) >> 24);
+	parsedCSD.TAAC = 			((CSD[0] & 0x00FF0000) >> 16);
+	parsedCSD.NSAC = 			((CSD[0] & 0x0000FF00) >> 8);
+	parsedCSD.MaxBusClkFrec = 	(CSD[0] & 0x000000FF);
+	parsedCSD.CardComdClasses = ((CSD[1] & 0xFFF00000) >> 20);
+	parsedCSD.RdBlockLen = 		((CSD[1] & 0x000F0000) >> 16);
+	parsedCSD.PartBlockRead   = ((CSD[1] & 0x00008000) >> 15);
+	parsedCSD.WrBlockMisalign = ((CSD[1] & 0x00004000) >> 14);
+	parsedCSD.RdBlockMisalign = ((CSD[1] & 0x00002000) >> 13);
+	parsedCSD.DSRImpl = 		((CSD[1] & 0x00001000) >> 12);
 	parsedCSD.Reserved2 = 0;
 
 	if (CardType == CARD_SDSC) {
-		parsedCSD.DeviceSize = (((CSD[1] & 0x000003FF) << 2) | ((CSD[2] & 0xC0000000) >> 30));
-		parsedCSD.MaxRdCurrentVDDMin = (uint8_t)((CSD[2] & 0x38000000) >> 27);
-		parsedCSD.MaxRdCurrentVDDMax = (uint8_t)((CSD[2] & 0x07000000) >> 24);
-		parsedCSD.MaxWrCurrentVDDMin = (uint8_t)((CSD[2] & 0x00E00000) >> 21);
-		parsedCSD.MaxWrCurrentVDDMax = (uint8_t)((CSD[2] & 0x001C0000) >> 18);
-		parsedCSD.DeviceSizeMul = (uint8_t)((CSD[2] & 0x00038000) >> 15);
+		parsedCSD.DeviceSize =         ((CSD[1] & 0x000003FF) << 2) | ((CSD[2] & 0xC0000000) >> 30);
+		parsedCSD.MaxRdCurrentVDDMin = ((CSD[2] & 0x38000000) >> 27);
+		parsedCSD.MaxRdCurrentVDDMax = ((CSD[2] & 0x07000000) >> 24);
+		parsedCSD.MaxWrCurrentVDDMin = ((CSD[2] & 0x00E00000) >> 21);
+		parsedCSD.MaxWrCurrentVDDMax = ((CSD[2] & 0x001C0000) >> 18);
+		parsedCSD.DeviceSizeMul =      ((CSD[2] & 0x00038000) >> 15);
 
-		BlockNbr  = (parsedCSD.DeviceSize + 1) ;
-		BlockNbr *= (1UL << ((parsedCSD.DeviceSizeMul & 0x07) + 2));
-		BlockSize = (1UL << (parsedCSD.RdBlockLen & 0x0F));
+		BlockNbr  = parsedCSD.DeviceSize + 1;
+		BlockNbr *= (1 << ((parsedCSD.DeviceSizeMul & 0x07) + 2));
+		BlockSize = (1 << (parsedCSD.RdBlockLen & 0x0F));
 
-		LogBlockNbr = (BlockNbr) * ((BlockSize) / 512);
+		LogBlockNbr = BlockNbr * (BlockSize / 512);
 		LogBlockSize = 512;
 	} else if (CardType == CARD_SDHC_SDXC) {
 		parsedCSD.DeviceSize = (((CSD[1] & 0x0000003F) << 16) | ((CSD[2] & 0xFFFF0000) >> 16));
 
-		BlockNbr = ((parsedCSD.DeviceSize + 1) * 1024);
+		BlockNbr = (parsedCSD.DeviceSize + 1) * 1024;
 		LogBlockNbr = BlockNbr;
 		BlockSize = 512;
 		LogBlockSize = BlockSize;
@@ -760,24 +759,24 @@ uint32_t SDCard::GetCardCSD()
 		return 1;
 	}
 
-	parsedCSD.EraseGrSize = (uint8_t)((CSD[2] & 0x00004000) >> 14);
-	parsedCSD.EraseGrMul = (uint8_t)((CSD[2] & 0x00003F80) >> 7);
-	parsedCSD.WrProtectGrSize = (uint8_t)(CSD[2] & 0x0000007F);
-	parsedCSD.WrProtectGrEnable = (uint8_t)((CSD[3] & 0x80000000) >> 31);
-	parsedCSD.ManDeflECC = (uint8_t)((CSD[3] & 0x60000000) >> 29);
-	parsedCSD.WrSpeedFact = (uint8_t)((CSD[3] & 0x1C000000) >> 26);
-	parsedCSD.MaxWrBlockLen = (uint8_t)((CSD[3] & 0x03C00000) >> 22);
-	parsedCSD.WriteBlockPaPartial = (uint8_t)((CSD[3] & 0x00200000) >> 21);
-	parsedCSD.Reserved3 = 0;
-	parsedCSD.ContentProtectAppli = (uint8_t)((CSD[3] & 0x00010000) >> 16);
-	parsedCSD.FileFormatGroup = (uint8_t)((CSD[3] & 0x00008000) >> 15);
-	parsedCSD.CopyFlag = (uint8_t)((CSD[3] & 0x00004000) >> 14);
-	parsedCSD.PermWrProtect = (uint8_t)((CSD[3] & 0x00002000) >> 13);
-	parsedCSD.TempWrProtect = (uint8_t)((CSD[3] & 0x00001000) >> 12);
-	parsedCSD.FileFormat = (uint8_t)((CSD[3] & 0x00000C00) >> 10);
-	parsedCSD.ECC = (uint8_t)((CSD[3] & 0x00000300) >> 8);
-	parsedCSD.CSD_CRC = (uint8_t)((CSD[3] & 0x000000FE) >> 1);
-	parsedCSD.Reserved4 = 1;
+	parsedCSD.EraseGrSize =			((CSD[2] & 0x00004000) >> 14);
+	parsedCSD.EraseGrMul =			((CSD[2] & 0x00003F80) >> 7);
+	parsedCSD.WrProtectGrSize =		(CSD[2] & 0x0000007F);
+	parsedCSD.WrProtectGrEnable =	((CSD[3] & 0x80000000) >> 31);
+	parsedCSD.ManDeflECC =			((CSD[3] & 0x60000000) >> 29);
+	parsedCSD.WrSpeedFact =			((CSD[3] & 0x1C000000) >> 26);
+	parsedCSD.MaxWrBlockLen =		((CSD[3] & 0x03C00000) >> 22);
+	parsedCSD.WriteBlockPaPartial = ((CSD[3] & 0x00200000) >> 21);
+	parsedCSD.Reserved3 =			0;
+	parsedCSD.ContentProtectAppli = ((CSD[3] & 0x00010000) >> 16);
+	parsedCSD.FileFormatGroup =		((CSD[3] & 0x00008000) >> 15);
+	parsedCSD.CopyFlag =			((CSD[3] & 0x00004000) >> 14);
+	parsedCSD.PermWrProtect =		((CSD[3] & 0x00002000) >> 13);
+	parsedCSD.TempWrProtect =		((CSD[3] & 0x00001000) >> 12);
+	parsedCSD.FileFormat =			((CSD[3] & 0x00000C00) >> 10);
+	parsedCSD.ECC =					((CSD[3] & 0x00000300) >> 8);
+	parsedCSD.CSD_CRC =				((CSD[3] & 0x000000FE) >> 1);
+	parsedCSD.Reserved4 =			1;
 
 	return 0;
 }
@@ -800,23 +799,22 @@ uint32_t SDCard::GetCardStatus(HAL_SD_CardStatusTypeDef *pStatus)
 		State = HAL_SD_STATE_READY;
 		status = 1;
 	} else {
-		pStatus->DataBusWidth = (uint8_t)((sd_status[0] & 0xC0) >> 6);
-		pStatus->SecuredMode = (uint8_t)((sd_status[0] & 0x20) >> 5);
-		pStatus->CardType = (uint16_t)(((sd_status[0] & 0x00FF0000) >> 8) | ((sd_status[0] & 0xFF000000) >> 24));
-		pStatus->ProtectedAreaSize = (((sd_status[1] & 0xFF) << 24) | ((sd_status[1] & 0xFF00) << 8) |
-				((sd_status[1] & 0xFF0000) >> 8) | ((sd_status[1] & 0xFF000000) >> 24));
-		pStatus->SpeedClass = (uint8_t)(sd_status[2] & 0xFF);
-		pStatus->PerformanceMove = (uint8_t)((sd_status[2] & 0xFF00) >> 8);
-		pStatus->AllocationUnitSize = (uint8_t)((sd_status[2] & 0xF00000) >> 20);
-		pStatus->EraseSize = (uint16_t)(((sd_status[2] & 0xFF000000) >> 16) | (sd_status[3] & 0xFF));
-		pStatus->EraseTimeout = (uint8_t)((sd_status[3] & 0xFC00) >> 10);
-		pStatus->EraseOffset = (uint8_t)((sd_status[3] & 0x0300) >> 8);
-		pStatus->UhsSpeedGrade = (uint8_t)((sd_status[3] & 0x00F0) >> 4);
-		pStatus->UhsAllocationUnitSize = (uint8_t)(sd_status[3] & 0x000F);
-		pStatus->VideoSpeedClass = (uint8_t)((sd_status[4] & 0xFF000000) >> 24);
+		pStatus->DataBusWidth =			((sd_status[0] & 0xC0) >> 6);
+		pStatus->SecuredMode =			((sd_status[0] & 0x20) >> 5);
+		pStatus->CardType = 			(((sd_status[0] & 0x00FF0000) >> 8) | ((sd_status[0] & 0xFF000000) >> 24));
+		pStatus->ProtectedAreaSize =	ByteSwap(sd_status[1]);
+		pStatus->SpeedClass =			(sd_status[2] & 0xFF);
+		pStatus->PerformanceMove =		((sd_status[2] & 0xFF00) >> 8);
+		pStatus->AllocationUnitSize =	((sd_status[2] & 0xF00000) >> 20);
+		pStatus->EraseSize =			(((sd_status[2] & 0xFF000000) >> 16) | (sd_status[3] & 0xFF));
+		pStatus->EraseTimeout =			((sd_status[3] & 0xFC00) >> 10);
+		pStatus->EraseOffset =			((sd_status[3] & 0x0300) >> 8);
+		pStatus->UhsSpeedGrade =		((sd_status[3] & 0x00F0) >> 4);
+		pStatus->UhsAllocationUnitSize = (sd_status[3] & 0x000F);
+		pStatus->VideoSpeedClass =		((sd_status[4] & 0xFF000000) >> 24);
 	}
 
-	// Set Block Size for Card
+	// Set Block Size
 	errorstate = CmdBlockLength(blockSize);
 	if (errorstate != 0) {
 		ClearAllStaticFlags();
@@ -916,10 +914,10 @@ uint32_t SDCard::ConfigWideBusOperation()
 
 	State = HAL_SD_STATE_BUSY;
 
-	errorstate = WideBus_Enable();
-	ErrorCode |= errorstate;
+	errorstate = WideBus_Enable();			// Checks if card supports wide bus mode and sets it on the card if so
 
 	if (ErrorCode != 0) {
+		ErrorCode |= errorstate;
 		ClearAllStaticFlags();
 		error = 1;
 	} else {
@@ -975,12 +973,12 @@ uint32_t SDCard::WideBus_Enable()
 }
 
 
-uint32_t SDCard::FindSCR(uint32_t *pSCR)
+uint32_t SDCard::FindSCR(uint32_t *scr)
 {
 	uint32_t errorstate;
 	uint32_t tickstart = SysTickVal;
 	uint32_t tempscr[2] = {0, 0};
-	uint32_t *scr = pSCR;
+	//uint32_t *scr = pSCR;
 
 	// Set Block Size To 8 Bytes
 	errorstate = CmdBlockLength(8);
@@ -1004,7 +1002,7 @@ uint32_t SDCard::FindSCR(uint32_t *pSCR)
 	ConfigData(&config);
 
 	errorstate = CmdSendSCR();	// Send ACMD51 SD_APP_SEND_SCR with argument as 0
-	if (errorstate != 0)  {
+	if (errorstate != 0) {
 		return errorstate;
 	}
 
@@ -1031,21 +1029,14 @@ uint32_t SDCard::FindSCR(uint32_t *pSCR)
 	} else if (SDMMC1->STA & SDMMC_STA_RXOVERR) {
 		SDMMC1->ICR = SDMMC_STA_RXOVERR;
 		return SDMMC_ERROR_RX_OVERRUN;
-	} else  {
-
+	} else {
 		ClearStaticDataFlags();
-
-		*scr = (((tempscr[1] & SDMMC_0TO7BITS) << 24)  | ((tempscr[1] & SDMMC_8TO15BITS) << 8) | \
-				((tempscr[1] & SDMMC_16TO23BITS) >> 8) | ((tempscr[1] & SDMMC_24TO31BITS) >> 24));
-		scr++;
-		*scr = (((tempscr[0] & SDMMC_0TO7BITS) << 24)  | ((tempscr[0] & SDMMC_8TO15BITS) << 8) | \
-				((tempscr[0] & SDMMC_16TO23BITS) >> 8) | ((tempscr[0] & SDMMC_24TO31BITS) >> 24));
-
+		scr[0] = ByteSwap(tempscr[1]);
+		scr[1] = ByteSwap(tempscr[0]);
 	}
 
 	return 0;
 }
-
 
 uint32_t SDCard::GetCardState()
 {
@@ -1110,7 +1101,7 @@ uint32_t SDCard::WriteBlocks_DMA(const uint8_t *pData, uint32_t BlockAdd, uint32
 			ClearAllStaticFlags();
 			ErrorCode |= errorstate;
 			State = HAL_SD_STATE_READY;
-			Context = SD_CONTEXT_NONE;
+			Context = 0;
 			return 1;
 		}
 
@@ -1124,6 +1115,134 @@ uint32_t SDCard::WriteBlocks_DMA(const uint8_t *pData, uint32_t BlockAdd, uint32
 }
 
 
+uint32_t SDCard::ReadBlocks(uint8_t *pData, uint32_t BlockAdd, uint32_t NumberOfBlocks, uint32_t Timeout)
+{
+	SDMMC_DataInitTypeDef config;
+	uint32_t errorstate;
+	uint32_t tickstart = SysTickVal;
+	uint32_t count;
+	uint32_t data;
+	uint32_t dataremaining;
+	uint32_t add = BlockAdd;
+	uint8_t *tempbuff = pData;
+
+	if (State == HAL_SD_STATE_READY) {
+		ErrorCode = 0;
+
+		if (add + NumberOfBlocks > LogBlockNbr) {
+			ErrorCode |= SDMMC_ERROR_ADDR_OUT_OF_RANGE;
+			return 1;
+		}
+
+		State = HAL_SD_STATE_BUSY;
+
+		SDMMC1->DCTRL = 0;		// Initialize data control register
+
+		if (CardType != CARD_SDHC_SDXC) {
+			add *= 512U;
+		}
+
+		// Configure the SD DPSM (Data Path State Machine)
+		config.DataTimeOut   = SDMMC_DATATIMEOUT;
+		config.DataLength    = NumberOfBlocks * blockSize;
+		config.DataBlockSize = SDMMC_DATABLOCK_SIZE_512B;
+		config.TransferDir   = SDMMC_TRANSFER_DIR_TO_SDMMC;
+		config.TransferMode  = SDMMC_TRANSFER_MODE_BLOCK;
+		config.DPSM          = SDMMC_DPSM_DISABLE;
+		ConfigData(&config);
+		SDMMC1->CMD |= SDMMC_CMD_CMDTRANS;
+
+		if (NumberOfBlocks > 1) {
+			Context = SD_CONTEXT_READ_MULTIPLE_BLOCK;
+			errorstate = CmdReadMultiBlock(add);
+		} else {
+			Context = SD_CONTEXT_READ_SINGLE_BLOCK;
+			errorstate = CmdReadSingleBlock(add);
+		}
+		if (errorstate != 0) {
+			ClearAllStaticFlags();
+			ErrorCode |= errorstate;
+			State = HAL_SD_STATE_READY;
+			Context = 0;
+			return 1;
+		}
+
+		dataremaining = config.DataLength;
+
+		while ((SDMMC1->STA & (SDMMC_STA_RXOVERR | SDMMC_STA_DCRCFAIL | SDMMC_STA_DTIMEOUT | SDMMC_STA_DATAEND)) == 0) {
+			if (SDMMC1->STA & SDMMC_STA_RXFIFOHF && (dataremaining >= 32)) {
+
+				for (count = 0; count < 8; count++) {
+					data = SDMMC1->FIFO;				// Read data from SDMMC Rx FIFO
+					*tempbuff = (uint8_t)(data & 0xFFU);
+					tempbuff++;
+					*tempbuff = (uint8_t)((data >> 8U) & 0xFFU);
+					tempbuff++;
+					*tempbuff = (uint8_t)((data >> 16U) & 0xFFU);
+					tempbuff++;
+					*tempbuff = (uint8_t)((data >> 24U) & 0xFFU);
+					tempbuff++;
+				}
+				dataremaining -= 32;
+			}
+
+			if (SysTickVal - tickstart >= Timeout || Timeout == 0) {
+				ClearAllStaticFlags();
+				ErrorCode |= SDMMC_ERROR_TIMEOUT;
+				State = HAL_SD_STATE_READY;
+				Context = 0;
+				return 3;
+			}
+		}
+		SDMMC1->CMD &= ~SDMMC_CMD_CMDTRANS;
+
+		// Send stop transmission command in case of multiblock read
+		if ((SDMMC1->STA & SDMMC_STA_DATAEND) && NumberOfBlocks > 1) {
+			if (CardType != CARD_SECURED) {
+
+				errorstate = CmdStopTransfer();				// Send stop transmission command
+				if (errorstate != 0) {
+					ClearAllStaticFlags();
+					ErrorCode |= errorstate;
+					State = HAL_SD_STATE_READY;
+					Context = 0;
+					return 1;
+				}
+			}
+		}
+
+		// Get error state
+		if ((SDMMC1->STA & SDMMC_STA_DTIMEOUT)) {
+			ClearAllStaticFlags();
+			ErrorCode |= SDMMC_ERROR_DATA_TIMEOUT;
+			State = HAL_SD_STATE_READY;
+			Context = 0;
+			return 1;
+		} else if ((SDMMC1->STA & SDMMC_STA_DCRCFAIL)) {
+			ClearAllStaticFlags();
+			ErrorCode |= SDMMC_ERROR_DATA_CRC_FAIL;
+			State = HAL_SD_STATE_READY;
+			Context = 0;
+			return 1;
+		} else if ((SDMMC1->STA & SDMMC_STA_RXOVERR)) {
+			ClearAllStaticFlags();
+			ErrorCode |= SDMMC_ERROR_RX_OVERRUN;
+			State = HAL_SD_STATE_READY;
+			Context = 0;
+			return 1;
+		}
+
+		ClearAllStaticFlags();
+		State = HAL_SD_STATE_READY;
+
+		return 0;
+	} else {
+		ErrorCode |= SDMMC_ERROR_BUSY;
+		return 1;
+	}
+}
+
+
 uint32_t SDCard::ReadBlocks_DMA(uint8_t *pData, uint32_t BlockAdd, uint32_t NumberOfBlocks)
 {
 	SDMMC_DataInitTypeDef config;
@@ -1133,14 +1252,14 @@ uint32_t SDCard::ReadBlocks_DMA(uint8_t *pData, uint32_t BlockAdd, uint32_t Numb
 	if (State == HAL_SD_STATE_READY) {
 		ErrorCode = 0;
 
-		if ((add + NumberOfBlocks) > (LogBlockNbr)) {
+		if (add + NumberOfBlocks > LogBlockNbr) {
 			ErrorCode |= SDMMC_ERROR_ADDR_OUT_OF_RANGE;
 			return 1;
 		}
 
 		State = HAL_SD_STATE_BUSY;
 
-		SDMMC1->DCTRL = 0;// Initialize data control register
+		SDMMC1->DCTRL = 0;		// Initialize data control register
 
 		pRxBuffPtr = pData;
 		RxXferSize = blockSize * NumberOfBlocks;
@@ -1159,24 +1278,22 @@ uint32_t SDCard::ReadBlocks_DMA(uint8_t *pData, uint32_t BlockAdd, uint32_t Numb
 		ConfigData(&config);
 
 		SDMMC1->CMD |= SDMMC_CMD_CMDTRANS;
-		SDMMC1->IDMABASE0 = (uint32_t) pData;
-		SDMMC1->IDMACTRL  = SDMMC_ENABLE_IDMA_SINGLE_BUFF;
+		SDMMC1->IDMABASE0 = (uint32_t)pData;
+		SDMMC1->IDMACTRL  = SDMMC_IDMA_IDMAEN;
 
 		// Read Blocks in DMA mode
 		if (NumberOfBlocks > 1) {
 			Context = SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_DMA;
 			errorstate = CmdReadMultiBlock(add);			// Read Multi Block command
 		} else {
-			Context = (SD_CONTEXT_READ_SINGLE_BLOCK | SD_CONTEXT_DMA);
-
-
+			Context = SD_CONTEXT_READ_SINGLE_BLOCK | SD_CONTEXT_DMA;
 			errorstate = CmdReadSingleBlock(add);			// Read Single Block command
 		}
 		if (errorstate != 0) {
 			ClearStaticDataFlags();
 			ErrorCode |= errorstate;
 			State = HAL_SD_STATE_READY;
-			Context = SD_CONTEXT_NONE;
+			Context = 0;
 			return 1;
 		}
 
@@ -1260,7 +1377,7 @@ void SDCard::InterruptHandler()
 		if ((context & SD_CONTEXT_IT) != 0) {
 			if (((context & SD_CONTEXT_READ_MULTIPLE_BLOCK) != 0) || ((context & SD_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0)) {
 				errorstate = CmdStopTransfer();
-				if (errorstate != 0)  {
+				if (errorstate != 0) {
 					ErrorCode |= errorstate;
 				}
 			}
@@ -1287,11 +1404,11 @@ void SDCard::InterruptHandler()
 			}
 
 			State = HAL_SD_STATE_READY;
-			Context = SD_CONTEXT_NONE;
+			Context = 0;
 			if (((context & SD_CONTEXT_WRITE_SINGLE_BLOCK) != 0) || ((context & SD_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0)) {
 				// HAL_SD_TxCpltCallback(hsd);
 			}
-			if (((context & SD_CONTEXT_READ_SINGLE_BLOCK) != 0) || ((context & SD_CONTEXT_READ_MULTIPLE_BLOCK) != 0))  {
+			if (((context & SD_CONTEXT_READ_SINGLE_BLOCK) != 0) || ((context & SD_CONTEXT_READ_MULTIPLE_BLOCK) != 0)) {
 				// HAL_SD_RxCpltCallback(hsd);
 			}
 		}
@@ -1326,7 +1443,7 @@ void SDCard::InterruptHandler()
 
 		if ((context & SD_CONTEXT_IT) != 0)	{
 			State = HAL_SD_STATE_READY;
-			Context = SD_CONTEXT_NONE;
+			Context = 0;
 
 		} else if ((context & SD_CONTEXT_DMA) != 0) {
 			if (ErrorCode != 0) {

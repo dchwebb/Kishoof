@@ -19,16 +19,6 @@ static volatile DSTATUS Stat = STA_NOINIT;
 
 typedef uint32_t HAL_SD_CardStateTypeDef;
 
-#define HAL_SD_CARD_READY          0x00000001U  // Card state is ready
-#define HAL_SD_CARD_IDENTIFICATION 0x00000002U  // Card is in identification state
-#define HAL_SD_CARD_STANDBY        0x00000003U  // Card is in standby state
-#define HAL_SD_CARD_TRANSFER       0x00000004U  // Card is in transfer state
-#define HAL_SD_CARD_SENDING        0x00000005U  // Card is sending an operation
-#define HAL_SD_CARD_RECEIVING      0x00000006U  // Card is receiving operation information
-#define HAL_SD_CARD_PROGRAMMING    0x00000007U  // Card is in programming state
-#define HAL_SD_CARD_DISCONNECTED   0x00000008U  // Card is disconnected
-#define HAL_SD_CARD_ERROR          0x000000FFU  // Card response Error
-
 
 
 static int SD_CheckStatusWithTimeout(uint32_t timeout)
@@ -55,7 +45,7 @@ uint8_t disk_status(uint8_t pdrv)
 
 DSTATUS disk_initialize(uint8_t pdrv)
 {
-	if (sdCard.Init() == 0) {
+	if (sdCard.Init()) {
 		return disk_status(pdrv);
 	}
 	return RES_NOTRDY;
@@ -81,8 +71,14 @@ uint8_t disk_read(uint8_t pdrv, uint8_t* writeAddress, uint32_t readSector, uint
 #if defined(ENABLE_SCRATCH_BUFFER)
 	if (!((uint32_t)buff & 0x3)) {
 #endif
+		if (sdCard.ReadBlocks(writeAddress, readSector, sectorCount, SD_TIMEOUT) == 0) {
+			res = RES_OK;
+		}
+		/*
 		if (sdCard.ReadBlocks_DMA(writeAddress, readSector, sectorCount) == 0) {
+
 			uint32_t ReadStatus = 0;
+
 			// Wait that the reading process is completed or a timeout occurs
 			timeout = SysTickVal;
 			while ((ReadStatus == 0) && ((SysTickVal - timeout) < SD_TIMEOUT)) {}
@@ -106,6 +102,7 @@ uint8_t disk_read(uint8_t pdrv, uint8_t* writeAddress, uint32_t readSector, uint
 				}
 			}
 		}
+		*/
 #if defined(ENABLE_SCRATCH_BUFFER)
 	} else {
 		// Slow path, fetch each sector a part and memcpy to destination buffer

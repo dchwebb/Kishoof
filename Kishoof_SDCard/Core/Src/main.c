@@ -96,7 +96,7 @@ int main(void)
 	MX_FATFS_Init();
 	/* USER CODE BEGIN 2 */
 	//if (0) {
-		if (f_mount(&SDFatFS, (TCHAR const*)SDPath, 0) != FR_OK)	{
+		if (f_mount(&SDFatFS, (TCHAR const*)SDPath, 1) != FR_OK)	{
 			Error_Handler();
 		} else {
 			res = f_mkfs((TCHAR const*)SDPath, FM_ANY, 0, rtext, sizeof(rtext));
