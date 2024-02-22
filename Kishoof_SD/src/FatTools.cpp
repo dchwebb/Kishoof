@@ -10,7 +10,6 @@ bool FatTools::InitFatFS()
 {
 //	disk_initialize(0);
 //	disk_read(0, fatTools.fatFs.win, 0, 1);
-
 	FRESULT res = f_mount(&fatFs, fatPath, 1) ;		// Register the file system object to the FatFs module
 	if (res == FR_NO_FILESYSTEM) {
 		return false;

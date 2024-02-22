@@ -33,7 +33,7 @@ bool SDCard::Init()
 		return false;
 	}
 
-	errorstate = InitCard();
+	errorstate = InitCard();			// Get the Card ID (CID) Card-Specific Data (CSD)
 	if (errorstate != 0) {
 		State = HAL_SD_STATE_READY;
 		ErrorCode |= errorstate;
@@ -670,7 +670,7 @@ uint32_t SDCard::InitCard()
 		CID[2] = SDMMC1->RESP3;
 		CID[3] = SDMMC1->RESP4;
 
-		// Send CMD3 SET_REL_ADDR with argument 0; SD Card publishes its RCA.
+		// Send CMD3 SET_REL_ADDR with argument 0; SD Card publishes its RCA
 		while (sd_rca == 0) {
 			errorstate = CmdSetRelAdd(&sd_rca);
 			if (errorstate != 0) {
@@ -699,7 +699,7 @@ uint32_t SDCard::InitCard()
 
 	Class = (SDMMC1->RESP2 >> 20);		// Get the Card Class
 
-	if (GetCardCSD() != 0) {	// Get CSD parameters
+	if (GetCardCSD() != 0) {			// Get Card-Specific Data (CSD) parameters
 		return SDMMC_ERROR_UNSUPPORTED_FEATURE;
 	}
 
@@ -709,14 +709,13 @@ uint32_t SDCard::InitCard()
 		return errorstate;
 	}
 
-	// All cards are initialized
 	return 0;
 }
 
 
 uint32_t SDCard::GetCardCSD()
 {
-	// Parse the raw CSD data - this does not actually seem to be used except to store some block info
+	// Parse the raw Card-Specific Data (CSD) data - this does not actually seem to be used except to store some block info
 	parsedCSD.CSDStruct = 		((CSD[0] & 0xC0000000) >> 30);
 	parsedCSD.SysSpecVersion = 	((CSD[0] & 0x3C000000) >> 26);
 	parsedCSD.Reserved1 = 		((CSD[0] & 0x03000000) >> 24);
@@ -923,8 +922,9 @@ uint32_t SDCard::ConfigWideBusOperation()
 	} else {
 		// Configure the SDMMC peripheral - FIXME may want to set Clock save power here
 
-		// Set the clock divider to full speed
+		// Set the clock divider to full speed and enable wide bus mode
 		SDMMC1->CLKCR = SDMMC_CLKCR_WIDBUS_0;			// 01: 4-bit wide bus mode: SDMMC_D[3:0] used
+		SDMMC1->CLKCR |= 1;								// Debug - set the clock divider
 	}
 
 	// Set Block Size for Card
@@ -1115,21 +1115,17 @@ uint32_t SDCard::WriteBlocks_DMA(const uint8_t *pData, uint32_t BlockAdd, uint32
 }
 
 
-uint32_t SDCard::ReadBlocks(uint8_t *pData, uint32_t BlockAdd, uint32_t NumberOfBlocks, uint32_t Timeout)
+uint32_t SDCard::ReadBlocks(uint8_t *pData, uint32_t blockAdd, uint32_t blocks, uint32_t timeout)
 {
-	SDMMC_DataInitTypeDef config;
+
 	uint32_t errorstate;
 	uint32_t tickstart = SysTickVal;
-	uint32_t count;
-	uint32_t data;
-	uint32_t dataremaining;
-	uint32_t add = BlockAdd;
-	uint8_t *tempbuff = pData;
+	uint32_t* tempBuff = (uint32_t*)pData;
 
 	if (State == HAL_SD_STATE_READY) {
 		ErrorCode = 0;
 
-		if (add + NumberOfBlocks > LogBlockNbr) {
+		if (blockAdd + blocks > LogBlockNbr) {
 			ErrorCode |= SDMMC_ERROR_ADDR_OUT_OF_RANGE;
 			return 1;
 		}
@@ -1139,12 +1135,13 @@ uint32_t SDCard::ReadBlocks(uint8_t *pData, uint32_t BlockAdd, uint32_t NumberOf
 		SDMMC1->DCTRL = 0;		// Initialize data control register
 
 		if (CardType != CARD_SDHC_SDXC) {
-			add *= 512U;
+			blockAdd *= 512U;
 		}
 
 		// Configure the SD DPSM (Data Path State Machine)
+		SDMMC_DataInitTypeDef config;
 		config.DataTimeOut   = SDMMC_DATATIMEOUT;
-		config.DataLength    = NumberOfBlocks * blockSize;
+		config.DataLength    = blocks * blockSize;
 		config.DataBlockSize = SDMMC_DATABLOCK_SIZE_512B;
 		config.TransferDir   = SDMMC_TRANSFER_DIR_TO_SDMMC;
 		config.TransferMode  = SDMMC_TRANSFER_MODE_BLOCK;
@@ -1152,12 +1149,12 @@ uint32_t SDCard::ReadBlocks(uint8_t *pData, uint32_t BlockAdd, uint32_t NumberOf
 		ConfigData(&config);
 		SDMMC1->CMD |= SDMMC_CMD_CMDTRANS;
 
-		if (NumberOfBlocks > 1) {
+		if (blocks > 1) {
 			Context = SD_CONTEXT_READ_MULTIPLE_BLOCK;
-			errorstate = CmdReadMultiBlock(add);
+			errorstate = CmdReadMultiBlock(blockAdd);
 		} else {
 			Context = SD_CONTEXT_READ_SINGLE_BLOCK;
-			errorstate = CmdReadSingleBlock(add);
+			errorstate = CmdReadSingleBlock(blockAdd);
 		}
 		if (errorstate != 0) {
 			ClearAllStaticFlags();
@@ -1167,26 +1164,19 @@ uint32_t SDCard::ReadBlocks(uint8_t *pData, uint32_t BlockAdd, uint32_t NumberOf
 			return 1;
 		}
 
-		dataremaining = config.DataLength;
+		uint32_t dataremaining = config.DataLength;
 
 		while ((SDMMC1->STA & (SDMMC_STA_RXOVERR | SDMMC_STA_DCRCFAIL | SDMMC_STA_DTIMEOUT | SDMMC_STA_DATAEND)) == 0) {
 			if (SDMMC1->STA & SDMMC_STA_RXFIFOHF && (dataremaining >= 32)) {
 
-				for (count = 0; count < 8; count++) {
-					data = SDMMC1->FIFO;				// Read data from SDMMC Rx FIFO
-					*tempbuff = (uint8_t)(data & 0xFFU);
-					tempbuff++;
-					*tempbuff = (uint8_t)((data >> 8U) & 0xFFU);
-					tempbuff++;
-					*tempbuff = (uint8_t)((data >> 16U) & 0xFFU);
-					tempbuff++;
-					*tempbuff = (uint8_t)((data >> 24U) & 0xFFU);
-					tempbuff++;
+				for (uint32_t count = 0; count < 8; count++) {
+					*tempBuff++ = SDMMC1->FIFO;
+					//++tempBuff;
 				}
 				dataremaining -= 32;
 			}
 
-			if (SysTickVal - tickstart >= Timeout || Timeout == 0) {
+			if (SysTickVal - tickstart >= timeout || timeout == 0) {
 				ClearAllStaticFlags();
 				ErrorCode |= SDMMC_ERROR_TIMEOUT;
 				State = HAL_SD_STATE_READY;
@@ -1197,7 +1187,7 @@ uint32_t SDCard::ReadBlocks(uint8_t *pData, uint32_t BlockAdd, uint32_t NumberOf
 		SDMMC1->CMD &= ~SDMMC_CMD_CMDTRANS;
 
 		// Send stop transmission command in case of multiblock read
-		if ((SDMMC1->STA & SDMMC_STA_DATAEND) && NumberOfBlocks > 1) {
+		if ((SDMMC1->STA & SDMMC_STA_DATAEND) && blocks > 1) {
 			if (CardType != CARD_SECURED) {
 
 				errorstate = CmdStopTransfer();				// Send stop transmission command
@@ -1243,16 +1233,15 @@ uint32_t SDCard::ReadBlocks(uint8_t *pData, uint32_t BlockAdd, uint32_t NumberOf
 }
 
 
-uint32_t SDCard::ReadBlocks_DMA(uint8_t *pData, uint32_t BlockAdd, uint32_t NumberOfBlocks)
+uint32_t SDCard::ReadBlocks_DMA(uint8_t *pData, uint32_t blockAdd, uint32_t blocks)
 {
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
-	uint32_t add = BlockAdd;
 
 	if (State == HAL_SD_STATE_READY) {
 		ErrorCode = 0;
 
-		if (add + NumberOfBlocks > LogBlockNbr) {
+		if (blockAdd + blocks > LogBlockNbr) {
 			ErrorCode |= SDMMC_ERROR_ADDR_OUT_OF_RANGE;
 			return 1;
 		}
@@ -1262,15 +1251,15 @@ uint32_t SDCard::ReadBlocks_DMA(uint8_t *pData, uint32_t BlockAdd, uint32_t Numb
 		SDMMC1->DCTRL = 0;		// Initialize data control register
 
 		pRxBuffPtr = pData;
-		RxXferSize = blockSize * NumberOfBlocks;
+		RxXferSize = blockSize * blocks;
 
 		if (CardType != CARD_SDHC_SDXC) {
-			add *= 512;
+			blockAdd *= 512;
 		}
 
 		//Configure the SD DPSM (Data Path State Machine)
 		config.DataTimeOut   = SDMMC_DATATIMEOUT;
-		config.DataLength    = blockSize * NumberOfBlocks;
+		config.DataLength    = blockSize * blocks;
 		config.DataBlockSize = SDMMC_DATABLOCK_SIZE_512B;
 		config.TransferDir   = SDMMC_TRANSFER_DIR_TO_SDMMC;
 		config.TransferMode  = SDMMC_TRANSFER_MODE_BLOCK;
@@ -1282,12 +1271,12 @@ uint32_t SDCard::ReadBlocks_DMA(uint8_t *pData, uint32_t BlockAdd, uint32_t Numb
 		SDMMC1->IDMACTRL  = SDMMC_IDMA_IDMAEN;
 
 		// Read Blocks in DMA mode
-		if (NumberOfBlocks > 1) {
+		if (blocks > 1) {
 			Context = SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_DMA;
-			errorstate = CmdReadMultiBlock(add);			// Read Multi Block command
+			errorstate = CmdReadMultiBlock(blockAdd);			// Read Multi Block command
 		} else {
 			Context = SD_CONTEXT_READ_SINGLE_BLOCK | SD_CONTEXT_DMA;
-			errorstate = CmdReadSingleBlock(add);			// Read Single Block command
+			errorstate = CmdReadSingleBlock(blockAdd);			// Read Single Block command
 		}
 		if (errorstate != 0) {
 			ClearStaticDataFlags();

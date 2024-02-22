@@ -115,10 +115,6 @@ void InitSSD()
 
     NVIC_SetPriority(SDMMC1_IRQn, 2);
     NVIC_EnableIRQ(SDMMC1_IRQn);
-
-
-
-
 }
 
 
