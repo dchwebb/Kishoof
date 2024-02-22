@@ -3,6 +3,7 @@
 #include "extFlash.h"
 #include "GpioPin.h"
 #include <cstring>
+#include "FatTools.h"
 
 // Clock overview:
 // [Main clock (Nucleo): 8MHz (HSE) / 2 (M) * 200 (N) / 2 (P) = 400MHz]
@@ -131,6 +132,19 @@ void InitHardware()
 
 void InitCache()
 {
+	// Use the Memory Protection Unit (MPU) to set up a region of memory with data caching disabled for use with DMA buffers
+	MPU->RNR = 0;									// Memory region number
+	MPU->RBAR = reinterpret_cast<uint32_t>(&fatTools);	// Store the address of the ADC_array into the region base address register
+
+	MPU->RASR = (0b11  << MPU_RASR_AP_Pos)   |		// All access permitted
+				(0b001 << MPU_RASR_TEX_Pos)  |		// Type Extension field: See truth table on p228 of Cortex M7 programming manual
+				(1     << MPU_RASR_S_Pos)    |		// Shareable: provides data synchronization between bus masters. Eg a processor with a DMA controller
+				(0     << MPU_RASR_C_Pos)    |		// Cacheable
+				(0     << MPU_RASR_B_Pos)    |		// Bufferable (ignored for non-cacheable configuration)
+				(10     << MPU_RASR_SIZE_Pos) |		// Size is log 2(mem size) - 1 ie 2^6 = 64
+				(1     << MPU_RASR_ENABLE_Pos);		// Enable MPU region
+
+
 	/*
 	// Use the Memory Protection Unit (MPU) to set up a region of memory with data caching disabled for use with DMA buffers
 	MPU->RNR = 0;									// Memory region number

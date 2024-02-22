@@ -1406,10 +1406,12 @@ void SDCard::InterruptHandler()
 			State = HAL_SD_STATE_READY;
 			Context = 0;
 			if (((context & SD_CONTEXT_WRITE_SINGLE_BLOCK) != 0) || ((context & SD_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0)) {
+				dmaWrite = true;
 				// HAL_SD_TxCpltCallback(hsd);
 			}
 			if (((context & SD_CONTEXT_READ_SINGLE_BLOCK) != 0) || ((context & SD_CONTEXT_READ_MULTIPLE_BLOCK) != 0)) {
 				// HAL_SD_RxCpltCallback(hsd);
+				dmaRead = true;
 			}
 		}
 

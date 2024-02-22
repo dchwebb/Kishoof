@@ -64,33 +64,37 @@ uint8_t disk_read(uint8_t pdrv, uint8_t* writeAddress, uint32_t readSector, uint
 #endif
 
 	//ensure the SDCard is ready for a new operation
-	if (SD_CheckStatusWithTimeout(SD_TIMEOUT) < 0) {
+	if (SD_CheckStatusWithTimeout(SD_TIMEOUT)) {
 		return res;
 	}
 
 #if defined(ENABLE_SCRATCH_BUFFER)
 	if (!((uint32_t)buff & 0x3)) {
 #endif
+
+#define SD_DMA 1
+
+#ifndef SD_DMA
 		if (sdCard.ReadBlocks(writeAddress, readSector, sectorCount, SD_TIMEOUT) == 0) {
 			res = RES_OK;
 		}
-		/*
+#else
 		if (sdCard.ReadBlocks_DMA(writeAddress, readSector, sectorCount) == 0) {
 
-			uint32_t ReadStatus = 0;
+			sdCard.dmaRead = false;
 
 			// Wait that the reading process is completed or a timeout occurs
 			timeout = SysTickVal;
-			while ((ReadStatus == 0) && ((SysTickVal - timeout) < SD_TIMEOUT)) {}
+			while ((!sdCard.dmaRead) && ((SysTickVal - timeout) < SD_TIMEOUT)) {}
 
-			if (ReadStatus == 0) {
+			if (!sdCard.dmaRead) {
 				res = RES_ERROR;
 			} else {
-				ReadStatus = 0;
+				sdCard.dmaRead = false;
 				timeout = SysTickVal;
 
 				while ((SysTickVal - timeout) < SD_TIMEOUT) {
-					if (sdCard.GetCardState() == 0) {
+					if (disk_status(0) == 0) {
 						res = RES_OK;
 #if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
 						// the SCB_InvalidateDCache_by_Addr() requires a 32-Byte aligned address, adjust the address and the D-Cache size to invalidate accordingly.
@@ -102,7 +106,8 @@ uint8_t disk_read(uint8_t pdrv, uint8_t* writeAddress, uint32_t readSector, uint
 				}
 			}
 		}
-		*/
+#endif
+
 #if defined(ENABLE_SCRATCH_BUFFER)
 	} else {
 		// Slow path, fetch each sector a part and memcpy to destination buffer

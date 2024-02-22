@@ -1,10 +1,16 @@
 #include "FatTools.h"
 #include <cstring>
+#include "SDCard.h"
+#include "diskio.h"
 
-FatTools fatTools;
+
+FatTools __attribute__((section (".ram_d1_data"))) fatTools;
 
 bool FatTools::InitFatFS()
 {
+//	disk_initialize(0);
+//	disk_read(0, fatTools.fatFs.win, 0, 1);
+
 	FRESULT res = f_mount(&fatFs, fatPath, 1) ;		// Register the file system object to the FatFs module
 	if (res == FR_NO_FILESYSTEM) {
 		return false;
@@ -17,7 +23,6 @@ bool FatTools::InitFatFS()
 	FILINFO fno;				// File information structure
 	res = f_opendir(&dp, "");	// second parm is directory name (root)
 	res = f_readdir(&dp, &fno);
-
 
 	return true;
 }
