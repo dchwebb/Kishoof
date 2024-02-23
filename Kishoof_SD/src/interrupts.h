@@ -3,6 +3,10 @@ void SDMMC1_IRQHandler(void)
 	sdCard.InterruptHandler();
 }
 
+void OTG_FS_IRQHandler(void)
+{
+	usb.InterruptHandler();
+}
 
 // System interrupts
 void NMI_Handler(void) {}
