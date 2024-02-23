@@ -95,7 +95,7 @@ int main(void)
 	MX_SDMMC1_SD_Init();
 	MX_FATFS_Init();
 	/* USER CODE BEGIN 2 */
-	//if (0) {
+	if (0) {
 		if (f_mount(&SDFatFS, (TCHAR const*)SDPath, 1) != FR_OK)	{
 			Error_Handler();
 		} else {
@@ -132,13 +132,27 @@ int main(void)
 			}
 
 		}
-	//}
-//	res = f_mount(&SDFatFS, (TCHAR const*)NULL, 0);
+	}
+	res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
 
 	DIR dp;						// Pointer to the directory object structure
 	FILINFO fno;				// File information structure
 	res = f_opendir(&dp, "");	// second parm is directory name (root)
 	res = f_readdir(&dp, &fno);
+
+	const char* testFile = "STM32.TXT";
+	if (f_open(&SDFile, testFile, FA_READ) == FR_OK) {
+
+		// Read data from the text file
+		res = f_read(&SDFile, rtext, sizeof(rtext), (unsigned int *)&bytesread);
+
+		if ((bytesread > 0) && (res == FR_OK)) {
+
+			//Close the open text file
+			f_close(&SDFile);
+		}
+	}
+
 	uint8_t dummy = 1;
 
 

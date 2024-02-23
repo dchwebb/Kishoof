@@ -177,16 +177,16 @@ uint8_t disk_write(uint8_t pdrv, const uint8_t* readBuff, uint32_t writeSector, 
 			// Wait that writing process is completed or a timeout occurs
 
 			timeout = SysTickVal;
-			while ((WriteStatus == 0) && ((SysTickVal - timeout) < SD_TIMEOUT)) {}
+			while (!sdCard.dmaWrite && ((SysTickVal - timeout) < SD_TIMEOUT)) {}
 
-			if (WriteStatus == 0) {
+			if (!sdCard.dmaWrite) {
 				res = RES_ERROR;
 			} else {
-				WriteStatus = 0;
+				sdCard.dmaWrite = false;
 				timeout = SysTickVal;
 
 				while ((SysTickVal - timeout) < SD_TIMEOUT) {
-					if (sdCard.GetCardState() == 0) {
+					if (disk_status(0) == 0) {
 						res = RES_OK;
 						break;
 					}

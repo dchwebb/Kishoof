@@ -1171,7 +1171,6 @@ uint32_t SDCard::ReadBlocks(uint8_t *pData, uint32_t blockAdd, uint32_t blocks, 
 
 				for (uint32_t count = 0; count < 8; count++) {
 					*tempBuff++ = SDMMC1->FIFO;
-					//++tempBuff;
 				}
 				dataremaining -= 32;
 			}
@@ -1257,7 +1256,7 @@ uint32_t SDCard::ReadBlocks_DMA(uint8_t *pData, uint32_t blockAdd, uint32_t bloc
 			blockAdd *= 512;
 		}
 
-		//Configure the SD DPSM (Data Path State Machine)
+		// Configure the SD DPSM (Data Path State Machine)
 		config.DataTimeOut   = SDMMC_DATATIMEOUT;
 		config.DataLength    = blockSize * blocks;
 		config.DataBlockSize = SDMMC_DATABLOCK_SIZE_512B;

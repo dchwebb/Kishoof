@@ -10,18 +10,68 @@ bool FatTools::InitFatFS()
 {
 //	disk_initialize(0);
 //	disk_read(0, fatTools.fatFs.win, 0, 1);
+
+	uint32_t byteswritten, bytesread;				// File write/read counts
+	uint8_t wtext[] = "Test file contents3 dw";	// File write buffer
+	uint8_t rtext[512];								// File read buffer
+	FIL SDFile;       								// File object for SD
+	const char* testFile = "DW3.TXT";
+	//const char* testFile = "STM32.TXT";
+
+
 	FRESULT res = f_mount(&fatFs, fatPath, 1) ;		// Register the file system object to the FatFs module
 	if (res == FR_NO_FILESYSTEM) {
 		return false;
 
 	}
 	noFileSystem = false;
+/*
+	// Open file for writing (Create)
+	if (f_open(&SDFile, testFile, FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
+		//Write to the text file
+		res = f_write(&SDFile, wtext, strlen((char*)wtext), (UINT*)&byteswritten);
+		if ((byteswritten == 0) || (res != FR_OK)) {
+			res = FR_INT_ERR;
+		} else {
+			f_close(&SDFile);
+
+			// Open the text file object with read access
+			if (f_open(&SDFile, testFile, FA_READ) == FR_OK) {
+
+				// Read data from the text file
+				res = f_read(&SDFile, rtext, sizeof(rtext), (unsigned int *)&bytesread);
+
+				if ((bytesread > 0) && (res == FR_OK)) {
+
+					//Close the open text file
+					f_close(&SDFile);
+				}
+			}
+		}
+	}
+*/
+
 
 
 	DIR dp;						// Pointer to the directory object structure
 	FILINFO fno;				// File information structure
 	res = f_opendir(&dp, "");	// second parm is directory name (root)
 	res = f_readdir(&dp, &fno);
+	res = f_readdir(&dp, &fno);
+	res = f_readdir(&dp, &fno);
+
+//	const char* testFile = "STM32.TXT";
+	if (f_open(&SDFile, testFile, FA_READ) == FR_OK) {
+
+		// Read data from the text file
+		res = f_read(&SDFile, rtext, sizeof(rtext), (unsigned int *)&bytesread);
+
+		if ((bytesread > 0) && (res == FR_OK)) {
+
+			//Close the open text file
+			f_close(&SDFile);
+		}
+	}
 
 	return true;
 }
