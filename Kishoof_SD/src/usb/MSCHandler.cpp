@@ -1,7 +1,8 @@
 #include "USB.h"
 #include "MSCHandler.h"
 #include "FatTools.h"
-
+#include "SDCard.h"
+#include "diskio.h"
 
 void MSCHandler::ActivateEP()
 {
@@ -245,7 +246,7 @@ int8_t MSCHandler::SCSI_Inquiry()
 
 int8_t MSCHandler::SCSI_ReadFormatCapacity()
 {
-	const uint32_t blk_nbr = fatSectorCount - 1;
+	const uint32_t blk_nbr = sdCard.LogBlockNbr - 1;
 	const uint32_t blk_size = fatSectorSize;
 
 	*(uint32_t*)&bot_data = 0; 						// blank out first three bytes of bot_data as reserved
@@ -274,7 +275,7 @@ int8_t MSCHandler::SCSI_ReadFormatCapacity()
 
 int8_t MSCHandler::SCSI_ReadCapacity10()
 {
-	const uint32_t blk_nbr = fatSectorCount - 1;
+	const uint32_t blk_nbr = sdCard.LogBlockNbr - 1;
 	const uint32_t blk_size = fatSectorSize;
 
 	uint8_t* blk8 = (uint8_t*)&blk_nbr;
@@ -300,7 +301,7 @@ int8_t MSCHandler::SCSI_ReadCapacity10()
 
 int8_t MSCHandler::SCSI_ReadCapacity16()		// Untested
 {
-	const uint32_t blk_nbr = fatSectorCount - 1;
+	const uint32_t blk_nbr = sdCard.LogBlockNbr - 1;
 	const uint32_t blk_size = fatSectorSize;
 
 	bot_data_length = ((uint32_t)cbw.CB[10] << 24) |
@@ -355,7 +356,7 @@ int8_t MSCHandler::SCSI_ModeSense6()
 
 int8_t MSCHandler::SCSI_CheckAddressRange(uint32_t blk_offset, uint32_t blk_nbr)
 {
-	if ((blk_offset + blk_nbr) > fatSectorCount) {
+	if ((blk_offset + blk_nbr) > sdCard.LogBlockNbr) {
 		SCSI_SenseCode(ILLEGAL_REQUEST, ADDRESS_OUT_OF_RANGE);
 		return -1;
 	}
@@ -393,12 +394,15 @@ int8_t MSCHandler::SCSI_Read()
 	csw.dDataResidue -= inBuffSize;
 
 	// Data may be read from cache or flash; if flash (signalled by nullptr), pass a buffer to be filled and wait for DMA transfer to complete
-	inBuff = fatTools.GetSectorAddr(scsi_blk_addr, bot_data, inBuffSize);
+	//inBuff = fatTools.GetSectorAddr(scsi_blk_addr, bot_data, inBuffSize);
 
-	if (inBuff != nullptr) {
-		ReadReady();
+	// FIXME - not sure if multiple sectors will be read at once
+	if (disk_read(0, bot_data, scsi_blk_addr, 1) == RES_OK) {		// Read sector into bot_data buffer
+		//inBuff = bot_data;
+		if (inBuff != nullptr) {
+			ReadReady();
+		}
 	}
-
 	return 0;
 }
 
@@ -448,10 +452,11 @@ int8_t MSCHandler::SCSI_Write()
 
 		uint32_t len = scsi_blk_len * fatSectorSize;
 
-		if (extFlash.flashCorrupt) {
-			SCSI_SenseCode(NOT_READY, WRITE_PROTECTED);
-			return -1;
-		}
+		// FIXME
+//		if (extFlash.flashCorrupt) {
+//			SCSI_SenseCode(NOT_READY, WRITE_PROTECTED);
+//			return -1;
+//		}
 
 		if (cbw.dDataLength != len) {
 			SCSI_SenseCode(ILLEGAL_REQUEST, INVALID_CDB);
@@ -469,7 +474,8 @@ int8_t MSCHandler::SCSI_Write()
 		// Write Process ongoing
 		uint32_t len = std::min(scsi_blk_len * fatSectorSize, MediaPacket);
 
-		fatTools.Write((uint8_t*)(outBuff), scsi_blk_addr, (len / fatSectorSize));
+		//fatTools.Write((uint8_t*)(outBuff), scsi_blk_addr, (len / fatSectorSize));
+		disk_write(0, (uint8_t*)(outBuff), scsi_blk_addr, (len / fatSectorSize));
 
 		scsi_blk_addr += (len / fatSectorSize);
 		scsi_blk_len -= (len / fatSectorSize);

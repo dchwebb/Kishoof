@@ -12,10 +12,10 @@ bool FatTools::InitFatFS()
 //	disk_read(0, fatTools.fatFs.win, 0, 1);
 
 	uint32_t byteswritten, bytesread;				// File write/read counts
-	uint8_t wtext[] = "Test file contents3 dw";	// File write buffer
+	uint8_t wtext[] = "Test file contents4 dw\0";	// File write buffer
 	uint8_t rtext[512];								// File read buffer
 	FIL SDFile;       								// File object for SD
-	const char* testFile = "DW3.TXT";
+	const char* testFile = "DW4.TXT";
 	//const char* testFile = "STM32.TXT";
 
 
@@ -115,12 +115,22 @@ void FatTools::InvalidateFatFSCache()
 }
 
 
+static LBA_t clst2sect (	/* !=0:Sector number, 0:Failed (invalid cluster#) */
+	FATFS* fs,		/* Filesystem object */
+	DWORD clst		/* Cluster# to be converted */
+)
+{
+	clst -= 2;		/* Cluster number is origin from 2 */
+	if (clst >= fs->n_fatent - 2) return 0;		/* Is it invalid cluster number? */
+	return fs->database + (LBA_t)fs->csize * clst;	/* Start sector number of the cluster */
+}
+
 // Uses FatFS to get a recursive directory listing (just shows paths and files)
 void FatTools::PrintFiles(char* path)						// Start node to be scanned (also used as work area)
 {
 	DIR dirObj;												// Pointer to the directory object structure
 	FILINFO fileInfo;										// File information structure
-
+	FIL SDFile;
 	FRESULT res = f_opendir(&dirObj, path);					// second parm is directory name (root)
 
 	if (res == FR_OK) {
@@ -135,7 +145,11 @@ void FatTools::PrintFiles(char* path)						// Start node to be scanned (also use
 				PrintFiles(path);							// Enter the directory
 				path[i] = 0;
 			} else {										// It is a file
-				printf("%s/%s %i bytes\n", path, fileInfo.fname, (int)fileInfo.fsize);
+				uint32_t sect = 0;
+				if (f_open(&SDFile, fileInfo.fname, FA_READ) == FR_OK) {
+					sect = clst2sect(SDFile.obj.fs, SDFile.obj.sclust);			// Get current sector
+				}
+				printf("%s/%s %lu bytes sector: %lu \n", path, fileInfo.fname, fileInfo.fsize, sect);
 			}
 		}
 		f_closedir(&dirObj);

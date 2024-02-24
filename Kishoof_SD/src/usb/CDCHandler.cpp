@@ -2,6 +2,7 @@
 #include "CDCHandler.h"
 #include "ExtFlash.h"
 #include "FatTools.h"
+#include "diskio.h"
 //#include "WaveTable.h"
 #include "ff.h"
 
@@ -100,25 +101,12 @@ void CDCHandler::ProcessCommand()
 				"clearconfig -  Erase configuration and restart\r\n"
 				"dirdetails  -  Print detailed file list for root directory\r\n"
 				"dir         -  Print list of all files and their directories\r\n"
-				"samplelist  -  Show details of all samples found in flash\r\n"
-				"midimap     -  Display MIDI note mapping\r\n"
 				"reboot      -  Reboot device\r\n"
-				"leds:x      -  Set all LEDs to brightness from 1-100%\r\n"
-				"revertleds  -  Reset all LEDs\r\n"
 				"\r\n"
-				"Flash Tools:\r\n"
+				"SD Card Tools:\r\n"
 				"------------\r\n"
-				"readreg     -  Print QSPI flash status registers\r\n"
-				"flashid     -  Print flash manufacturer and device IDs\r\n"
-				"printflash:A   Print 512 bytes of flash (A = decimal address)\r\n"
-				"printcluster:A Print 2048 bytes of cluster address A (>=2)\r\n"
+				"printsector:A  Print 512 bytes of SD data (A = decimal address)\r\n"
 				"clusterchain   List chain of FAT clusters\r\n"
-				"cacheinfo   -  Summary of unwritten changes in header cache\r\n"
-				"cachechanges   Show all bytes changed in header cache\r\n"
-				"flushcache  -  Flush any changed data in cache to flash\r\n"
-				"eraseflash  -  Erase all sample storage flash data\r\n"
-				"format      -  Format sample storage flash\r\n"
-				"eraseblock:A   Erase block of memory (8192 bytes in dual flash mode)\r\n"
 
 		);
 
@@ -140,9 +128,6 @@ void CDCHandler::ProcessCommand()
 		printf("** No file system **\r\n");
 
 
-
-
-
 	} else if (cmd.compare("dir") == 0) {						// Get basic FAT directory list
 		if (fatTools.noFileSystem) {
 			printf("** No file System **\r\n");
@@ -153,6 +138,23 @@ void CDCHandler::ProcessCommand()
 			fatTools.InvalidateFatFSCache();					// Ensure that the FAT FS cache is updated
 			fatTools.PrintFiles(workBuff);
 		}
+
+	} else if (cmd.compare(0, 12, "printsector:") == 0) {				// print 512 bytes of SD data
+		const int32_t address = ParseInt(cmd, ':', 0, 0xFFFFFF);
+		if (address >= 0) {
+
+			printf("Sector: %ld\r\n", address);
+			uint8_t readBuffer[512];
+			disk_read(0, readBuffer, address, 1);
+
+			const uint32_t* p = (uint32_t*)(readBuffer);
+
+			for (uint32_t a = 0; a < 128; a += 4) {
+				printf("%6ld: %#010lx %#010lx %#010lx %#010lx\r\n", (a * 4), p[a], p[a + 1], p[a + 2], p[a + 3]);
+			}
+		}
+
+
 /*
 	} else if (cmd.compare("readreg") == 0) {					// Read QSPI register
 		usb->SendString("Status register 1: " + std::to_string(extFlash.ReadStatus(ExtFlash::readStatusReg1)) +

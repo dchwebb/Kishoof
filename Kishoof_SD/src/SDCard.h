@@ -288,8 +288,7 @@ public:
 	uint32_t ReadBlocks(uint8_t *pData, uint32_t blockAdd, uint32_t noBlocks, uint32_t timeout);
 	uint32_t ReadBlocks_DMA(uint8_t *pData, uint32_t blockAdd, uint32_t NoBlocks);
 	void InterruptHandler();
-	void Read_IT();
-	void Write_IT();
+
 
 	uint32_t CmdGoIdleState();
 	uint32_t CmdOperCond();

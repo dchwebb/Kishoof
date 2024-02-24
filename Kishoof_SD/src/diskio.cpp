@@ -2,28 +2,11 @@
 #include "SDCard.h"
 #include <string.h>
 
-#define SD_TIMEOUT 30 * 1000
-#define SD_DEFAULT_BLOCK_SIZE 512
-
-
-#if defined(ENABLE_SCRATCH_BUFFER)
-#if defined (ENABLE_SD_DMA_CACHE_MAINTENANCE)
-ALIGN_32BYTES(static uint8_t scratch[BLOCKSIZE]); // 32-Byte aligned for cache maintenance
-#else
-__ALIGN_BEGIN static uint8_t scratch[BLOCKSIZE] __ALIGN_END;
-#endif
-#endif
-
-static volatile DSTATUS Stat = STA_NOINIT;
-
-
-typedef uint32_t HAL_SD_CardStateTypeDef;
-
+#define SD_TIMEOUT 200
 
 
 static int SD_CheckStatusWithTimeout(uint32_t timeout)
 {
-
 	uint32_t timer = SysTickVal;
 	while (SysTickVal - timer < timeout) {						// block until SDIO free or timeout
 		if (sdCard.GetCardState() == HAL_SD_CARD_TRANSFER) {	// Check card is not busy
@@ -55,92 +38,38 @@ DSTATUS disk_initialize(uint8_t pdrv)
 uint8_t disk_read(uint8_t pdrv, uint8_t* writeAddress, uint32_t readSector, uint32_t sectorCount)
 {
 	DRESULT res = RES_ERROR;
-	uint32_t timeout;
-#if defined(ENABLE_SCRATCH_BUFFER)
-	uint8_t ret;
-#endif
-#if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
-	uint32_t alignedAddr;
-#endif
 
-	//ensure the SDCard is ready for a new operation
-	if (SD_CheckStatusWithTimeout(SD_TIMEOUT)) {
+	if (SD_CheckStatusWithTimeout(SD_TIMEOUT)) {	// ensure the SDCard is ready for a new operation
 		return res;
 	}
 
-#if defined(ENABLE_SCRATCH_BUFFER)
-	if (!((uint32_t)buff & 0x3)) {
-#endif
+//	// Direct read (no DMA)
+//	if (sdCard.ReadBlocks(writeAddress, readSector, sectorCount, SD_TIMEOUT) == 0) {
+//		res = RES_OK;
+//	}
 
-#define SD_DMA 1
+	if (sdCard.ReadBlocks_DMA(writeAddress, readSector, sectorCount) == 0) {
 
-#ifndef SD_DMA
-		if (sdCard.ReadBlocks(writeAddress, readSector, sectorCount, SD_TIMEOUT) == 0) {
-			res = RES_OK;
-		}
-#else
-		if (sdCard.ReadBlocks_DMA(writeAddress, readSector, sectorCount) == 0) {
+		uint32_t timeout = SysTickVal;
+		while (!sdCard.dmaRead && (SysTickVal - timeout) < SD_TIMEOUT) {}
 
-			sdCard.dmaRead = false;
-
-			// Wait that the reading process is completed or a timeout occurs
+		if (sdCard.dmaRead) {
 			timeout = SysTickVal;
-			while ((!sdCard.dmaRead) && ((SysTickVal - timeout) < SD_TIMEOUT)) {}
 
-			if (!sdCard.dmaRead) {
-				res = RES_ERROR;
-			} else {
-				sdCard.dmaRead = false;
-				timeout = SysTickVal;
+			while ((SysTickVal - timeout) < SD_TIMEOUT) {
+				if (disk_status(0) == RES_OK) {
+					res = RES_OK;
 
-				while ((SysTickVal - timeout) < SD_TIMEOUT) {
-					if (disk_status(0) == 0) {
-						res = RES_OK;
-#if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
-						// the SCB_InvalidateDCache_by_Addr() requires a 32-Byte aligned address, adjust the address and the D-Cache size to invalidate accordingly.
-						alignedAddr = (uint32_t)buff & ~0x1F;
-						SCB_InvalidateDCache_by_Addr((uint32_t*)alignedAddr, count*BLOCKSIZE + ((uint32_t)buff - alignedAddr));
-#endif
-						break;
-					}
-				}
-			}
-		}
-#endif
+					// SCB_InvalidateDCache_by_Addr() requires a 32-Byte aligned address
+					//uint32_t alignedAddr = (uint32_t)buff & ~0x1F;
+					//SCB_InvalidateDCache_by_Addr((uint32_t*)alignedAddr, count*BLOCKSIZE + ((uint32_t)buff - alignedAddr));
 
-#if defined(ENABLE_SCRATCH_BUFFER)
-	} else {
-		// Slow path, fetch each sector a part and memcpy to destination buffer
-		int i;
-
-		for (i = 0; i < count; i++) {
-			ret = BSP_SD_ReadBlocks_DMA((uint32_t*)scratch, (uint32_t)sector++, 1);
-			if (ret == 0) {
-				// wait until the read is successful or a timeout occurs
-				timeout = SysTickVal;
-				while((ReadStatus == 0) && ((SysTickVal - timeout) < SD_TIMEOUT)) {}
-				if (ReadStatus == 0) {
-					res = RES_ERROR;
 					break;
 				}
-				ReadStatus = 0;
-
-#if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
-				// invalidate the scratch buffer before the next read to get the actual data instead of the cached one
-				SCB_InvalidateDCache_by_Addr((uint32_t*)scratch, BLOCKSIZE);
-#endif
-				memcpy(buff, scratch, BLOCKSIZE);
-				buff += BLOCKSIZE;
-			} else {
-				break;
 			}
 		}
-
-		if ((i == count) && (ret == 0)) {
-			res = RES_OK;
-		}
 	}
-#endif
+
 
 	return res;
 }
@@ -149,81 +78,32 @@ uint8_t disk_read(uint8_t pdrv, uint8_t* writeAddress, uint32_t readSector, uint
 uint8_t disk_write(uint8_t pdrv, const uint8_t* readBuff, uint32_t writeSector, uint32_t sectorCount)
 {
 	DRESULT res = RES_ERROR;
-	uint32_t timeout;
-#if defined(ENABLE_SCRATCH_BUFFER)
-	uint8_t ret;
-	int i;
-#endif
-
-	uint32_t WriteStatus = 0;
-#if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
-	uint32_t alignedAddr;
-#endif
 
 	if (SD_CheckStatusWithTimeout(SD_TIMEOUT) < 0) {
 		return res;
 	}
 
-#if defined(ENABLE_SCRATCH_BUFFER)
-	if (!((uint32_t)buff & 0x3)) {
-#endif
-#if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
-		// the SCB_CleanDCache_by_Addr() requires a 32-Byte aligned address adjust the address and the D-Cache size to clean accordingly.
-		alignedAddr = (uint32_t)buff &  ~0x1F;
-		SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, count*BLOCKSIZE + ((uint32_t)buff - alignedAddr));
-#endif
+	// SCB_CleanDCache_by_Addr() requires a 32-Byte aligned address adjust the address and the D-Cache size to clean accordingly.
+	// uint32_t alignedAddr = (uint32_t)buff &  ~0x1F;
+	// SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, count*BLOCKSIZE + ((uint32_t)buff - alignedAddr));
 
-		if (sdCard.WriteBlocks_DMA(readBuff, writeSector, sectorCount) == 0) {
-			// Wait that writing process is completed or a timeout occurs
+	if (sdCard.WriteBlocks_DMA(readBuff, writeSector, sectorCount) == 0) {
+		uint32_t timeout = SysTickVal;
+		while (!sdCard.dmaWrite && ((SysTickVal - timeout) < SD_TIMEOUT)) {}
 
+		if (sdCard.dmaWrite) {
+			sdCard.dmaWrite = false;
 			timeout = SysTickVal;
-			while (!sdCard.dmaWrite && ((SysTickVal - timeout) < SD_TIMEOUT)) {}
 
-			if (!sdCard.dmaWrite) {
-				res = RES_ERROR;
-			} else {
-				sdCard.dmaWrite = false;
-				timeout = SysTickVal;
-
-				while ((SysTickVal - timeout) < SD_TIMEOUT) {
-					if (disk_status(0) == 0) {
-						res = RES_OK;
-						break;
-					}
-				}
-			}
-		}
-#if defined(ENABLE_SCRATCH_BUFFER)
-	} else {
-		// Slow path, fetch each sector a part and memcpy to destination buffer
-#if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
-		// invalidate the scratch buffer before the next write to get the actual data instead of the cached one
-		SCB_InvalidateDCache_by_Addr((uint32_t*)scratch, BLOCKSIZE);
-#endif
-
-		for (i = 0; i < count; i++) {
-			WriteStatus = 0;
-
-			memcpy((void *)scratch, (void *)buff, BLOCKSIZE);
-			buff += BLOCKSIZE;
-
-			ret = BSP_SD_WriteBlocks_DMA((uint32_t*)scratch, (uint32_t)sector++, 1);
-			if (ret == 0) {
-				// wait for a message from the queue or a timeout
-				timeout = SysTickVal;
-				while ((WriteStatus == 0) && ((SysTickVal - timeout) < SD_TIMEOUT)) {	}
-				if (WriteStatus == 0) {
+			while ((SysTickVal - timeout) < SD_TIMEOUT) {
+				if (disk_status(0) == RES_OK) {
+					res = RES_OK;
 					break;
 				}
-
-			} else {
-				break;
 			}
 		}
-		if ((i == count) && (ret == 0))
-			res = RES_OK;
 	}
-#endif
+
 	return res;
 }
 
@@ -231,11 +111,8 @@ uint8_t disk_write(uint8_t pdrv, const uint8_t* readBuff, uint32_t writeSector, 
 
 uint8_t disk_ioctl(uint8_t pdrv, uint8_t cmd, void* buff)
 {
+	// FIXME - check to see if SD card inserted
 	DRESULT res = RES_ERROR;
-
-	if (Stat & STA_NOINIT) {
-		return RES_NOTRDY;
-	}
 
 	switch (cmd) {
 	case CTRL_SYNC:				// Make sure that no pending write process
@@ -253,7 +130,7 @@ uint8_t disk_ioctl(uint8_t pdrv, uint8_t cmd, void* buff)
 		break;
 
 	case GET_BLOCK_SIZE:		// Get erase block size in unit of sector (DWORD)
-		*(uint32_t*)buff = sdCard.LogBlockSize / SD_DEFAULT_BLOCK_SIZE;
+		*(uint32_t*)buff = sdCard.LogBlockSize / sdCard.blockSize;
 		res = RES_OK;
 		break;
 
@@ -262,19 +139,6 @@ uint8_t disk_ioctl(uint8_t pdrv, uint8_t cmd, void* buff)
 	}
 
 	return res;
-}
-
-
-
-void BSP_SD_WriteCpltCallback(void)
-{
-	uint32_t WriteStatus = 1;
-}
-
-
-void BSP_SD_ReadCpltCallback(void)
-{
-	uint32_t ReadStatus = 1;
 }
 
 
