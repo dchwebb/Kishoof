@@ -1,8 +1,8 @@
 #include "USB.h"
 
-USB usb;
+USB __attribute__((section (".ram_d1_data"))) usb {};
 
-volatile bool debugStart = false;
+volatile bool debugStart = true;
 
 extern "C" {
 // To enable USB for printf commands (To print floats enable 'Use float with printf from newlib-nano' MCU Build Settings)
@@ -797,6 +797,11 @@ bool USB::ReadInterrupts(const uint32_t interrupt)
 		usbDebugNo = usbDebugEvent % USB_DEBUG_COUNT;
 		usbDebug[usbDebugNo].eventNo = usbDebugEvent;
 		usbDebug[usbDebugNo].Interrupt = USB_OTG_FS->GINTSTS & USB_OTG_FS->GINTMSK;
+		usbDebug[usbDebugNo].endpoint = 0;
+		usbDebug[usbDebugNo].IntData = 0;
+		usbDebug[usbDebugNo].PacketSize = 0;
+		usbDebug[usbDebugNo].scsiOpCode = 0;
+
 		usbDebugEvent++;
 	}
 #endif
@@ -897,14 +902,14 @@ std::string HexByte(const uint16_t& v) {
 void USB::OutputDebug() {
 
 	uart.SendString("Event,Interrupt,Desc,Int Data,Desc,Endpoint,mRequest,Request,Value,Index,Length,Scsi,PacketSize,XferBuff\n");
-	uint16_t evNo = usbDebugEvent % USB_DEBUG_COUNT;
+	//uint16_t evNo = usbDebugEvent % USB_DEBUG_COUNT;
 	std::string interrupt, subtype;
-	for (int i = 0; i < USB_DEBUG_COUNT; ++i) {
-		switch (usbDebug[evNo].Interrupt) {
+	for (int i = 0; i < std::min(usbDebugEvent, (uint16_t)USB_DEBUG_COUNT); ++i) {
+		switch (usbDebug[i].Interrupt) {
 		case USB_OTG_GINTSTS_RXFLVL:
 			interrupt = "RXFLVL";
 
-			switch ((usbDebug[evNo].IntData & USB_OTG_GRXSTSP_PKTSTS) >> 17) {
+			switch ((usbDebug[i].IntData & USB_OTG_GRXSTSP_PKTSTS) >> 17) {
 				case OutDataReceived:			subtype = "Out packet rec";			break;		// 2 = OUT data packet received
 				case OutTransferCompleted:		subtype = "Transfer completed";		break;		// 3 = Transfer completed
 				case SetupDataReceived:			subtype = "Setup packet rec";		break;		// 6 = SETUP data packet received
@@ -920,19 +925,19 @@ void USB::OutputDebug() {
 		case USB_OTG_GINTSTS_ENUMDNE:		interrupt = "ENUMDNE";			break;		// 0x2000
 		case USB_OTG_GINTSTS_OEPINT:		interrupt = "OEPINT";						// 0x80000
 
-			switch (usbDebug[evNo].IntData) {
+			switch (usbDebug[i].IntData) {
 			case USB_OTG_DOEPINT_XFRC:			subtype = "Transfer Done";							break;
 
 			case USB_OTG_DOEPINT_STUP:
 
-				switch (usbDebug[evNo].Request.Value >> 8)	{
+				switch (usbDebug[i].Request.Value >> 8)	{
 					case DeviceDescriptor:			subtype = "Device Descriptor";					break;
 					case ConfigurationDescriptor:	subtype = "Configuration Descriptor";			break;
 					case BosDescriptor:				subtype = "Bos Descriptor";						break;
 					case DeviceQualifierDescriptor:	subtype = "Device Qualifier Descriptor";		break;
 					case StringDescriptor:
 
-						switch ((uint8_t)(usbDebug[evNo].Request.Value)) {
+						switch ((uint8_t)(usbDebug[i].Request.Value)) {
 							case StringIndex::LangId:				subtype = "Lang Id";			break;
 							case StringIndex::Manufacturer:			subtype = "Manufacturer";		break;
 							case StringIndex::Product:				subtype = "Product";			break;
@@ -958,7 +963,7 @@ void USB::OutputDebug() {
 		case USB_OTG_GINTSTS_IEPINT:		// 0x40000
 			interrupt = "IEPINT";
 
-			switch (usbDebug[evNo].IntData) {
+			switch (usbDebug[i].IntData) {
 				case USB_OTG_DIEPINT_XFRC:			subtype = "Transfer completed";			break;
 				case USB_OTG_DIEPINT_TXFE:			subtype = "Transmit FIFO empty";		break;
 				default:							subtype = "";
@@ -969,24 +974,24 @@ void USB::OutputDebug() {
 			interrupt = "";
 		}
 
-		if (usbDebug[evNo].Interrupt != 0) {
-			uart.SendString(IntToString(usbDebug[evNo].eventNo) + ","
-					+ HexToString(usbDebug[evNo].Interrupt, false) + "," + interrupt + ","
-					+ HexToString(usbDebug[evNo].IntData, false) + "," + subtype + ","
-					+ IntToString(usbDebug[evNo].endpoint) + ","
-					+ HexByte(usbDebug[evNo].Request.RequestType) + ", "
-					+ HexByte(usbDebug[evNo].Request.Request) + ", "
-					+ HexByte(usbDebug[evNo].Request.Value) + ", "
-					+ HexByte(usbDebug[evNo].Request.Index) + ", "
-					+ HexByte(usbDebug[evNo].Request.Length) + ", "
-					+ HexByte(usbDebug[evNo].scsiOpCode) + ", "
-					+ IntToString(usbDebug[evNo].PacketSize) + ", "
-					+ HexToString(usbDebug[evNo].xferBuff[0], true) + " "
-					+ HexToString(usbDebug[evNo].xferBuff[1], true) + " "
-					+ HexToString(usbDebug[evNo].xferBuff[2], true) + " "
-					+ HexToString(usbDebug[evNo].xferBuff[3], true) + "\n");
+		if (usbDebug[i].Interrupt != 0) {
+			uart.SendString(IntToString(usbDebug[i].eventNo) + ","
+					+ HexToString(usbDebug[i].Interrupt, false) + "," + interrupt + ","
+					+ HexToString(usbDebug[i].IntData, false) + "," + subtype + ","
+					+ IntToString(usbDebug[i].endpoint) + ","
+					+ HexByte(usbDebug[i].Request.RequestType) + ", "
+					+ HexByte(usbDebug[i].Request.Request) + ", "
+					+ HexByte(usbDebug[i].Request.Value) + ", "
+					+ HexByte(usbDebug[i].Request.Index) + ", "
+					+ HexByte(usbDebug[i].Request.Length) + ", "
+					+ HexByte(usbDebug[i].scsiOpCode) + ", "
+					+ IntToString(usbDebug[i].PacketSize) + ", "
+					+ HexToString(usbDebug[i].xferBuff[0], true) + " "
+					+ HexToString(usbDebug[i].xferBuff[1], true) + " "
+					+ HexToString(usbDebug[i].xferBuff[2], true) + " "
+					+ HexToString(usbDebug[i].xferBuff[3], true) + "\n");
 		}
-		evNo = (evNo + 1) % USB_DEBUG_COUNT;
+		//evNo = (evNo + 1) % USB_DEBUG_COUNT;
 	}
 }
 

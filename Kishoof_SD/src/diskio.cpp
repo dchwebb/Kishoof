@@ -2,7 +2,7 @@
 #include "SDCard.h"
 #include <string.h>
 
-#define SD_TIMEOUT 200
+#define SD_TIMEOUT 30 * 1000
 
 
 static int SD_CheckStatusWithTimeout(uint32_t timeout)

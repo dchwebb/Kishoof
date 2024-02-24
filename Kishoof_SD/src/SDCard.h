@@ -172,6 +172,7 @@
 #define SD_CONTEXT_WRITE_MULTIPLE_BLOCK    0x00000020  // Write multiple blocks operation
 #define SD_CONTEXT_IT                      0x00000008  // Process in Interrupt mode
 #define SD_CONTEXT_DMA                     0x00000080  // Process in DMA mode
+#define SD_CONTEXT_CALLBACK                0x00000100  // DW - test for MSC callback from DMA
 
 #define CARD_NORMAL_SPEED                  0x00000000   // Normal Speed Card <12.5Mo/s , Spec Version 1.01
 #define CARD_HIGH_SPEED                    0x00000100   // High Speed Card <25Mo/s , Spec version 2.00

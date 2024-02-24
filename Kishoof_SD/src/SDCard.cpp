@@ -1228,7 +1228,7 @@ uint32_t SDCard::ReadBlocks(uint8_t *pData, uint32_t blockAdd, uint32_t blocks, 
 }
 
 
-uint32_t SDCard::ReadBlocks_DMA(uint8_t *pData, uint32_t blockAdd, uint32_t blocks)
+uint32_t SDCard::ReadBlocks_DMA(uint8_t *rxBuffer, uint32_t blockAddr, uint32_t blocks)
 {
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
@@ -1237,7 +1237,7 @@ uint32_t SDCard::ReadBlocks_DMA(uint8_t *pData, uint32_t blockAdd, uint32_t bloc
 	if (State == HAL_SD_STATE_READY) {
 		ErrorCode = 0;
 
-		if (blockAdd + blocks > LogBlockNbr) {
+		if (blockAddr + blocks > LogBlockNbr) {
 			ErrorCode |= SDMMC_ERROR_ADDR_OUT_OF_RANGE;
 			return 1;
 		}
@@ -1246,11 +1246,11 @@ uint32_t SDCard::ReadBlocks_DMA(uint8_t *pData, uint32_t blockAdd, uint32_t bloc
 
 		SDMMC1->DCTRL = 0;		// Initialize data control register
 
-		pRxBuffPtr = pData;
+		pRxBuffPtr = rxBuffer;
 		RxXferSize = blockSize * blocks;
 
 		if (CardType != CARD_SDHC_SDXC) {
-			blockAdd *= 512;
+			blockAddr *= 512;
 		}
 
 		// Configure the SD DPSM (Data Path State Machine)
@@ -1263,16 +1263,16 @@ uint32_t SDCard::ReadBlocks_DMA(uint8_t *pData, uint32_t blockAdd, uint32_t bloc
 		ConfigData(&config);
 
 		SDMMC1->CMD |= SDMMC_CMD_CMDTRANS;
-		SDMMC1->IDMABASE0 = (uint32_t)pData;
+		SDMMC1->IDMABASE0 = (uint32_t)rxBuffer;
 		SDMMC1->IDMACTRL  = SDMMC_IDMA_IDMAEN;
 
 		// Read Blocks in DMA mode
 		if (blocks > 1) {
 			Context = SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_DMA;
-			errorstate = CmdReadMultiBlock(blockAdd);			// Read Multi Block command
+			errorstate = CmdReadMultiBlock(blockAddr);			// Read Multi Block command
 		} else {
 			Context = SD_CONTEXT_READ_SINGLE_BLOCK | SD_CONTEXT_DMA;
-			errorstate = CmdReadSingleBlock(blockAdd);			// Read Single Block command
+			errorstate = CmdReadSingleBlock(blockAddr);			// Read Single Block command
 		}
 		if (errorstate != 0) {
 			ClearStaticDataFlags();
