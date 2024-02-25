@@ -87,12 +87,11 @@ uint8_t disk_write(uint8_t pdrv, const uint8_t* readBuff, uint32_t writeSector, 
 	// uint32_t alignedAddr = (uint32_t)buff &  ~0x1F;
 	// SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, count*BLOCKSIZE + ((uint32_t)buff - alignedAddr));
 
-	if (sdCard.WriteBlocks_DMA(readBuff, writeSector, sectorCount) == 0) {
+	if (sdCard.WriteBlocks_DMA(readBuff, writeSector, sectorCount, false) == 0) {
 		uint32_t timeout = SysTickVal;
 		while (!sdCard.dmaWrite && ((SysTickVal - timeout) < SD_TIMEOUT)) {}
 
 		if (sdCard.dmaWrite) {
-			sdCard.dmaWrite = false;
 			timeout = SysTickVal;
 
 			while ((SysTickVal - timeout) < SD_TIMEOUT) {

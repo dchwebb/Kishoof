@@ -1,6 +1,7 @@
 #include "uartHandler.h"
 #include "usb.h"
 #include "GpioPin.h"
+#include "fattools.h"
 
 UART uart;
 
@@ -62,6 +63,9 @@ void UART::ProcessCommand()
 	if (cmd.compare("dirdetails\n") == 0) {				// Get detailed FAT directory info
 		//fatTools.PrintDirInfo();
 
+	} else if (cmd.compare("format\n") == 0) {				// Get detailed FAT directory info
+		SendString("Formatting ...\r\n");
+		fatTools.Format();
 
 
 #if (USB_DEBUG)

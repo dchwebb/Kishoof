@@ -81,17 +81,21 @@ bool FatTools::Format()
 {
 	//extFlash.FullErase();
 
+
+
 	printf("Mounting File System ...\r\n");
 	uint8_t fsWork[fatSectorSize];							// Work buffer for the f_mkfs()
 	MKFS_PARM parms;										// Create parameter struct
-	parms.fmt = FM_FAT | FM_SFD;							// format as FAT12/16 using SFD (Supper Floppy Drive)
-	parms.n_root = 128;										// Number of root directory entries (each uses 32 bytes of storage)
+	parms.fmt = FM_FAT32;									// format as FAT12/16 using SFD (Supper Floppy Drive)
+	parms.n_root = 0;										// Number of root directory entries (each uses 32 bytes of storage)
 	parms.align = 0;										// Default initialise remaining values
 	parms.au_size = 0;
 	parms.n_fat = 0;
 
-	f_mkfs(fatPath, &parms, fsWork, sizeof(fsWork));		// Make file system in header cache (via diskio.cpp helper functions)
-	f_mount(&fatFs, fatPath, 1) ;							// Mount the file system (needed to set up FAT locations for next functions)
+
+
+	FRESULT res = f_mkfs(fatPath, &parms, fsWork, sizeof(fsWork));		// Make file system
+	//f_mount(&fatFs, fatPath, 1) ;							// Mount the file system (needed to set up FAT locations for next functions)
 
 //	printf("Creating system files ...\r\n");
 //	MakeDummyFiles();										// Create Windows index files to force them to be created in header cache

@@ -1045,12 +1045,12 @@ uint32_t SDCard::GetCardState()
 }
 
 
-uint32_t SDCard::WriteBlocks_DMA(const uint8_t *pData, uint32_t BlockAdd, uint32_t NumberOfBlocks)
+uint32_t SDCard::WriteBlocks_DMA(const uint8_t *pData, uint32_t BlockAdd, uint32_t NumberOfBlocks, bool blocking)
 {
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
 	uint32_t add = BlockAdd;
-
+	dmaWrite = false;			// Interrupt handler will use this to signal completion
 
 	if (State == HAL_SD_STATE_READY) {
 		ErrorCode = 0;
@@ -1101,8 +1101,20 @@ uint32_t SDCard::WriteBlocks_DMA(const uint8_t *pData, uint32_t BlockAdd, uint32
 			return 1;
 		}
 
-		// Enable transfer interrupts
-		SDMMC1->MASK |= SDMMC_MASK_DCRCFAILIE | SDMMC_MASK_DTIMEOUTIE | SDMMC_MASK_TXUNDERRIE | SDMMC_MASK_DATAENDIE;
+		if (blocking) {
+			// If in blocking mode wait until data end flag and then call interrupt handler directly
+			uint32_t tickstart = SysTickVal;
+
+			while ((SDMMC1->STA & SDMMC_STA_DATAEND) == 0) {
+				if ((SysTickVal - tickstart) >= SDMMC_DATATIMEOUT) {
+					return SDMMC_ERROR_TIMEOUT;
+				}
+			}
+			InterruptHandler();
+		} else {
+			// Enable transfer interrupts
+			SDMMC1->MASK |= SDMMC_MASK_DCRCFAILIE | SDMMC_MASK_DTIMEOUTIE | SDMMC_MASK_TXUNDERRIE | SDMMC_MASK_DATAENDIE;
+		}
 
 		return 0;
 	} else {

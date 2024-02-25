@@ -364,11 +364,6 @@ int8_t MSCHandler::SCSI_CheckAddressRange(uint32_t blk_offset, uint32_t blk_nbr)
 	return 0;
 }
 
-struct {
-	volatile uint32_t len;
-	volatile uint32_t addr;
-} debugMSC[300];
-uint32_t debugIdx = 0;
 
 int8_t MSCHandler::SCSI_Read()
 {
@@ -399,24 +394,9 @@ int8_t MSCHandler::SCSI_Read()
 	csw.dDataResidue -= inBuffSize;
 
 	// Data may be read from cache or flash; if flash (signalled by nullptr), pass a buffer to be filled and wait for DMA transfer to complete
-	//inBuff = fatTools.GetSectorAddr(scsi_blk_addr, bot_data, inBuffSize);
-
-	// FIXME - not sure if multiple sectors will be read at once
-	if (debugIdx < 300) {
-		debugMSC[debugIdx++] = {scsi_blk_len, scsi_blk_addr};
-		if (scsi_blk_len > 0) {
-			volatile int susp = 1;
-		}
-	}
-
-
-	//if (disk_read(0, bot_data, scsi_blk_addr, 1) == RES_OK) {		// Read sector into bot_data buffer
-	if (sdCard.ReadBlocks_DMA(bot_data, scsi_blk_addr, 1, DMAtoMSCTransferDone) == RES_OK) {		// Read sector into bot_data buffer
-		inBuff = nullptr;
-		//inBuff = bot_data;
-//		if (inBuff != nullptr) {
-//			ReadReady(false);
-//		}
+	inBuff = nullptr;
+	if (sdCard.ReadBlocks_DMA(bot_data, scsi_blk_addr, 1, DMAtoMSCTransferDone) != RES_OK) {		// Read sector into bot_data buffer
+		int err = 1;
 	}
 	return 0;
 }
@@ -492,8 +472,8 @@ int8_t MSCHandler::SCSI_Write()
 		// Write Process ongoing
 		uint32_t len = std::min(scsi_blk_len * fatSectorSize, MediaPacket);
 
-		//fatTools.Write((uint8_t*)(outBuff), scsi_blk_addr, (len / fatSectorSize));
-		disk_write(0, (uint8_t*)(outBuff), scsi_blk_addr, (len / fatSectorSize));
+		// Write data using DMA but in blocking mode
+		sdCard.WriteBlocks_DMA((const uint8_t*)(outBuff), scsi_blk_addr, (len / fatSectorSize), true);
 
 		scsi_blk_addr += (len / fatSectorSize);
 		scsi_blk_len -= (len / fatSectorSize);

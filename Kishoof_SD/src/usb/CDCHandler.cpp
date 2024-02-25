@@ -82,8 +82,6 @@ int32_t CDCHandler::ParseInt(const std::string_view cmd, const char precedingCha
 	return val;
 }
 
-// Timing debug variables
-extern uint32_t loopTime, maxLoopTime, outputTime, maxOutputTime, reverbTime, maxReverbTime;
 
 void CDCHandler::ProcessCommand()
 {
@@ -107,6 +105,7 @@ void CDCHandler::ProcessCommand()
 				"------------\r\n"
 				"printsector:A  Print 512 bytes of SD data (A = decimal address)\r\n"
 				"clusterchain   List chain of FAT clusters\r\n"
+				"format         Format SD Card\r\n"
 
 		);
 
@@ -154,6 +153,9 @@ void CDCHandler::ProcessCommand()
 			}
 		}
 
+	} else if (cmd.compare("format") == 0) {					// Format Flash storage with FAT
+		printf("Formatting flash:\r\n");
+		fatTools.Format();
 
 /*
 	} else if (cmd.compare("readreg") == 0) {					// Read QSPI register
