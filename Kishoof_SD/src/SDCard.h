@@ -287,7 +287,7 @@ public:
 	uint32_t SendStatus(uint32_t *pCardStatus);
 	uint32_t WriteBlocks_DMA(const uint8_t *pData, uint32_t blockAdd, uint32_t NoBlocks);
 	uint32_t ReadBlocks(uint8_t *pData, uint32_t blockAdd, uint32_t noBlocks, uint32_t timeout);
-	uint32_t ReadBlocks_DMA(uint8_t *pData, uint32_t blockAdd, uint32_t NoBlocks);
+	uint32_t ReadBlocks_DMA(uint8_t *pData, uint32_t blockAdd, uint32_t NoBlocks, void (*callback)() = nullptr);
 	void InterruptHandler();
 
 
@@ -367,7 +367,7 @@ public:
 	uint32_t CID[4];						// Card ID
 	uint32_t CSD[4];						// Card Specific Data
 
-
+	void (*dmaCallback)() = nullptr;		// Used to store the callback function when DMA transfer complete interupt fires
 
 	struct {
 	  uint8_t  CSDStruct;            // CSD structure

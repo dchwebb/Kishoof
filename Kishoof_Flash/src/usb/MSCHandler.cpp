@@ -338,6 +338,12 @@ int8_t MSCHandler::SCSI_ModeSense10()
 }
 
 
+struct {
+	volatile uint32_t len;
+	volatile uint32_t addr;
+} debugMSC[300];
+uint32_t debugIdx = 0;
+
 int8_t MSCHandler::SCSI_ModeSense6()
 {
 	/* ?? Mode page request format
@@ -392,8 +398,20 @@ int8_t MSCHandler::SCSI_Read()
 	inBuffCount = 0;
 	csw.dDataResidue -= inBuffSize;
 
+	if (debugIdx < 300) {
+		debugMSC[debugIdx++] = {scsi_blk_len, scsi_blk_addr};
+		if (scsi_blk_len > 0) {
+			volatile int susp = 1;
+		}
+	}
+
 	// Data may be read from cache or flash; if flash (signalled by nullptr), pass a buffer to be filled and wait for DMA transfer to complete
 	inBuff = fatTools.GetSectorAddr(scsi_blk_addr, bot_data, inBuffSize);
+
+	if (scsi_blk_len > 1) {
+		volatile int susp = 1;
+		++susp;
+	}
 
 	if (inBuff != nullptr) {
 		ReadReady();

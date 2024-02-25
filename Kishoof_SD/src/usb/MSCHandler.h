@@ -75,7 +75,7 @@
 #define SCSI_MEDIUM_EJECTED                         0x02U
 
 
-
+void DMAtoMSCTransferDone();
 
 
 class USB;
@@ -93,7 +93,8 @@ public:
 	void ClassSetupData(usbRequest& req, const uint8_t* data) override;
 	uint32_t GetInterfaceDescriptor(const uint8_t** buffer) override;
 
-	void DMATransferDone();
+	static void DMATransferDone();
+	void ReadReady(bool dma);
 
 	static const uint8_t Descriptor[];
 
@@ -114,7 +115,6 @@ private:
 	int8_t SCSI_ModeSense10();
 	int8_t SCSI_ModeSense6();
 	int8_t SCSI_Read();
-	void ReadReady();
 	int8_t SCSI_Write();
 	int8_t SCSI_CheckAddressRange(uint32_t blk_offset, uint32_t blk_nbr);
 	int8_t SCSI_TestUnitReady();

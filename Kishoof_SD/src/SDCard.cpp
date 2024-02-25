@@ -1228,7 +1228,7 @@ uint32_t SDCard::ReadBlocks(uint8_t *pData, uint32_t blockAdd, uint32_t blocks, 
 }
 
 
-uint32_t SDCard::ReadBlocks_DMA(uint8_t *rxBuffer, uint32_t blockAddr, uint32_t blocks)
+uint32_t SDCard::ReadBlocks_DMA(uint8_t *rxBuffer, uint32_t blockAddr, uint32_t blocks, void (*callback)())
 {
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
@@ -1282,6 +1282,13 @@ uint32_t SDCard::ReadBlocks_DMA(uint8_t *rxBuffer, uint32_t blockAddr, uint32_t 
 			return 1;
 		}
 
+		// Store callback if required, for processing in interrupt handler
+		if (callback) {
+			dmaCallback = callback;
+			Context |= SD_CONTEXT_CALLBACK;
+		}
+
+
 		// Enable transfer interrupts
 		SDMMC1->MASK |= (SDMMC_MASK_DCRCFAILIE | SDMMC_MASK_DTIMEOUTIE | SDMMC_MASK_RXOVERRIE | SDMMC_MASK_DATAENDIE);
 
@@ -1319,18 +1326,22 @@ void SDCard::InterruptHandler()
 				}
 			}
 
-			State = HAL_SD_STATE_READY;
-			Context = 0;
 			if (((context & SD_CONTEXT_WRITE_SINGLE_BLOCK) != 0) || ((context & SD_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0)) {
 				dmaWrite = true;
 			}
 			if (((context & SD_CONTEXT_READ_SINGLE_BLOCK) != 0) || ((context & SD_CONTEXT_READ_MULTIPLE_BLOCK) != 0)) {
 				dmaRead = true;
+				if (Context & SD_CONTEXT_CALLBACK && dmaCallback) {
+					dmaCallback();
+				}
 			}
+			State = HAL_SD_STATE_READY;
+			Context = 0;
 		}
 
 
 	} else if ((SDMMC1->STA & (SDMMC_STA_DCRCFAIL | SDMMC_STA_DTIMEOUT | SDMMC_STA_RXOVERR | SDMMC_STA_TXUNDERR)) != 0) {
+		// Error handling
 		if ((SDMMC1->STA & SDMMC_STA_DCRCFAIL) != 0) {
 			ErrorCode |= SDMMC_ERROR_DATA_CRC_FAIL;
 		}
@@ -1365,6 +1376,7 @@ void SDCard::InterruptHandler()
 		}
 
 	} else if ((SDMMC1->STA & SDMMC_STA_IDMABTC) != 0) {
+		// Double-buffering
 		SDMMC1->ICR = SDMMC_ICR_IDMABTCC;
 
 		if ((SDMMC1->IDMACTRL & SDMMC_IDMA_IDMABACT) == 0) {

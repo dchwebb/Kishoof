@@ -364,6 +364,11 @@ int8_t MSCHandler::SCSI_CheckAddressRange(uint32_t blk_offset, uint32_t blk_nbr)
 	return 0;
 }
 
+struct {
+	volatile uint32_t len;
+	volatile uint32_t addr;
+} debugMSC[300];
+uint32_t debugIdx = 0;
 
 int8_t MSCHandler::SCSI_Read()
 {
@@ -397,18 +402,33 @@ int8_t MSCHandler::SCSI_Read()
 	//inBuff = fatTools.GetSectorAddr(scsi_blk_addr, bot_data, inBuffSize);
 
 	// FIXME - not sure if multiple sectors will be read at once
-	if (disk_read(0, bot_data, scsi_blk_addr, 1) == RES_OK) {		// Read sector into bot_data buffer
-		//inBuff = bot_data;
-		if (inBuff != nullptr) {
-			ReadReady();
+	if (debugIdx < 300) {
+		debugMSC[debugIdx++] = {scsi_blk_len, scsi_blk_addr};
+		if (scsi_blk_len > 0) {
+			volatile int susp = 1;
 		}
+	}
+
+
+	//if (disk_read(0, bot_data, scsi_blk_addr, 1) == RES_OK) {		// Read sector into bot_data buffer
+	if (sdCard.ReadBlocks_DMA(bot_data, scsi_blk_addr, 1, DMAtoMSCTransferDone) == RES_OK) {		// Read sector into bot_data buffer
+		inBuff = nullptr;
+		//inBuff = bot_data;
+//		if (inBuff != nullptr) {
+//			ReadReady(false);
+//		}
 	}
 	return 0;
 }
 
 
-void MSCHandler::ReadReady()
+ void MSCHandler::ReadReady(bool dmaComplete)
 {
+	if (dmaComplete) {		// Triggered once data has been read from flash and copied to local buffer
+		//SCB_InvalidateDCache_by_Addr((uint32_t*)bot_data, inBuffSize);		// Ensure cache is refreshed after write or erase
+		inBuff = bot_data;
+	}
+
 	// Once read data is ready (may be waiting for DMA) start endpoint transfer
 	EndPointTransfer(Direction::in, inEP, inBuffSize);
 
@@ -421,12 +441,10 @@ void MSCHandler::ReadReady()
 }
 
 
-void MSCHandler::DMATransferDone()
+void DMAtoMSCTransferDone()
 {
-	// Triggered once data has been read from flash and copied to local buffer
-	SCB_InvalidateDCache_by_Addr((uint32_t*)bot_data, inBuffSize);		// Ensure cache is refreshed after write or erase
-	inBuff = bot_data;
-	ReadReady();
+	// Callback for use with DMA interrupt
+	usb.msc.ReadReady(true);
 }
 
 
