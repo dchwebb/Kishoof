@@ -9,78 +9,7 @@
 uint32_t flashBuff[8192];
 uint32_t* heapVal;		// Debug
 
-void CDCHandler::DataIn()
-{
-	if (inBuffSize > 0 && inBuffSize % USB::ep_maxPacket == 0) {
-		inBuffSize = 0;
-		EndPointTransfer(Direction::in, inEP, 0);				// Fixes issue transmitting an exact multiple of max packet size (n x 64)
-	}
-}
 
-
-// As this is called from an interrupt assign the command to a variable so it can be handled in the main loop
-void CDCHandler::DataOut()
-{
-	// Check if sufficient space in command buffer
-	const uint32_t newCharCnt = std::min(outBuffCount, maxCmdLen - 1 - buffPos);
-
-	strncpy(&comCmd[buffPos], (char*)outBuff, newCharCnt);
-	buffPos += newCharCnt;
-
-	// Check if cr has been sent yet
-	if (comCmd[buffPos - 1] == 13 || comCmd[buffPos - 1] == 10 || buffPos == maxCmdLen - 1) {
-		comCmd[buffPos - 1] = '\0';
-		cmdPending = true;
-		buffPos = 0;
-	}
-}
-
-
-void CDCHandler::ActivateEP()
-{
-	EndPointActivate(USB::CDC_In,   Direction::in,  EndPointType::Bulk);			// Activate CDC in endpoint
-	EndPointActivate(USB::CDC_Out,  Direction::out, EndPointType::Bulk);			// Activate CDC out endpoint
-	EndPointActivate(USB::CDC_Cmd,  Direction::in,  EndPointType::Interrupt);		// Activate Command IN EP
-
-	EndPointTransfer(Direction::out, USB::CDC_Out, USB::ep_maxPacket);
-}
-
-
-void CDCHandler::ClassSetup(usbRequest& req)
-{
-	if (req.RequestType == DtoH_Class_Interface && req.Request == GetLineCoding) {
-		SetupIn(req.Length, (uint8_t*)&lineCoding);
-	}
-
-	if (req.RequestType == HtoD_Class_Interface && req.Request == SetLineCoding) {
-		// Prepare to receive line coding data in ClassSetupData
-		usb->classPendingData = true;
-		EndPointTransfer(Direction::out, 0, req.Length);
-	}
-}
-
-
-void CDCHandler::ClassSetupData(usbRequest& req, const uint8_t* data)
-{
-	// ClassSetup passes instruction to set line coding - this is the data portion where the line coding is transferred
-	if (req.RequestType == HtoD_Class_Interface && req.Request == SetLineCoding) {
-		lineCoding = *(LineCoding*)data;
-	}
-}
-
-
-int32_t CDCHandler::ParseInt(const std::string_view cmd, const char precedingChar, const int32_t low = 0, const int32_t high = 0) {
-	int32_t val = -1;
-	const int8_t pos = cmd.find(precedingChar);		// locate position of character preceding
-	if (pos >= 0 && std::strspn(&cmd[pos + 1], "0123456789-") > 0) {
-		val = std::stoi(&cmd[pos + 1]);
-	}
-	if (high > low && (val > high || val < low)) {
-		printf("Must be a value between %ld and %ld\r\n", low, high);
-		return low - 1;
-	}
-	return val;
-}
 
 
 void CDCHandler::ProcessCommand()
@@ -92,7 +21,7 @@ void CDCHandler::ProcessCommand()
 	std::string_view cmd {comCmd};
 
 	if (cmd.compare("help") == 0) {
-		usb->SendString("Mountjoy Punck\r\n"
+		usb->SendString("Mountjoy Kishoof\r\n"
 				"\r\nSupported commands:\r\n"
 				"saveconfig  -  Save configuration to internal memory\r\n"
 				"restoreconfig  Restore saved configuration\r\n"
@@ -138,6 +67,10 @@ void CDCHandler::ProcessCommand()
 			fatTools.PrintFiles(workBuff);
 		}
 
+	} else if (cmd.compare("dirdetails") == 0) {				// Get detailed FAT directory info
+		fatTools.PrintDirInfo();
+
+
 	} else if (cmd.compare(0, 12, "printsector:") == 0) {				// print 512 bytes of SD data
 		const int32_t address = ParseInt(cmd, ':', 0, 0xFFFFFF);
 		if (address >= 0) {
@@ -158,74 +91,7 @@ void CDCHandler::ProcessCommand()
 		fatTools.Format();
 
 /*
-	} else if (cmd.compare("readreg") == 0) {					// Read QSPI register
-		usb->SendString("Status register 1: " + std::to_string(extFlash.ReadStatus(ExtFlash::readStatusReg1)) +
-				"\r\nStatus register 2: " + std::to_string(extFlash.ReadStatus(ExtFlash::readStatusReg2)) +
-				"\r\nStatus register 3: " + std::to_string(extFlash.ReadStatus(ExtFlash::readStatusReg3)) + "\r\n");
-		extFlash.MemoryMapped();
 
-
-	} else if (cmd.compare("flashid") == 0) {					// Get manufacturer and device ID
-		const uint32_t flashID = extFlash.GetID();
-		auto flashBytes = reinterpret_cast<const uint8_t*>(&flashID);
-		if (dualFlashMode) {
-			// In dual flash mode results from each device are interleaved
-			printf("Flash 1: Manufacturer ID: %#04x; Device ID: %#04x\r\n"
-				   "Flash 2: Manufacturer ID: %#04x; Device ID: %#04x\r\n", flashBytes[0], flashBytes[2], flashBytes[1], flashBytes[3]);
-		} else {
-			printf("Manufacturer ID: %#04x; Device ID: %#04x\r\n", flashBytes[0], flashBytes[1]);
-		}
-		extFlash.MemoryMapped();
-
-
-	} else if (cmd.compare("switchflash") == 0) {				// Switch Flash Device
-		const uint16_t flashBank = (QUADSPI->CR & QUADSPI_CR_FSEL) == 0 ? 2 : 1;
-		QUADSPI->CR &= ~QUADSPI_CR_EN;
-		uint32_t now = SysTickVal;
-		while (now + 2 > SysTickVal) {};
-		if (flashBank == 2) {
-			QUADSPI->CR |= QUADSPI_CR_FSEL;
-		} else {
-			QUADSPI->CR &= ~QUADSPI_CR_FSEL;
-		}
-		QUADSPI->CR |= QUADSPI_CR_EN;
-		extFlash.Init(false);
-		printf("Flash bank switched to %d\r\n", flashBank);
-
-
-	} else if (cmd.compare("format") == 0) {					// Format Flash storage with FAT
-		printf("Formatting flash:\r\n");
-		fatTools.Format();
-		extFlash.MemoryMapped();
-
-
-	} else if (cmd.compare(0, 5, "read:") == 0) {				// Read QSPI data (format read:A where A is address)
-		const int32_t address = ParseInt(cmd, ':', 0, 0xFFFFFF);
-		if (address >= 0) {
-			printf("Data Read: %#010lx\r\n", extFlash.FastRead(address));
-		}
-
-
-
-	//--------------------------------------------------------------------------------------------------
-	// All flash commands that rely on memory mapped data to follow this guard
-	} else if (extFlash.flashCorrupt) {
-		printf("** Flash Corrupt **\r\n");
-
-
-
-
-
-	} else if (cmd.compare("dir") == 0) {						// Get basic FAT directory list
-		if (fatTools.noFileSystem) {
-			printf("** No file System **\r\n");
-		} else {
-			char workBuff[256];
-			strcpy(workBuff, "/");
-
-			fatTools.InvalidateFatFSCache();					// Ensure that the FAT FS cache is updated
-			fatTools.PrintFiles(workBuff);
-		}
 
 
 
@@ -310,28 +176,7 @@ void CDCHandler::ProcessCommand()
 		printf("Found %lu different bytes\r\n", count);
 
 
-	} else if (cmd.compare(0, 11, "printflash:") == 0) {		// QSPI flash: print 512 byres of memory mapped data
-		const int32_t address = ParseInt(cmd, ':', 0, 0xFFFFFF);
-		if (address >= 0) {
-			const uint32_t* p = (uint32_t*)(0x90000000 + address);
 
-			for (uint32_t a = 0; a < 256; a += 4) {
-				printf("%6ld: %#010lx %#010lx %#010lx %#010lx\r\n", (a * 4) + address, p[a], p[a + 1], p[a + 2], p[a + 3]);
-			}
-		}
-
-
-	} else if (cmd.compare(0, 13, "printcluster:") == 0) {		// QSPI flash: print memory mapped data
-		const int32_t cluster = ParseInt(cmd, ':', 2, 0xFFFFFF);
-		if (cluster >= 2) {
-			printf("Cluster %ld:\r\n", cluster);
-
-			const uint32_t* p = (uint32_t*)(fatTools.GetClusterAddr(cluster));
-
-			for (uint32_t a = 0; a < 512; a += 4) {
-				printf("0x%08lx: %#010lx %#010lx %#010lx %#010lx\r\n", (a * 4) + (uint32_t)p, p[a], p[a + 1], p[a + 2], p[a + 3]);
-			}
-		}
 
 
 	} else if (cmd.compare(0, 7, "setzero") == 0) {				// Set data at address to 0 [A = address; W = num words]
@@ -347,12 +192,6 @@ void CDCHandler::ProcessCommand()
 			extFlash.MemoryMapped();
 			printf("Finished\r\n");
 		}
-
-
-	} else if (cmd.compare("flushcache") == 0) {				// Flush FAT cache to Flash
-		const uint8_t sectors = fatTools.FlushCache();
-		printf("%i blocks flushed\r\n", sectors);
-		extFlash.MemoryMapped();
 
 
 	} else if (cmd.compare("eraseflash") == 0) {				// Erase all flash memory
@@ -413,7 +252,78 @@ void CDCHandler::ProcessCommand()
 
 }
 
+void CDCHandler::DataIn()
+{
+	if (inBuffSize > 0 && inBuffSize % USB::ep_maxPacket == 0) {
+		inBuffSize = 0;
+		EndPointTransfer(Direction::in, inEP, 0);				// Fixes issue transmitting an exact multiple of max packet size (n x 64)
+	}
+}
 
+
+// As this is called from an interrupt assign the command to a variable so it can be handled in the main loop
+void CDCHandler::DataOut()
+{
+	// Check if sufficient space in command buffer
+	const uint32_t newCharCnt = std::min(outBuffCount, maxCmdLen - 1 - buffPos);
+
+	strncpy(&comCmd[buffPos], (char*)outBuff, newCharCnt);
+	buffPos += newCharCnt;
+
+	// Check if cr has been sent yet
+	if (comCmd[buffPos - 1] == 13 || comCmd[buffPos - 1] == 10 || buffPos == maxCmdLen - 1) {
+		comCmd[buffPos - 1] = '\0';
+		cmdPending = true;
+		buffPos = 0;
+	}
+}
+
+
+void CDCHandler::ActivateEP()
+{
+	EndPointActivate(USB::CDC_In,   Direction::in,  EndPointType::Bulk);			// Activate CDC in endpoint
+	EndPointActivate(USB::CDC_Out,  Direction::out, EndPointType::Bulk);			// Activate CDC out endpoint
+	EndPointActivate(USB::CDC_Cmd,  Direction::in,  EndPointType::Interrupt);		// Activate Command IN EP
+
+	EndPointTransfer(Direction::out, USB::CDC_Out, USB::ep_maxPacket);
+}
+
+
+void CDCHandler::ClassSetup(usbRequest& req)
+{
+	if (req.RequestType == DtoH_Class_Interface && req.Request == GetLineCoding) {
+		SetupIn(req.Length, (uint8_t*)&lineCoding);
+	}
+
+	if (req.RequestType == HtoD_Class_Interface && req.Request == SetLineCoding) {
+		// Prepare to receive line coding data in ClassSetupData
+		usb->classPendingData = true;
+		EndPointTransfer(Direction::out, 0, req.Length);
+	}
+}
+
+
+void CDCHandler::ClassSetupData(usbRequest& req, const uint8_t* data)
+{
+	// ClassSetup passes instruction to set line coding - this is the data portion where the line coding is transferred
+	if (req.RequestType == HtoD_Class_Interface && req.Request == SetLineCoding) {
+		lineCoding = *(LineCoding*)data;
+	}
+}
+
+
+int32_t CDCHandler::ParseInt(const std::string_view cmd, const char precedingChar, const int32_t low = 0, const int32_t high = 0) {
+	int32_t val = -1;
+	const int8_t pos = cmd.find(precedingChar);		// locate position of character preceding
+	if (pos >= 0 && std::strspn(&cmd[pos + 1], "0123456789-") > 0) {
+		val = std::stoi(&cmd[pos + 1]);
+	}
+	if (high > low && (val > high || val < low)) {
+		printf("Must be a value between %ld and %ld\r\n", low, high);
+		return low - 1;
+	}
+	return val;
+}
 
 
 float CDCHandler::ParseFloat(const std::string_view cmd, const char precedingChar, const float low = 0.0f, const float high = 0.0f) {
@@ -428,6 +338,8 @@ float CDCHandler::ParseFloat(const std::string_view cmd, const char precedingCha
 	}
 	return val;
 }
+
+
 
 
 // Descriptor definition here as requires constants from USB class
