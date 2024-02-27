@@ -48,7 +48,6 @@ class FatTools
 public:
 	bool busy = false;
 	bool noFileSystem = true;
-	uint16_t* clusterChain;				// Pointer to beginning of cluster chain (AKA FAT)
 
 	bool InitFatFS();
 	bool Format();
@@ -59,7 +58,9 @@ private:
 	std::string GetFileName(const FATFileInfo* lfn);
 	std::string GetAttributes(const FATFileInfo* fi);
 	std::string FileDate(const uint16_t date);
-	bool ReadBuffer(const uint32_t sector, bool forceRefresh = false);
+
+	enum bufferOptions {none = 0, forceRefresh = 1, useFatBuffer = 2};
+	bool ReadBuffer(const uint32_t sector, bufferOptions options = bufferOptions::none);
 
 	FATFS fatFs;						// File system object for RAM disk logical drive
 	const char fatPath[4] = "0:/";		// Logical drive path for FAT File system
@@ -68,9 +69,11 @@ private:
 	uint32_t fatMaxCluster;
 
 	static constexpr uint32_t bufferSize = SDCard::blockSize;
-	uint32_t buffer[bufferSize];	// Currently used in directory printing
-	int32_t bufferedSector = -1;			// which sector is currently buffered
+	uint32_t buffer[bufferSize];		// Currently used in directory printing
+	int32_t bufferedSector = -1;		// which sector is currently buffered
 
+	uint32_t fatBuffer[bufferSize];		// Used to buffer the fat cluster chain
+	int32_t fatBufferedSector = -1;		// which sector is currently buffered
 };
 
 extern FatTools fatTools;

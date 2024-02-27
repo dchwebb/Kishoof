@@ -16,18 +16,23 @@ bool FatTools::InitFatFS()
 	noFileSystem = false;
 
 	fatClusterSize = fatFs.csize * SDCard::blockSize;
-	clusterChain = (uint16_t*)(fatFs.fatbase);
 	fatMaxCluster = (SDCard::blockSize * sdCard.LogBlockNbr) / fatClusterSize;		// Store largest cluster number
 	return true;
 }
 
 
-bool FatTools::ReadBuffer(const uint32_t sector, bool forceRefresh)
+bool FatTools::ReadBuffer(const uint32_t sector, bufferOptions options)
 {
-	if (disk_read(0, (uint8_t*)buffer, sector, 1) != RES_OK) {
-		return false;
+	uint8_t* buff = (uint8_t*)((options & bufferOptions::useFatBuffer) ? fatBuffer : buffer);
+	int32_t& currentSector = (options & bufferOptions::useFatBuffer) ? fatBufferedSector : bufferedSector;
+
+	if ((options & bufferOptions::forceRefresh) || (currentSector != (int32_t)sector)) {
+		if (disk_read(0, buff, sector, 1) != RES_OK) {
+			return false;
+		}
+
+		currentSector = sector;
 	}
-	bufferedSector = sector;
 	return true;
 }
 
@@ -78,26 +83,31 @@ void FatTools::PrintDirInfo(const uint32_t cluster)
 					FileDate(fatInfo->createDate).c_str(),
 					FileDate(fatInfo->accessedDate).c_str(),
 					GetFileName(fatInfo).c_str());
-/*
+
 			// Print cluster chain
 			if (fatInfo->name[0] != 0xE5 && fatInfo->fileSize > fatClusterSize) {
 
 				bool seq = false;					// used to check for sequential blocks
 
-				uint32_t cluster = fatInfo->firstClusterLow;
+				uint32_t cluster = (fatInfo->firstClusterHigh << 8) | fatInfo->firstClusterLow;
 				printf("%lu", cluster);
 
-				while (clusterChain[cluster] != 0xFFFF) {
-					if (clusterChain[cluster] == cluster + 1) {
+				// Check the cluster chain is available in a memory buffer
+				uint32_t fatBlockPos = fatFs.fatbase + (cluster / SDCard::blockSize);
+				ReadBuffer(fatBlockPos, bufferOptions::useFatBuffer);
+				uint32_t* clusterChain = fatBuffer;
+
+				while (clusterChain[cluster % SDCard::blockSize] != 0x0FFFFFFF) {
+					if (clusterChain[cluster % SDCard::blockSize] == cluster + 1) {
 						if (!seq) {
 							printf("-");
 							seq = true;
 						}
 					} else {
 						seq = false;
-						printf("%lu, %i", cluster, clusterChain[cluster]);
+						printf("%lu, %lu", cluster, clusterChain[cluster % SDCard::blockSize]);
 					}
-					cluster = clusterChain[cluster];
+					cluster = clusterChain[cluster % SDCard::blockSize];
 				}
 				if (seq) {
 					printf("%lu", cluster);
@@ -105,7 +115,6 @@ void FatTools::PrintDirInfo(const uint32_t cluster)
 
 			}
 
-			*/
 			printf("\r\n");
 		}
 
@@ -119,7 +128,7 @@ void FatTools::PrintDirInfo(const uint32_t cluster)
 
 		// move to next entry updating cache if beyond buffer size
 		fatInfo++;
-		if ((uint32_t)fatInfo - (uint32_t)buffer > bufferSize) {
+		if ((uint32_t)fatInfo - (uint32_t)buffer >= bufferSize) {
 			ReadBuffer(++sector);
 			fatInfo = (FATFileInfo*)buffer;
 		}
