@@ -48,6 +48,22 @@ void FatTools::PrintDirInfo(const uint32_t cluster)
 
 	uint32_t sector;
 	if (cluster == 0) {
+		// Print general storage details
+		printf("\r\nBlock/Sector Size: %lu bytes\r\n"
+				"Cluster Size: %lu bytes (%d sectors)\r\n"
+				"Block Count: %lu\r\n"
+				"Volume sector: %lu\r\n"
+				"FAT sector: %lu\r\n"
+				"Data sector: %lu\r\n"
+				,
+				fatSectorSize, fatClusterSize,
+				fatFs.csize,
+				sdCard.LogBlockNbr,
+				fatFs.volbase,
+				fatFs.fatbase,
+				fatFs.database
+				);
+
 		printf("\r\n  Attrib Cluster   Bytes    Created   Accessed Name          Clusters\r\n"
 				   "  ------------------------------------------------------------------\r\n");
 		sector = fatFs.database;
@@ -92,7 +108,7 @@ void FatTools::PrintDirInfo(const uint32_t cluster)
 				uint32_t cluster = (fatInfo->firstClusterHigh << 8) | fatInfo->firstClusterLow;
 				printf("%lu", cluster);
 
-				// Check the cluster chain is available in a memory buffer
+				// Check the cluster chain is available in memory buffer
 				uint32_t fatBlockPos = fatFs.fatbase + (cluster / SDCard::blockSize);
 				ReadBuffer(fatBlockPos, bufferOptions::useFatBuffer);
 				uint32_t* clusterChain = fatBuffer;
@@ -255,7 +271,6 @@ void FatTools::PrintFiles(char* path)						// Start node to be scanned (also use
 			} else {										// It is a file
 				uint32_t sect = 0;
 				if (f_open(&SDFile, fileInfo.fname, FA_READ) == FR_OK) {
-					//sect = ClusterToSector(SDFile.obj.fs, SDFile.obj.sclust);			// Get current sector
 					sect = SDFile.obj.fs->database + SDFile.obj.fs->csize * (SDFile.obj.sclust - 2);
 				}
 				printf("%s/%s %lu bytes sector: %lu \n", path, fileInfo.fname, fileInfo.fsize, sect);

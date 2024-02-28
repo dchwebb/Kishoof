@@ -124,6 +124,8 @@ void InitHardware()
 	InitDebugTimer();				// Timer 3 used for performance testing
 	//InitCache();					// Configure MPU to not cache memory regions where DMA buffers reside
 	InitSSD();
+
+	GpioPin::Init(GPIOG, 11, GpioPin::Type::Output);		// PG11: Debug
 }
 
 void InitCache()

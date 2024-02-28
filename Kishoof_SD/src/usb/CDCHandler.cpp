@@ -72,16 +72,19 @@ void CDCHandler::ProcessCommand()
 
 
 	} else if (cmd.compare(0, 12, "printsector:") == 0) {				// print 512 bytes of SD data
-		const int32_t address = ParseInt(cmd, ':', 0, 0xFFFFFF);
+		const int32_t address = ParseInt(cmd, ':', 0, sdCard.LogBlockNbr);
+		int32_t blocks = ParseInt(cmd, ',', 0, 32);
 		if (address >= 0) {
-
+			if (blocks < 1) {
+				blocks = 1;
+			}
 			printf("Sector: %ld\r\n", address);
-			uint8_t readBuffer[512];
-			disk_read(0, readBuffer, address, 1);
+			uint8_t readBuffer[512 * blocks];
+			disk_read(0, readBuffer, address, blocks);
 
 			const uint32_t* p = (uint32_t*)(readBuffer);
 
-			for (uint32_t a = 0; a < 128; a += 4) {
+			for (int32_t a = 0; a < blocks * 128; a += 4) {
 				printf("%6ld: %#010lx %#010lx %#010lx %#010lx\r\n", (a * 4), p[a], p[a + 1], p[a + 2], p[a + 3]);
 			}
 		}

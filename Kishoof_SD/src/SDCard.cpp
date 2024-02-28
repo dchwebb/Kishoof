@@ -1247,6 +1247,8 @@ uint32_t SDCard::ReadBlocks_DMA(uint8_t *rxBuffer, uint32_t blockAddr, uint32_t 
 	dmaRead = false;			// Interrupt handler will use this to signal completion
 
 	if (State == HAL_SD_STATE_READY) {
+		GpioPin::SetHigh(GPIOG, 11);			 // Debug pin high
+
 		ErrorCode = 0;
 
 		if (blockAddr + blocks > LogBlockNbr) {
@@ -1342,6 +1344,7 @@ void SDCard::InterruptHandler()
 				dmaWrite = true;
 			}
 			if (((context & SD_CONTEXT_READ_SINGLE_BLOCK) != 0) || ((context & SD_CONTEXT_READ_MULTIPLE_BLOCK) != 0)) {
+				GpioPin::SetLow(GPIOG, 11);			 // Debug pin low
 				dmaRead = true;
 				if (Context & SD_CONTEXT_CALLBACK && dmaCallback) {
 					dmaCallback();
