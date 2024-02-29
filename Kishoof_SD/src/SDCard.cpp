@@ -1240,7 +1240,7 @@ uint32_t SDCard::ReadBlocks(uint8_t *pData, uint32_t blockAdd, uint32_t blocks, 
 }
 
 
-uint32_t SDCard::ReadBlocks_DMA(uint8_t *rxBuffer, uint32_t blockAddr, uint32_t blocks, void (*callback)())
+uint32_t SDCard::ReadBlocks_DMA(uint8_t *rxBuffer, uint32_t blockAddr, uint32_t blocks, bool blocking, void (*callback)())
 {
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
@@ -1302,9 +1302,20 @@ uint32_t SDCard::ReadBlocks_DMA(uint8_t *rxBuffer, uint32_t blockAddr, uint32_t 
 			Context |= SD_CONTEXT_CALLBACK;
 		}
 
+		if (blocking) {
+			// If in blocking mode wait until data end flag and then call interrupt handler directly
+			uint32_t tickstart = SysTickVal;
 
-		// Enable transfer interrupts
-		SDMMC1->MASK |= (SDMMC_MASK_DCRCFAILIE | SDMMC_MASK_DTIMEOUTIE | SDMMC_MASK_RXOVERRIE | SDMMC_MASK_DATAENDIE);
+			while ((SDMMC1->STA & SDMMC_STA_DATAEND) == 0) {
+				if ((SysTickVal - tickstart) >= SDMMC_DATATIMEOUT) {
+					return SDMMC_ERROR_TIMEOUT;
+				}
+			}
+			InterruptHandler();
+		} else {
+			// Enable transfer interrupts
+			SDMMC1->MASK |= (SDMMC_MASK_DCRCFAILIE | SDMMC_MASK_DTIMEOUTIE | SDMMC_MASK_RXOVERRIE | SDMMC_MASK_DATAENDIE);
+		}
 
 		return 0;
 	} else {

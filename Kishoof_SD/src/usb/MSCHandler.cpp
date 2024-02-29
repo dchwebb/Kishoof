@@ -395,7 +395,7 @@ int8_t MSCHandler::SCSI_Read()
 
 	// Data may be read from cache or flash; if flash (signalled by nullptr), pass a buffer to be filled and wait for DMA transfer to complete
 	inBuff = nullptr;
-	if (sdCard.ReadBlocks_DMA(bot_data, scsi_blk_addr, 1, DMAtoMSCTransferDone) != RES_OK) {		// Read sector into bot_data buffer
+	if (sdCard.ReadBlocks_DMA(bot_data, scsi_blk_addr, 1, false, DMAtoMSCTransferDone) != RES_OK) {		// Read sector into bot_data buffer
 		int err = 1;
 	}
 	return 0;

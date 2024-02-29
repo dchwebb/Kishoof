@@ -43,33 +43,20 @@ uint8_t disk_read(uint8_t pdrv, uint8_t* writeAddress, uint32_t readSector, uint
 		return res;
 	}
 
-//	// Direct read (no DMA)
-//	if (sdCard.ReadBlocks(writeAddress, readSector, sectorCount, SD_TIMEOUT) == 0) {
-//		res = RES_OK;
-//	}
-
-	if (sdCard.ReadBlocks_DMA(writeAddress, readSector, sectorCount) == 0) {
-
+	// DMA read but in blocking mode
+	if (sdCard.ReadBlocks_DMA(writeAddress, readSector, sectorCount, true) == 0) {
 		uint32_t timeout = SysTickVal;
-		while (!sdCard.dmaRead && (SysTickVal - timeout) < SD_TIMEOUT) {}
+		while ((SysTickVal - timeout) < SD_TIMEOUT) {
+			if (disk_status(0) == RES_OK) {
+				res = RES_OK;
 
-		if (sdCard.dmaRead) {
-			timeout = SysTickVal;
+				//uint32_t alignedAddr = (uint32_t)buff & ~0x1F;		// requires a 32-Byte aligned address
+				//SCB_InvalidateDCache_by_Addr((uint32_t*)alignedAddr, count*BLOCKSIZE + ((uint32_t)buff - alignedAddr));
 
-			while ((SysTickVal - timeout) < SD_TIMEOUT) {
-				if (disk_status(0) == RES_OK) {
-					res = RES_OK;
-
-					// SCB_InvalidateDCache_by_Addr() requires a 32-Byte aligned address
-					//uint32_t alignedAddr = (uint32_t)buff & ~0x1F;
-					//SCB_InvalidateDCache_by_Addr((uint32_t*)alignedAddr, count*BLOCKSIZE + ((uint32_t)buff - alignedAddr));
-
-					break;
-				}
+				break;
 			}
 		}
 	}
-
 
 	return res;
 }

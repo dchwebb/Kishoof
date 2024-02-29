@@ -287,7 +287,7 @@ public:
 	uint32_t SendStatus(uint32_t *pCardStatus);
 	uint32_t WriteBlocks_DMA(const uint8_t *pData, uint32_t blockAdd, uint32_t blocks, bool blocking);
 	uint32_t ReadBlocks(uint8_t *pData, uint32_t blockAdd, uint32_t noBlocks, uint32_t timeout);
-	uint32_t ReadBlocks_DMA(uint8_t *pData, uint32_t blockAdd, uint32_t NoBlocks, void (*callback)() = nullptr);
+	uint32_t ReadBlocks_DMA(uint8_t *pData, uint32_t blockAdd, uint32_t NoBlocks, bool blocking, void (*callback)() = nullptr);
 	void InterruptHandler();
 
 
