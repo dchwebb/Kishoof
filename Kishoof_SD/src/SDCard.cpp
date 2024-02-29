@@ -1324,6 +1324,66 @@ uint32_t SDCard::ReadBlocks_DMA(uint8_t *rxBuffer, uint32_t blockAddr, uint32_t 
 }
 
 
+
+uint32_t SDCard::ReadBlocksDMAMultiBuffer(uint32_t blockAddr, uint32_t blocks, uint32_t* buffer0, uint32_t* buffer1)
+{
+	//  Reads blocks from specified address and store in Buffer0 and Buffer1.
+
+	if (State == HAL_SD_STATE_READY) {
+		if ((blockAddr + blocks) > (LogBlockNbr)) {
+			ErrorCode |= SDMMC_ERROR_ADDR_OUT_OF_RANGE;
+			return 1;
+		}
+
+		SDMMC1->IDMABASE0 = (uint32_t)buffer0;
+		SDMMC1->IDMABASE1 = (uint32_t)buffer1;
+		SDMMC1->IDMABSIZE = ((blockSize * blocks) / 2);		// Each buffer must be the same size (half size of received data)
+		SDMMC1->DCTRL = 0;
+
+		ClearStaticDataFlags();
+
+		ErrorCode = 0;
+		State = HAL_SD_STATE_BUSY;
+
+		if (CardType != CARD_SDHC_SDXC) {
+			blockAddr *= 512U;
+		}
+
+		// Configure the SD DPSM (Data Path State Machine)
+		SDMMC_DataInitTypeDef config;
+		config.DataTimeOut   = SDMMC_DATATIMEOUT;
+		config.DataLength    = blockSize * blocks;
+		config.DataBlockSize = SDMMC_DATABLOCK_SIZE_512B;
+		config.TransferDir   = SDMMC_TRANSFER_DIR_TO_SDMMC;
+		config.TransferMode  = SDMMC_TRANSFER_MODE_BLOCK;
+		config.DPSM          = SDMMC_DPSM_DISABLE;
+		ConfigData(&config);
+
+		SDMMC1->DCTRL |= SDMMC_DCTRL_FIFORST;
+		SDMMC1->CMD |= SDMMC_CMD_CMDTRANS;
+		SDMMC1->IDMACTRL = SDMMC_ENABLE_IDMA_DOUBLE_BUFF0;
+
+		// Read Blocks in DMA mode
+		Context = (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_DMA);
+
+		// Read Multi Block command
+		uint32_t errorstate = CmdReadMultiBlock(blockAddr);
+		if (errorstate != 0) {
+			State = HAL_SD_STATE_READY;
+			ErrorCode |= errorstate;
+			return 1;
+		}
+
+		SDMMC1->MASK |= (SDMMC_MASK_DCRCFAILIE | SDMMC_MASK_DTIMEOUTIE | SDMMC_MASK_RXOVERRIE | SDMMC_MASK_DATAENDIE | SDMMC_MASK_IDMABTCIE);
+
+		return 0;
+	} else {
+		return 2;
+	}
+
+}
+
+
 void SDCard::InterruptHandler()
 {
 	uint32_t errorstate;

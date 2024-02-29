@@ -288,6 +288,7 @@ public:
 	uint32_t WriteBlocks_DMA(const uint8_t *pData, uint32_t blockAdd, uint32_t blocks, bool blocking);
 	uint32_t ReadBlocks(uint8_t *pData, uint32_t blockAdd, uint32_t noBlocks, uint32_t timeout);
 	uint32_t ReadBlocks_DMA(uint8_t *pData, uint32_t blockAdd, uint32_t NoBlocks, bool blocking, void (*callback)() = nullptr);
+	uint32_t ReadBlocksDMAMultiBuffer(uint32_t blockAddr, uint32_t blocks, uint32_t* buffer0, uint32_t* buffer1);
 	void InterruptHandler();
 
 
