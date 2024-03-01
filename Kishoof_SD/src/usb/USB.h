@@ -175,28 +175,42 @@ public:
 		uint32_t IntData;
 		usbRequest Request;
 		uint8_t endpoint;
-		uint8_t scsiOpCode;
 		uint16_t PacketSize;
 		uint32_t xferBuff[4];
-	};
-	usbDebugItem usbDebug[USB_DEBUG_COUNT];
+	} usbDebug[USB_DEBUG_COUNT];
+
+	struct scsiDebugItem {
+		uint16_t eventNo;
+		uint8_t scsiOpCode;
+		uint32_t blockAddr;
+		uint32_t blocks;
+	} scsiDebug[USB_DEBUG_COUNT];
+
 	void OutputDebug();
 
 	// Update the current debug record
-	void USBUpdateDbg(uint32_t IntData, usbRequest request, uint8_t endpoint, uint16_t PacketSize, uint32_t scsiOpCode, uint32_t* xferBuff)
+	void USBUpdateDbg(uint32_t IntData, usbRequest request, uint8_t endpoint, uint16_t PacketSize, uint32_t* xferBuff)
 	{
 		if (usbDebugNo < USB_DEBUG_COUNT - 1) {
 			if (IntData) usbDebug[usbDebugNo].IntData = IntData;
 			if (((uint32_t*)&request)[0]) usbDebug[usbDebugNo].Request = request;
 			if (endpoint) usbDebug[usbDebugNo].endpoint = endpoint;
 			if (PacketSize) usbDebug[usbDebugNo].PacketSize = PacketSize;
-			if (scsiOpCode) usbDebug[usbDebugNo].scsiOpCode = scsiOpCode;
 			if (xferBuff != nullptr) {
 				usbDebug[usbDebugNo].xferBuff[0] = xferBuff[0];
 				usbDebug[usbDebugNo].xferBuff[1] = xferBuff[1];
 				usbDebug[usbDebugNo].xferBuff[2] = xferBuff[2];
 				usbDebug[usbDebugNo].xferBuff[3] = xferBuff[3];
 			}
+		}
+	}
+	void SCSIUpdateDbg(uint32_t scsiOpCode, uint32_t blockAddr, uint32_t blocks)
+	{
+		if (usbDebugNo < USB_DEBUG_COUNT - 1) {
+			scsiDebug[usbDebugNo].eventNo = usbDebugNo;
+			if (scsiOpCode) scsiDebug[usbDebugNo].scsiOpCode = scsiOpCode;
+			if (blockAddr) scsiDebug[usbDebugNo].blockAddr = blockAddr;
+			if (blocks) scsiDebug[usbDebugNo].blocks = blocks;
 		}
 	}
 #else

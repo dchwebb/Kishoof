@@ -142,7 +142,7 @@ void MSCHandler::MSC_BOT_Abort()
 int8_t MSCHandler::SCSI_ProcessCmd()
 {
 #if (USB_DEBUG)
-	usb->USBUpdateDbg({}, {}, {}, {}, cbw.CB[0], nullptr);
+	usb->SCSIUpdateDbg(cbw.CB[0], {}, {});
 #endif
 	switch (cbw.CB[0])
 	{
@@ -388,6 +388,7 @@ int8_t MSCHandler::SCSI_Read()
 
 		bot_state = BotState::DataIn;
 	}
+	usb->SCSIUpdateDbg({}, scsi_blk_addr, scsi_blk_len);
 
 	inBuffSize = std::min(scsi_blk_len * fatSectorSize, MediaPacket);
 	inBuffCount = 0;

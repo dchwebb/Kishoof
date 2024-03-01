@@ -23,7 +23,7 @@ void USB::EP0In(const uint8_t* buff, const uint32_t size)
 	ep0.inBuff = buff;
 	ep0State = EP0State::DataIn;
 
-	USBUpdateDbg({}, {}, {}, ep0.inBuffSize, {}, (uint32_t*)ep0.inBuff);
+	USBUpdateDbg({}, {}, {}, ep0.inBuffSize, (uint32_t*)ep0.inBuff);
 
 	EPStartXfer(Direction::in, 0, size);		// sends blank request back
 }
@@ -47,17 +47,17 @@ void USB::InterruptHandler()					// In Drivers\STM32F4xx_HAL_Driver\Src\stm32f4x
 		epnum = receiveStatus & USB_OTG_GRXSTSP_EPNUM;			// Get the endpoint number
 		const uint16_t packetSize = (receiveStatus & USB_OTG_GRXSTSP_BCNT) >> 4;
 
-		USBUpdateDbg(receiveStatus, {}, epnum, packetSize, {}, nullptr);
+		USBUpdateDbg(receiveStatus, {}, epnum, packetSize, nullptr);
 
 		if (((receiveStatus & USB_OTG_GRXSTSP_PKTSTS) >> 17) == OutDataReceived && packetSize != 0) {	// 2 = OUT data packet received
 			ReadPacket(classByEP[epnum]->outBuff, packetSize, classByEP[epnum]->outBuffOffset);
-			USBUpdateDbg({}, {}, {}, {}, {}, classByEP[epnum]->outBuff + classByEP[epnum]->outBuffOffset);
+			USBUpdateDbg({}, {}, {}, {}, classByEP[epnum]->outBuff + classByEP[epnum]->outBuffOffset);
 			if (classByEP[epnum]->outBuffPackets > 1) {
 				classByEP[epnum]->outBuffOffset += (packetSize / 4);			// When receiving multiple packets increase buffer offset (packet size in bytes -> 32 bit ints)
 			}
 		} else if (((receiveStatus & USB_OTG_GRXSTSP_PKTSTS) >> 17) == SetupDataReceived) {				// 6 = SETUP data packet received
 			ReadPacket(classByEP[epnum]->outBuff, 8U, 0);
-			USBUpdateDbg({}, {}, {}, {}, {}, classByEP[epnum]->outBuff);
+			USBUpdateDbg({}, {}, {}, {}, classByEP[epnum]->outBuff);
 		} else if (((receiveStatus & USB_OTG_GRXSTSP_PKTSTS) >> 17) == OutTransferCompleted) {			// 3 = transfer completed
 			classByEP[epnum]->outBuffOffset = 0;
 		}
@@ -80,7 +80,7 @@ void USB::InterruptHandler()					// In Drivers\STM32F4xx_HAL_Driver\Src\stm32f4x
 			if ((ep_intr & 1) != 0) {
 				epint = USBx_OUTEP(epnum)->DOEPINT & USBx_DEVICE->DOEPMSK;
 
-				USBUpdateDbg(epint, {}, epnum, {}, {}, nullptr);
+				USBUpdateDbg(epint, {}, epnum, {}, nullptr);
 
 				if ((epint & USB_OTG_DOEPINT_XFRC) == USB_OTG_DOEPINT_XFRC) {		// 0x01 Transfer completed
 
@@ -112,7 +112,7 @@ void USB::InterruptHandler()					// In Drivers\STM32F4xx_HAL_Driver\Src\stm32f4x
 					// Parse Setup Request containing data in outBuff filled by RXFLVL interrupt
 					req.loadData((uint8_t*)classByEP[epnum]->outBuff);
 
-					USBUpdateDbg({}, req, {}, {}, {}, nullptr);
+					USBUpdateDbg({}, req, {}, {}, nullptr);
 
 					ep0State = EP0State::Setup;
 
@@ -173,7 +173,7 @@ void USB::InterruptHandler()					// In Drivers\STM32F4xx_HAL_Driver\Src\stm32f4x
 
 				epint = USBx_INEP(epnum)->DIEPINT & (USBx_DEVICE->DIEPMSK | (((USBx_DEVICE->DIEPEMPMSK >> (epnum & EP_ADDR_MASK)) & 0x1U) << 7));
 
-				USBUpdateDbg(epint, {}, epnum, {}, {}, nullptr);
+				USBUpdateDbg(epint, {}, epnum, {}, nullptr);
 
 				if ((epint & USB_OTG_DIEPINT_XFRC) == USB_OTG_DIEPINT_XFRC) {			// 0x1 Transfer completed interrupt
 					uint32_t fifoemptymsk = (0x1UL << (epnum & EP_ADDR_MASK));
@@ -189,7 +189,7 @@ void USB::InterruptHandler()					// In Drivers\STM32F4xx_HAL_Driver\Src\stm32f4x
 						} else if (ep0State == EP0State::DataIn && ep0.inBuffRem > 0) {		// For EP0 long packets are sent separately rather than streamed out of the FIFO
 							ep0.inBuffSize = ep0.inBuffRem;
 							ep0.inBuffRem = 0;
-							USBUpdateDbg({}, {}, {}, ep0.inBuffSize, {}, (uint32_t*)ep0.inBuff);
+							USBUpdateDbg({}, {}, {}, ep0.inBuffSize, (uint32_t*)ep0.inBuff);
 
 							EPStartXfer(Direction::in, 0, ep0.inBuffSize);
 						}
@@ -200,7 +200,7 @@ void USB::InterruptHandler()					// In Drivers\STM32F4xx_HAL_Driver\Src\stm32f4x
 				}
 
 				if ((epint & USB_OTG_DIEPINT_TXFE) == USB_OTG_DIEPINT_TXFE) {			// 0x80 Transmit FIFO empty
-					USBUpdateDbg({}, {}, {}, classByEP[epnum]->inBuffSize, {}, (uint32_t*)classByEP[epnum]->inBuff);
+					USBUpdateDbg({}, {}, {}, classByEP[epnum]->inBuffSize, (uint32_t*)classByEP[epnum]->inBuff);
 
 					if (epnum == 0) {
 						if (ep0.inBuffSize > ep_maxPacket) {
@@ -800,8 +800,6 @@ bool USB::ReadInterrupts(const uint32_t interrupt)
 		usbDebug[usbDebugNo].endpoint = 0;
 		usbDebug[usbDebugNo].IntData = 0;
 		usbDebug[usbDebugNo].PacketSize = 0;
-		usbDebug[usbDebugNo].scsiOpCode = 0;
-
 		usbDebugEvent++;
 	}
 #endif
@@ -901,7 +899,7 @@ std::string HexByte(const uint16_t& v) {
 
 void USB::OutputDebug() {
 
-	uart.SendString("Event,Interrupt,Desc,Int Data,Desc,Endpoint,mRequest,Request,Value,Index,Length,Scsi,PacketSize,XferBuff\n");
+	uart.SendString("Event,Interrupt,Desc,Int Data,Desc,Endpoint,mRequest,Request,Value,Index,Length,Scsi,Addr,Blocks,PacketSize,XferBuff\n");
 	//uint16_t evNo = usbDebugEvent % USB_DEBUG_COUNT;
 	std::string interrupt, subtype;
 	for (int i = 0; i < std::min(usbDebugEvent, (uint16_t)USB_DEBUG_COUNT); ++i) {
@@ -984,7 +982,9 @@ void USB::OutputDebug() {
 					+ HexByte(usbDebug[i].Request.Value) + ", "
 					+ HexByte(usbDebug[i].Request.Index) + ", "
 					+ HexByte(usbDebug[i].Request.Length) + ", "
-					+ HexByte(usbDebug[i].scsiOpCode) + ", "
+					+ HexByte(scsiDebug[i].scsiOpCode) + ", "
+					+ IntToString(scsiDebug[i].blockAddr) + ", "
+					+ IntToString(scsiDebug[i].blocks) + ", "
 					+ IntToString(usbDebug[i].PacketSize) + ", "
 					+ HexToString(usbDebug[i].xferBuff[0], true) + " "
 					+ HexToString(usbDebug[i].xferBuff[1], true) + " "

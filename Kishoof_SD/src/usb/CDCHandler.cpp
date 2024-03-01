@@ -89,6 +89,21 @@ void CDCHandler::ProcessCommand()
 			}
 		}
 
+	} else if (cmd.compare(0, 13, "bprintsector:") == 0) {				// print 512 bytes of SD data using double buffering
+		const int32_t address = ParseInt(cmd, ':', 0, sdCard.LogBlockNbr);
+		int32_t blocks = 2;
+		if (address >= 0) {
+			printf("Sector: %ld\r\n", address);
+			sdCard.ReadBlocksDMAMultiBuffer(address, blocks, &flashBuff[0], &flashBuff[128]);
+
+
+			const uint32_t* p = (uint32_t*)(flashBuff);
+
+			for (int32_t a = 0; a < blocks * 128; a += 4) {
+				printf("%6ld: %#010lx %#010lx %#010lx %#010lx\r\n", (a * 4), p[a], p[a + 1], p[a + 2], p[a + 3]);
+			}
+		}
+
 	} else if (cmd.compare("format") == 0) {					// Format Flash storage with FAT
 		printf("Formatting flash:\r\n");
 		fatTools.Format();
