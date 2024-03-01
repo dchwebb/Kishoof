@@ -291,14 +291,16 @@ public:
 	uint32_t ReadBlocksDMAMultiBuffer(uint32_t blockAddr, uint32_t blocks, uint32_t* buffer0, uint32_t* buffer1);
 	void InterruptHandler();
 
+	uint32_t CmdResponse1(uint32_t command, uint32_t argument);
+	uint32_t CmdResponse2(uint32_t command, uint32_t argument);
 
 	uint32_t CmdGoIdleState();
 	uint32_t CmdOperCond();
 	uint32_t CmdAppCommand(uint32_t argument);
 	uint32_t CmdAppOperCommand(uint32_t argument);
-	uint32_t CmdSendCID();
+	//uint32_t CmdSendCID();
 	uint32_t CmdSetRelAdd(uint16_t *rca);
-	uint32_t CmdSendCSD(uint32_t argument);
+	//uint32_t CmdSendCSD(uint32_t argument);
 	uint32_t GetCardCSD();
 	uint32_t CmdSelDesel(uint32_t addr);
 	uint32_t CmdBlockLength(uint32_t blockSize);
@@ -360,10 +362,11 @@ public:
 
 	const uint8_t *pTxBuffPtr;				// Pointer to SD Tx transfer Buffer
 	uint32_t      TxXferSize;				// SD Tx Transfer size
-	uint8_t       *pRxBuffPtr;				// Pointer to SD Rx transfer Buffer
-	uint32_t      RxXferSize;				// SD Rx Transfer size
+//	uint8_t       *pRxBuffPtr;				// Pointer to SD Rx transfer Buffer
+//	uint32_t      RxXferSize;				// SD Rx Transfer size
 	bool dmaRead = false;					// Used to indicate DMA read has completed
 	bool dmaWrite = false;					// Used to indicate DMA write has completed
+	bool currentBuffer;					// In double buffering mode, 1 means buffer 0 is complete and ready for access
 
 	uint32_t CID[4];						// Card ID
 	uint32_t CSD[4];						// Card Specific Data

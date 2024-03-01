@@ -107,7 +107,7 @@
 					</folderInfo>
 					<sourceEntries>
 						<entry excluding="FatFs/doc/res" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
-						<entry excluding="stm32h7xx_hal_sd.c|ExtFlash.cpp|samples.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry excluding="test.cpp|stm32h7xx_hal_sd.c|ExtFlash.cpp|samples.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -209,7 +209,7 @@
 					</folderInfo>
 					<sourceEntries>
 						<entry excluding="FatFs/doc/res" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
-						<entry excluding="stm32h7xx_hal_sd.c|ExtFlash.cpp|samples.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry excluding="test.cpp|stm32h7xx_hal_sd.c|ExtFlash.cpp|samples.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

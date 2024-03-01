@@ -380,7 +380,7 @@ void USB::Init(bool softReset)
 		GPIOA->MODER &= ~GPIO_MODER_MODE12_0;
 		GPIOA->AFR[1] |= (10 << GPIO_AFRH_AFSEL11_Pos) | (10 << GPIO_AFRH_AFSEL12_Pos);		// Alternate Function 10 is OTG_FS
 
-		NVIC_SetPriority(OTG_FS_IRQn, 2);
+		NVIC_SetPriority(OTG_FS_IRQn, 3);
 		NVIC_EnableIRQ(OTG_FS_IRQn);
 	}
 

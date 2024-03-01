@@ -6,7 +6,7 @@
 //#include "WaveTable.h"
 #include "ff.h"
 
-uint32_t flashBuff[8192];
+uint32_t __attribute__((section (".ram_d1_data")))  flashBuff[8192];
 uint32_t* heapVal;		// Debug
 
 
@@ -96,11 +96,16 @@ void CDCHandler::ProcessCommand()
 			printf("Sector: %ld\r\n", address);
 			sdCard.ReadBlocksDMAMultiBuffer(address, blocks, &flashBuff[0], &flashBuff[128]);
 
+			uint32_t timeout = SysTickVal;
 
-			const uint32_t* p = (uint32_t*)(flashBuff);
+			while (!sdCard.dmaRead && (SysTickVal - timeout) < 30000) {}
 
-			for (int32_t a = 0; a < blocks * 128; a += 4) {
-				printf("%6ld: %#010lx %#010lx %#010lx %#010lx\r\n", (a * 4), p[a], p[a + 1], p[a + 2], p[a + 3]);
+			if (sdCard.dmaRead) {
+				const uint32_t* p = (uint32_t*)(flashBuff);
+
+				for (int32_t a = 0; a < blocks * 128; a += 4) {
+					printf("%6ld: %#010lx %#010lx %#010lx %#010lx\r\n", (a * 4), p[a], p[a + 1], p[a + 2], p[a + 3]);
+				}
 			}
 		}
 
