@@ -120,8 +120,6 @@ uint32_t SDCard::CmdResponse2(uint32_t command, uint32_t argument)
 }
 
 
-
-
 // Send the command asking the accessed card to send its operating condition register (OCR)
 uint32_t SDCard::CmdAppOperCommand(uint32_t argument)
 {
@@ -172,7 +170,7 @@ uint32_t SDCard::GetCmdResp2()
 {
 	//Checks for error conditions for R2 (CID or CSD) response.
 
-	uint32_t count = SDMMC_CMDTIMEOUT * (SystemCoreClock / 8U / 1000);
+	uint32_t count = SDMMC_CMDTIMEOUT * (SystemCoreClock / 8 / 1000);
 	uint32_t sta_reg;
 	do {
 		if (count-- == 0) {
@@ -201,7 +199,7 @@ uint32_t SDCard::GetCmdResp2()
 uint32_t SDCard::GetCmdResp3()
 {
 	// 8 is the number of required instructions cycles for loop.  SDMMC_CMDTIMEOUT in ms
-	uint32_t count = SDMMC_CMDTIMEOUT * (SystemCoreClock / 8U / 1000);
+	uint32_t count = SDMMC_CMDTIMEOUT * (SystemCoreClock / 8 / 1000);
 	uint32_t sta_reg;
 	do {
 		if (count-- == 0) {
@@ -257,9 +255,9 @@ uint32_t SDCard::GetCmdResp6(uint8_t SD_CMD, uint16_t *pRCA)
 	if ((response_r1 & (SDMMC_R6_GENERAL_UNKNOWN_ERROR | SDMMC_R6_ILLEGAL_CMD | SDMMC_R6_COM_CRC_FAILED)) == 0) {
 		*pRCA = (uint16_t)(response_r1 >> 16);
 		return 0;
-	} else if ((response_r1 & SDMMC_R6_ILLEGAL_CMD) == SDMMC_R6_ILLEGAL_CMD) {
+	} else if ((response_r1 & SDMMC_R6_ILLEGAL_CMD) != 0) {
 		return SDMMC_ERROR_ILLEGAL_CMD;
-	} else if ((response_r1 & SDMMC_R6_COM_CRC_FAILED) == SDMMC_R6_COM_CRC_FAILED) {
+	} else if ((response_r1 & SDMMC_R6_COM_CRC_FAILED) != 0) {
 		return SDMMC_ERROR_COM_CRC_FAILED;
 	} else {
 		return SDMMC_ERROR_GENERAL_UNKNOWN_ERR;
@@ -272,7 +270,7 @@ uint32_t SDCard::GetCmdResp7()
 {
 	// Checks for error conditions for R7 response.
 	// 8 is the number of required instructions cycles for loop.  SDMMC_CMDTIMEOUT in ms
-	uint32_t count = SDMMC_CMDTIMEOUT * (SystemCoreClock / 8U / 1000);
+	uint32_t count = SDMMC_CMDTIMEOUT * (SystemCoreClock / 8 / 1000);
 	uint32_t sta_reg;
 	do {
 		if (count-- == 0) {
@@ -282,17 +280,17 @@ uint32_t SDCard::GetCmdResp7()
 	} while (((sta_reg & (SDMMC_STA_CCRCFAIL | SDMMC_STA_CMDREND | SDMMC_STA_CTIMEOUT)) == 0) ||
 			((sta_reg & SDMMC_STA_CPSMACT) != 0));
 
-	if ((SDMMC1->STA & SDMMC_STA_CTIMEOUT) != 0) {		// Card is not SD V2.0 compliant
+	if ((SDMMC1->STA & SDMMC_STA_CTIMEOUT) != 0) {
 		SDMMC1->ICR = SDMMC_STA_CTIMEOUT;
 		return SDMMC_ERROR_CMD_RSP_TIMEOUT;
 
-	} else if ((SDMMC1->STA & SDMMC_STA_CCRCFAIL) != 0) {		// Card is not SD V2.0 compliant
+	} else if ((SDMMC1->STA & SDMMC_STA_CCRCFAIL) != 0) {
 		SDMMC1->ICR = SDMMC_STA_CCRCFAIL;
 		return SDMMC_ERROR_CMD_CRC_FAIL;
 	}
 
 	if ((SDMMC1->STA & SDMMC_STA_CMDREND) != 0) {
-		SDMMC1->ICR = SDMMC_STA_CMDREND;		// Card is SD V2.0 compliant
+		SDMMC1->ICR = SDMMC_STA_CMDREND;
 	}
 
 	return 0;
@@ -303,7 +301,6 @@ uint32_t SDCard::GetCmdResp1(uint8_t SD_CMD, uint32_t timeout)
 	// Checks for error conditions for R1 response.
 	uint32_t sta_reg;
 
-	// 8 is the number of required instructions cycles for loop.  SDMMC_CMDTIMEOUT in ms
 	uint32_t count = SDMMC_CMDTIMEOUT * (SystemCoreClock / 8 / 1000);
 
 	do {
@@ -332,41 +329,41 @@ uint32_t SDCard::GetCmdResp1(uint8_t SD_CMD, uint32_t timeout)
 
 	if ((response_r1 & SDMMC_OCR_ERRORBITS) == 0) {
 		return 0;
-	} else if ((response_r1 & SDMMC_OCR_ADDR_OUT_OF_RANGE) == SDMMC_OCR_ADDR_OUT_OF_RANGE) {
+	} else if ((response_r1 & SDMMC_OCR_ADDR_OUT_OF_RANGE) != 0) {
 		return SDMMC_ERROR_ADDR_OUT_OF_RANGE;
-	} else if ((response_r1 & SDMMC_OCR_ADDR_MISALIGNED) == SDMMC_OCR_ADDR_MISALIGNED) {
+	} else if ((response_r1 & SDMMC_OCR_ADDR_MISALIGNED) != 0) {
 		return SDMMC_ERROR_ADDR_MISALIGNED;
-	} else if ((response_r1 & SDMMC_OCR_BLOCK_LEN_ERR) == SDMMC_OCR_BLOCK_LEN_ERR) {
+	} else if ((response_r1 & SDMMC_OCR_BLOCK_LEN_ERR) != 0) {
 		return SDMMC_ERROR_BLOCK_LEN_ERR;
-	} else if ((response_r1 & SDMMC_OCR_ERASE_SEQ_ERR) == SDMMC_OCR_ERASE_SEQ_ERR) {
+	} else if ((response_r1 & SDMMC_OCR_ERASE_SEQ_ERR) != 0) {
 		return SDMMC_ERROR_ERASE_SEQ_ERR;
-	} else if ((response_r1 & SDMMC_OCR_BAD_ERASE_PARAM) == SDMMC_OCR_BAD_ERASE_PARAM) {
+	} else if ((response_r1 & SDMMC_OCR_BAD_ERASE_PARAM) != 0) {
 		return SDMMC_ERROR_BAD_ERASE_PARAM;
-	} else if ((response_r1 & SDMMC_OCR_WRITE_PROT_VIOLATION) == SDMMC_OCR_WRITE_PROT_VIOLATION) {
+	} else if ((response_r1 & SDMMC_OCR_WRITE_PROT_VIOLATION) != 0) {
 		return SDMMC_ERROR_WRITE_PROT_VIOLATION;
-	} else if ((response_r1 & SDMMC_OCR_LOCK_UNLOCK_FAILED) == SDMMC_OCR_LOCK_UNLOCK_FAILED) {
+	} else if ((response_r1 & SDMMC_OCR_LOCK_UNLOCK_FAILED) != 0) {
 		return SDMMC_ERROR_LOCK_UNLOCK_FAILED;
-	} else if ((response_r1 & SDMMC_OCR_COM_CRC_FAILED) == SDMMC_OCR_COM_CRC_FAILED) {
+	} else if ((response_r1 & SDMMC_OCR_COM_CRC_FAILED) != 0) {
 		return SDMMC_ERROR_COM_CRC_FAILED;
-	} else if ((response_r1 & SDMMC_OCR_ILLEGAL_CMD) == SDMMC_OCR_ILLEGAL_CMD) {
+	} else if ((response_r1 & SDMMC_OCR_ILLEGAL_CMD) != 0) {
 		return SDMMC_ERROR_ILLEGAL_CMD;
-	} else if ((response_r1 & SDMMC_OCR_CARD_ECC_FAILED) == SDMMC_OCR_CARD_ECC_FAILED) {
+	} else if ((response_r1 & SDMMC_OCR_CARD_ECC_FAILED) != 0) {
 		return SDMMC_ERROR_CARD_ECC_FAILED;
-	} else if ((response_r1 & SDMMC_OCR_CC_ERROR) == SDMMC_OCR_CC_ERROR) {
+	} else if ((response_r1 & SDMMC_OCR_CC_ERROR) != 0) {
 		return SDMMC_ERROR_CC_ERR;
-	} else if ((response_r1 & SDMMC_OCR_STREAM_READ_UNDERRUN) == SDMMC_OCR_STREAM_READ_UNDERRUN) {
+	} else if ((response_r1 & SDMMC_OCR_STREAM_READ_UNDERRUN) != 0) {
 		return SDMMC_ERROR_STREAM_READ_UNDERRUN;
-	} else if ((response_r1 & SDMMC_OCR_STREAM_WRITE_OVERRUN) == SDMMC_OCR_STREAM_WRITE_OVERRUN) {
+	} else if ((response_r1 & SDMMC_OCR_STREAM_WRITE_OVERRUN) != 0) {
 		return SDMMC_ERROR_STREAM_WRITE_OVERRUN;
-	} else if ((response_r1 & SDMMC_OCR_CID_CSD_OVERWRITE) == SDMMC_OCR_CID_CSD_OVERWRITE) {
+	} else if ((response_r1 & SDMMC_OCR_CID_CSD_OVERWRITE) != 0) {
 		return SDMMC_ERROR_CID_CSD_OVERWRITE;
-	} else if ((response_r1 & SDMMC_OCR_WP_ERASE_SKIP) == SDMMC_OCR_WP_ERASE_SKIP) {
+	} else if ((response_r1 & SDMMC_OCR_WP_ERASE_SKIP) != 0) {
 		return SDMMC_ERROR_WP_ERASE_SKIP;
-	} else if ((response_r1 & SDMMC_OCR_CARD_ECC_DISABLED) == SDMMC_OCR_CARD_ECC_DISABLED) {
+	} else if ((response_r1 & SDMMC_OCR_CARD_ECC_DISABLED) != 0) {
 		return SDMMC_ERROR_CARD_ECC_DISABLED;
-	} else if ((response_r1 & SDMMC_OCR_ERASE_RESET) == SDMMC_OCR_ERASE_RESET) {
+	} else if ((response_r1 & SDMMC_OCR_ERASE_RESET) != 0) {
 		return SDMMC_ERROR_ERASE_RESET;
-	} else if ((response_r1 & SDMMC_OCR_AKE_SEQ_ERROR) == SDMMC_OCR_AKE_SEQ_ERROR) {
+	} else if ((response_r1 & SDMMC_OCR_AKE_SEQ_ERROR) != 0) {
 		return SDMMC_ERROR_AKE_SEQ_ERR;
 	} else {
 		return SDMMC_ERROR_GENERAL_UNKNOWN_ERR;
@@ -400,151 +397,6 @@ uint32_t SDCard::CmdResponse1(uint32_t command, uint32_t argument)
 }
 
 
-////	Verify that that the next command is an application specific command rather than a standard command
-//uint32_t SDCard::CmdAppCommand(uint32_t argument)
-//{
-//	sdCmd.Argument         = argument;
-//	sdCmd.CmdIndex         = SDMMC_CMD_APP_CMD;
-//	sdCmd.Response         = SDMMC_RESPONSE_SHORT;
-//	sdCmd.WaitForInterrupt = 0;
-//	sdCmd.CPSM             = SDMMC_CMD_CPSMEN;
-//	sdCmd.Send();
-//
-//	// If error is a MMC card; otherwise SD card: SD card 2.0 (voltage range mismatch) or SD card 1.x
-//	return GetCmdResp1(SDMMC_CMD_APP_CMD, SDMMC_CMDTIMEOUT);
-//}
-
-
-//uint32_t SDCard::CmdSelDesel(uint32_t addr)
-//{
-//	sdCmd.Argument         = addr;
-//	sdCmd.CmdIndex         = SDMMC_CMD_SEL_DESEL_CARD;
-//	sdCmd.Response         = SDMMC_RESPONSE_SHORT;
-//	sdCmd.WaitForInterrupt = 0;
-//	sdCmd.CPSM             = SDMMC_CPSM_ENABLE;
-//	sdCmd.Send();
-//
-//	return GetCmdResp1(SDMMC_CMD_SEL_DESEL_CARD, SDMMC_CMDTIMEOUT);
-//}
-
-
-//uint32_t SDCard::CmdBlockLength(uint32_t blockSize)
-//{
-//	sdCmd.Argument         = blockSize;
-//	sdCmd.CmdIndex         = SDMMC_CMD_SET_BLOCKLEN;
-//	sdCmd.Response         = SDMMC_RESPONSE_SHORT;
-//	sdCmd.WaitForInterrupt = 0;
-//	sdCmd.CPSM             = SDMMC_CPSM_ENABLE;
-//	sdCmd.Send();
-//
-//	return GetCmdResp1(SDMMC_CMD_SET_BLOCKLEN, SDMMC_CMDTIMEOUT);
-//}
-
-
-//uint32_t SDCard::CmdStatusRegister()
-//{
-//	sdCmd.Argument         = 0;
-//	sdCmd.CmdIndex         = SDMMC_CMD_SD_APP_STATUS;
-//	sdCmd.Response         = SDMMC_RESPONSE_SHORT;
-//	sdCmd.WaitForInterrupt = 0;
-//	sdCmd.CPSM             = SDMMC_CPSM_ENABLE;
-//	sdCmd.Send();
-//
-//	return GetCmdResp1(SDMMC_CMD_SD_APP_STATUS, SDMMC_CMDTIMEOUT);
-//}
-
-
-uint32_t SDCard::CmdSendSCR()
-{
-	sdCmd.Argument         = 0;
-	sdCmd.CmdIndex         = SDMMC_CMD_SD_APP_SEND_SCR;
-	sdCmd.Response         = SDMMC_RESPONSE_SHORT;
-	sdCmd.WaitForInterrupt = 0;
-	sdCmd.CPSM             = SDMMC_CPSM_ENABLE;
-	sdCmd.Send();
-
-	return GetCmdResp1(SDMMC_CMD_SD_APP_SEND_SCR, SDMMC_CMDTIMEOUT);
-}
-
-
-uint32_t SDCard::CmdBusWidth(uint32_t busWidth)
-{
-	sdCmd.Argument         = busWidth;
-	sdCmd.CmdIndex         = SDMMC_CMD_APP_SD_SET_BUSWIDTH;
-	sdCmd.Response         = SDMMC_RESPONSE_SHORT;
-	sdCmd.WaitForInterrupt = 0;
-	sdCmd.CPSM             = SDMMC_CPSM_ENABLE;
-	sdCmd.Send();
-
-	return GetCmdResp1(SDMMC_CMD_APP_SD_SET_BUSWIDTH, SDMMC_CMDTIMEOUT);
-}
-
-
-uint32_t SDCard::CmdSendStatus(uint32_t argument)
-{
-	sdCmd.Argument         = argument;
-	sdCmd.CmdIndex         = SDMMC_CMD_SEND_STATUS;
-	sdCmd.Response         = SDMMC_RESPONSE_SHORT;
-	sdCmd.WaitForInterrupt = 0;
-	sdCmd.CPSM             = SDMMC_CPSM_ENABLE;
-	sdCmd.Send();
-
-	return GetCmdResp1(SDMMC_CMD_SEND_STATUS, SDMMC_CMDTIMEOUT);
-}
-
-
-uint32_t SDCard::CmdReadSingleBlock(uint32_t readAdd)
-{
-	sdCmd.Argument         = readAdd;
-	sdCmd.CmdIndex         = SDMMC_CMD_READ_SINGLE_BLOCK;
-	sdCmd.Response         = SDMMC_RESPONSE_SHORT;
-	sdCmd.WaitForInterrupt = 0;
-	sdCmd.CPSM             = SDMMC_CPSM_ENABLE;
-	sdCmd.Send();
-
-	return GetCmdResp1(SDMMC_CMD_READ_SINGLE_BLOCK, SDMMC_CMDTIMEOUT);
-}
-
-
-uint32_t SDCard::CmdReadMultiBlock(uint32_t readAdd)
-{
-	sdCmd.Argument         = readAdd;
-	sdCmd.CmdIndex         = SDMMC_CMD_READ_MULT_BLOCK;
-	sdCmd.Response         = SDMMC_RESPONSE_SHORT;
-	sdCmd.WaitForInterrupt = 0;
-	sdCmd.CPSM             = SDMMC_CPSM_ENABLE;
-	sdCmd.Send();
-
-	return GetCmdResp1(SDMMC_CMD_READ_MULT_BLOCK, SDMMC_CMDTIMEOUT);
-}
-
-
-uint32_t SDCard::CmdWriteSingleBlock(uint32_t writeAdd)
-{
-	sdCmd.Argument         = writeAdd;
-	sdCmd.CmdIndex         = SDMMC_CMD_WRITE_SINGLE_BLOCK;
-	sdCmd.Response         = SDMMC_RESPONSE_SHORT;
-	sdCmd.WaitForInterrupt = 0;
-	sdCmd.CPSM             = SDMMC_CPSM_ENABLE;
-	sdCmd.Send();
-
-	return GetCmdResp1(SDMMC_CMD_WRITE_SINGLE_BLOCK, SDMMC_CMDTIMEOUT);
-}
-
-
-uint32_t SDCard::CmdWriteMultiBlock(uint32_t writeAdd)
-{
-	sdCmd.Argument         = writeAdd;
-	sdCmd.CmdIndex         = SDMMC_CMD_WRITE_MULT_BLOCK;
-	sdCmd.Response         = SDMMC_RESPONSE_SHORT;
-	sdCmd.WaitForInterrupt = 0;
-	sdCmd.CPSM             = SDMMC_CPSM_ENABLE;
-	sdCmd.Send();
-
-	return GetCmdResp1(SDMMC_CMD_WRITE_MULT_BLOCK, SDMMC_CMDTIMEOUT);
-}
-
-
 uint32_t SDCard::CmdStopTransfer()
 {
 	sdCmd.Argument         = 0;
@@ -575,15 +427,9 @@ void SDCard::ConfigData(SDMMC_DataInitTypeDef *Data)
 {
 	SDMMC1->DTIMER = Data->DataTimeOut;		// Set the SDMMC Data TimeOut value
 	SDMMC1->DLEN = Data->DataLength;		// Set the SDMMC DataLength value
-
-	// Set the SDMMC data configuration parameters
-//	uint32_t tmpreg = Data->DataBlockSize | Data->TransferDir | Data->TransferMode | Data->DPSM;
-//
-//	MODIFY_REG(SDMMC1->DCTRL, DCTRL_CLEAR_MASK, tmpreg);
-//
 	SDMMC1->DCTRL = (Data->DataBlockSize | Data->TransferDir | Data->TransferMode | Data->DPSM);
-
 }
+
 
 uint32_t SDCard::PowerON()
 {
@@ -964,7 +810,7 @@ uint32_t SDCard::WideBus_Enable()
 			return errorstate;
 		}
 
-		errorstate = CmdBusWidth(2);					// Send ACMD6 APP_CMD with argument as 2 for wide bus mode
+		errorstate = CmdResponse1(SDMMC_CMD_APP_SD_SET_BUSWIDTH, 2);		// Send ACMD6 APP_CMD with argument as 2 for wide bus mode
 		if (errorstate != 0) {
 			return errorstate;
 		}
@@ -1004,7 +850,7 @@ uint32_t SDCard::FindSCR(uint32_t *scr)
 	config.DPSM          = SDMMC_DPSM_ENABLE;
 	ConfigData(&config);
 
-	errorstate = CmdSendSCR();	// Send ACMD51 SD_APP_SEND_SCR with argument as 0
+	errorstate = CmdResponse1(SDMMC_CMD_SD_APP_SEND_SCR, 0);	// Send ACMD51 SD_APP_SEND_SCR with argument as 0
 	if (errorstate != 0) {
 		return errorstate;
 	}
@@ -1044,7 +890,7 @@ uint32_t SDCard::FindSCR(uint32_t *scr)
 
 uint32_t SDCard::GetCardState()
 {
-	uint32_t errorstate = CmdSendStatus(RelCardAdd << 16);
+	uint32_t errorstate = CmdResponse1(SDMMC_CMD_SEND_STATUS, RelCardAdd << 16);
 	if (errorstate != 0) {
 		ErrorCode |= errorstate;
 	}
@@ -1094,10 +940,10 @@ uint32_t SDCard::WriteBlocks_DMA(const uint8_t *pData, uint32_t blockAddr, uint3
 		uint32_t errorstate;
 		if (NumberOfBlocks > 1) {		// Write Blocks in Polling mode
 			Context = SD_CONTEXT_WRITE_MULTIPLE_BLOCK | SD_CONTEXT_DMA;
-			errorstate = CmdWriteMultiBlock(blockAddr);			// Write Multi Block command
+			errorstate = CmdResponse1(SDMMC_CMD_WRITE_MULT_BLOCK, blockAddr);			// Write Multi Block command
 		} else {
 			Context = (SD_CONTEXT_WRITE_SINGLE_BLOCK | SD_CONTEXT_DMA);
-			errorstate = CmdWriteSingleBlock(blockAddr);			// Write Single Block command
+			errorstate = CmdResponse1(SDMMC_CMD_WRITE_SINGLE_BLOCK, blockAddr);			// Write Single Block command
 		}
 
 		if (errorstate != 0) {
@@ -1290,10 +1136,10 @@ uint32_t SDCard::ReadBlocks_DMA(uint8_t* rxBuffer, uint32_t blockAddr, uint32_t 
 		uint32_t errorstate;
 		if (blocks > 1) {
 			Context = SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_DMA;
-			errorstate = CmdReadMultiBlock(blockAddr);			// Read Multi Block command
+			errorstate = CmdResponse1(SDMMC_CMD_READ_MULT_BLOCK, blockAddr);			// Read Multi Block command
 		} else {
 			Context = SD_CONTEXT_READ_SINGLE_BLOCK | SD_CONTEXT_DMA;
-			errorstate = CmdReadSingleBlock(blockAddr);			// Read Single Block command
+			errorstate = CmdResponse1(SDMMC_CMD_READ_SINGLE_BLOCK, blockAddr);			// Read Single Block command
 		}
 		if (errorstate != 0) {
 			ClearStaticDataFlags();
@@ -1377,7 +1223,7 @@ uint32_t SDCard::ReadBlocksDMAMultiBuffer(uint32_t blockAddr, uint32_t blocks, u
 		Context = (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_DMA);
 
 		// Read Multi Block command
-		uint32_t errorstate = CmdReadMultiBlock(blockAddr);
+		uint32_t errorstate = CmdResponse1(SDMMC_CMD_READ_MULT_BLOCK, blockAddr);
 		if (errorstate != 0) {
 			State = HAL_SD_STATE_READY;
 			ErrorCode |= errorstate;

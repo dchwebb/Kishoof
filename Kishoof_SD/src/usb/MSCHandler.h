@@ -130,6 +130,12 @@ private:
 	uint32_t bot_data_length = 0;
 	const uint8_t* botBuff;
 	uint8_t bot_data[MediaPacket];
+	static constexpr uint32_t cacheBlocks = 64;
+	uint8_t dataCache[MediaPacket * cacheBlocks];	// Create buffer large enough to store multiple packets to avoid slow lookups
+	int32_t dataCacheStart = -1;			// First block number held in data cache
+	int32_t dataCacheEnd = -1;				// Last block number held in data cache
+	uint32_t blockReq = 0;					// When requesting DMA to fill cache store the first block number requested
+	uint32_t blockReqCount = 0;				// DMA block count requested
 	uint32_t scsi_blk_addr;
 	uint32_t scsi_blk_len;
 	uint32_t scsi_medium_state = 0;

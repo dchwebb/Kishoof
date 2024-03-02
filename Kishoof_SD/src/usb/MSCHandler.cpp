@@ -395,10 +395,22 @@ int8_t MSCHandler::SCSI_Read()
 	csw.dDataResidue -= inBuffSize;
 
 	// Data may be read from cache or flash; if flash (signalled by nullptr), pass a buffer to be filled and wait for DMA transfer to complete
-	inBuff = nullptr;
-	if (sdCard.ReadBlocks_DMA(bot_data, scsi_blk_addr, 1, false, DMAtoMSCTransferDone) != RES_OK) {		// Read sector into bot_data buffer
-		int err = 1;
+
+
+	// Check if data to be sent is in cache
+	if ((int)scsi_blk_addr >= dataCacheStart && (int)scsi_blk_addr <= dataCacheEnd) {
+		inBuff = &dataCache[MediaPacket * (scsi_blk_addr - dataCacheStart)];
+		inBuffSize = std::min(scsi_blk_len, dataCacheEnd - scsi_blk_addr + 1) * fatSectorSize;
+		ReadReady(false);
+	} else {
+		inBuff = nullptr;
+		blockReq = scsi_blk_addr;
+		blockReqCount = std::min(cacheBlocks, scsi_blk_len);
+		if (sdCard.ReadBlocks_DMA(dataCache, scsi_blk_addr, blockReqCount, false, DMAtoMSCTransferDone) != RES_OK) {		// Read sector into bot_data buffer
+			int err = 1;
+		}
 	}
+
 	return 0;
 }
 
@@ -407,7 +419,10 @@ int8_t MSCHandler::SCSI_Read()
 {
 	if (dmaComplete) {		// Triggered once data has been read from flash and copied to local buffer
 		//SCB_InvalidateDCache_by_Addr((uint32_t*)bot_data, inBuffSize);		// Ensure cache is refreshed after write or erase
-		inBuff = bot_data;
+		dataCacheStart = blockReq;
+		dataCacheEnd = blockReq + blockReqCount - 1;
+		inBuff = dataCache;
+		inBuffSize = blockReqCount * fatSectorSize;
 	}
 
 	// Once read data is ready (may be waiting for DMA) start endpoint transfer
