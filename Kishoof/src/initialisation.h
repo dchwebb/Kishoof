@@ -9,7 +9,7 @@
 extern volatile uint32_t SysTickVal;
 
 #define ADC1_BUFFER_LENGTH 4
-#define ADC2_BUFFER_LENGTH 7
+#define ADC2_BUFFER_LENGTH 6
 #define SAMPLE_BUFFER_LENGTH 1048576		// Currently 2^20 (4MB of 16MB)
 //#define SAMPLE_RATE 48000
 #define SYSTICK 1000						// Set in uS so 1000uS = 1ms
@@ -24,13 +24,12 @@ struct ADCValues {
 	uint16_t audio_L;
 	uint16_t audio_R;
 	uint16_t DelayPot_R;
-	uint16_t DelayCV_R;
+	uint16_t DelayCV_L;
 	uint16_t Mix;
 	uint16_t DelayPot_L;
-	uint16_t DelayCV_L;
+	uint16_t DelayCV_R;
 	uint16_t FeedbackPot;
 	uint16_t FeedbackCV;
-	uint16_t FilterCV;
 	uint16_t FilterPot;
 };
 
@@ -43,6 +42,7 @@ void InitClocks();
 void InitHardware();
 void InitCache();
 void InitSysTick();
+void InitDisplaySPI();
 void uartSendChar(char c);
 void uartSendString(const char* s);
 void InitADC();

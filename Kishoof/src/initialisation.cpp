@@ -155,6 +155,7 @@ void InitHardware()
 	InitIO();										// Initialise switches and LEDs
 	InitADC();
 	InitDebugTimer();
+	InitDisplaySPI();
 
 	RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;
 	RNG->CR |= RNG_CR_RNGEN;
@@ -189,6 +190,40 @@ void InitSysTick()
 {
 	SysTick_Config(SystemCoreClock / SYSTICK);		// gives 1ms
 	NVIC_SetPriority(SysTick_IRQn, 0);
+}
+
+
+void InitDisplaySPI()
+{
+	RCC->APB1LENR |= RCC_APB1LENR_SPI3EN;
+
+	GpioPin::Init(GPIOC, 10, GpioPin::Type::AlternateFunction, 6);		// PC10: SPI3_SCK AF6
+	GpioPin::Init(GPIOC, 12, GpioPin::Type::AlternateFunction, 6);		// PC12: SPI3_MOSI AF6
+
+	// Configure SPI
+	SPI3->CFG2 |= SPI_CFG2_COMM_0;					// 00: full-duplex, *01: simplex transmitter, 10: simplex receiver, 11: half-duplex
+	SPI3->CFG2 |= SPI_CFG2_SSM;						// Software slave management: When SSM bit is set, NSS pin input is replaced with the value from the SSI bit
+	SPI3->CR1 |= SPI_CR1_SSI;						// Internal slave select
+	SPI3->CFG2 |= SPI_CFG2_SSOM;					// SS output management in master mode
+	SPI3->CFG1 |= SPI_CFG1_MBR_2 | SPI_CFG1_MBR_0;	// Master Baud rate p2238: 100: SPI clock/32; 101: SPI clock/64
+	SPI3->CFG2 |= SPI_CFG2_MASTER;					// Master selection
+
+
+	SPI3->CR1 |= SPI_CR1_SPE;						// Enable SPI
+
+	// Configure DMA
+	RCC->AHB4ENR |= RCC_AHB4ENR_BDMAEN;
+
+	BDMA_Channel0->CCR &= ~BDMA_CCR_MSIZE;			// Memory size: 8 bit; 01 = 16 bit; 10 = 32 bit
+	BDMA_Channel0->CCR &= ~BDMA_CCR_PSIZE;			// Peripheral size: 8 bit; 01 = 16 bit; 10 = 32 bit
+	BDMA_Channel0->CCR |= BDMA_CCR_DIR;				// data transfer direction: 00: peripheral-to-memory; 01: memory-to-peripheral; 10: memory-to-memory
+	BDMA_Channel0->CCR |= BDMA_CCR_PL_0;			// Priority: 00 = low; 01 = Medium; 10 = High; 11 = Very High
+	BDMA_Channel0->CCR |= BDMA_CCR_MINC;			// Memory in increment mode
+
+	BDMA_Channel0->CPAR = (uint32_t)(&(SPI3->TXDR));// Configure the peripheral data register address
+
+	DMAMUX1_Channel0->CCR |= 62; 					// DMA request MUX input 62 = spi3_tx_dma (See p.695)
+	DMAMUX1_ChannelStatus->CFR |= DMAMUX_CFR_CSOF0; // Clear synchronization overrun event flag
 }
 
 
@@ -259,18 +294,17 @@ void InitADC()
 ADC Channels are distributed across ADC1 and ADC2 for faster conversions. Audio channels on ADC1 for better quality.
 Both insert data into ADC_array at different offsets.
  ADC1:
-	0	PA3 ADC12_INP15		AUDIO_IN_L
-	1	PA2 ADC12_INP14		AUDIO_IN_R
+	0	PA3 ADC12_INP15		AUDIO_IN_R
+	1	PA2 ADC12_INP14		AUDIO_IN_L
 	2	PA1 ADC1_INP17		DELAY_POT_R
-	3	PA0 ADC1_INP16		DELAY_CV_SCALED_R
+	3	PA0 ADC1_INP16		DELAY_CV_SCALED_L
 ADC2:
 	0	PC5 ADC12_INP8		WET_DRY_MIX
 	1	PB1 ADC12_INP5		DELAY_POT_L
-	2	PA6 ADC12_INP3 		DELAY_CV_SCALED_L
+	2	PA6 ADC12_INP3 		DELAY_CV_SCALED_R
 	3	PB0 ADC12_INP9		FEEDBACK_POT
-	4	PA7 ADC12_INP7		FEEDBACK_CV_SCALED
-	5	PC4 ADC12_INP4		FILTER_CV_SCALED
-	6	PC1 ADC123_INP11 	FILTER_POT
+	4	PC4 ADC12_INP4		FEEDBACK_CV_SCALED
+	5	PC1 ADC123_INP11 	FILTER_POT
 */
 
 void InitADC1()
@@ -397,13 +431,12 @@ void InitADC2()
 	/* Configure ADC Channels to be converted:
 	0	PC5 ADC12_INP8		WET_DRY_MIX
 	1	PB1 ADC12_INP5		DELAY_POT_L
-	2	PA6 ADC12_INP3 		DELAY_CV_SCALED_L
+	2	PA6 ADC12_INP3 		DELAY_CV_SCALED_R
 	3	PB0 ADC12_INP9		FEEDBACK_POT
-	4	PA7 ADC12_INP7		FEEDBACK_CV_SCALED
-	5	PC4 ADC12_INP4		FILTER_CV_SCALED
-	6	PC1 ADC123_INP11 	FILTER_POT
+	4	PC4 ADC12_INP4		FEEDBACK_CV_SCALED
+	5	PC1 ADC123_INP11 	FILTER_POT
 	*/
-	InitAdcPins(ADC2, {8, 5, 3, 9, 7, 4, 11});
+	InitAdcPins(ADC2, {8, 5, 3, 9, 4, 11});
 
 	// Enable ADC
 	ADC2->CR |= ADC_CR_ADEN;
@@ -560,13 +593,12 @@ float StopDebugTimer() {
 void InitIO()
 {
 	GpioPin::Init(GPIOA, 7, GpioPin::Type::Input);				// PA7: tempo clock
-	GpioPin::Init(GPIOC, 10, GpioPin::Type::Output);			// PC10: LED1
-	GpioPin::Init(GPIOC, 11, GpioPin::Type::Output);			// PC11: LED 2
-	GpioPin::Init(GPIOC, 12, GpioPin::Type::InputPullup);		// PC12: Delay Chorus
 	GpioPin::Init(GPIOE, 2, GpioPin::Type::InputPullup);		// PE2: Mode 1, low in reverse mode
-	GpioPin::Init(GPIOE, 3, GpioPin::Type::InputPullup);		// PE3: Mode 2, low in short mode
-	GpioPin::Init(GPIOB, 7, GpioPin::Type::Output);				// PB7: debug pin
-	GpioPin::Init(GPIOB, 8, GpioPin::Type::Output);				// PB8: debug pin
+
+	GpioPin::Init(GPIOC, 10, GpioPin::Type::Output);			// PC10: SCLK [ex LED1]
+	GpioPin::Init(GPIOC, 12, GpioPin::Type::Output);			// PC12: MOSI [ex Delay Chorus]
+	GpioPin::Init(GPIOC, 11, GpioPin::Type::Output);			// PC11: DC [ex LED2]
+	GpioPin::Init(GPIOE, 3, GpioPin::Type::Output);				// PE3: CS [ex Mode 2], low in short mode
 
 }
 

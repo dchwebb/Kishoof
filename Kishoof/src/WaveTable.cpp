@@ -26,7 +26,7 @@ void WaveTable::CalcSample()
 	// Calculations: 11090 is difference in cv between two octaves; 50110 is cv at 1v and 130.81 is desired Hz at 1v
 	constexpr float pitchBase = (65.41f * (2048.0f / sampleRate)) / std::pow(2.0, -50120.0f / 11090.0f);
 	constexpr float cvMult = -1.0f / 11090.0f;
-	float newInc = pitchBase * std::pow(2.0f, (float)adc.FilterCV * cvMult);			// for cycle length matching sample rate (48k)
+	float newInc = pitchBase * std::pow(2.0f, (float)adc.FeedbackCV * cvMult);			// for cycle length matching sample rate (48k)
 	pitchInc = 0.99 * pitchInc + 0.01 * newInc;
 
 	// Set filter for recalculation
