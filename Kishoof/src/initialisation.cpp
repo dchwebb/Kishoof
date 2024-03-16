@@ -181,7 +181,7 @@ void InitCache()
 				 (1 << MPU_CTRL_ENABLE_Pos);		// Enable the MPU
 
 	// Enable data and instruction caches
-	SCB_EnableDCache();
+	//SCB_EnableDCache();
 	SCB_EnableICache();
 }
 
@@ -212,15 +212,15 @@ void InitDisplaySPI()
 	SPI3->CR1 |= SPI_CR1_SPE;						// Enable SPI
 
 	// Configure DMA
-	RCC->AHB4ENR |= RCC_AHB4ENR_BDMAEN;
+	RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
 
-	BDMA_Channel0->CCR &= ~BDMA_CCR_MSIZE;			// Memory size: 8 bit; 01 = 16 bit; 10 = 32 bit
-	BDMA_Channel0->CCR &= ~BDMA_CCR_PSIZE;			// Peripheral size: 8 bit; 01 = 16 bit; 10 = 32 bit
-	BDMA_Channel0->CCR |= BDMA_CCR_DIR;				// data transfer direction: 00: peripheral-to-memory; 01: memory-to-peripheral; 10: memory-to-memory
-	BDMA_Channel0->CCR |= BDMA_CCR_PL_0;			// Priority: 00 = low; 01 = Medium; 10 = High; 11 = Very High
-	BDMA_Channel0->CCR |= BDMA_CCR_MINC;			// Memory in increment mode
+	DMA1_Stream0->CR &= ~DMA_SxCR_MSIZE;			// Memory size: 8 bit; 01 = 16 bit; 10 = 32 bit
+	DMA1_Stream0->CR &= ~DMA_SxCR_PSIZE;			// Peripheral size: 8 bit; 01 = 16 bit; 10 = 32 bit
+	DMA1_Stream0->CR |= DMA_SxCR_DIR_0;				// data transfer direction: 00: peripheral-to-memory; 01: memory-to-peripheral; 10: memory-to-memory
+	DMA1_Stream0->CR |= DMA_SxCR_PL_0;				// Priority: 00 = low; 01 = Medium; 10 = High; 11 = Very High
+	DMA1_Stream0->CR |= DMA_SxCR_MINC;				// Memory in increment mode
 
-	BDMA_Channel0->CPAR = (uint32_t)(&(SPI3->TXDR));// Configure the peripheral data register address
+	DMA1_Stream0->PAR = (uint32_t)(&(SPI3->TXDR));	// Configure the peripheral data register address
 
 	DMAMUX1_Channel0->CCR |= 62; 					// DMA request MUX input 62 = spi3_tx_dma (See p.695)
 	DMAMUX1_ChannelStatus->CFR |= DMAMUX_CFR_CSOF0; // Clear synchronization overrun event flag

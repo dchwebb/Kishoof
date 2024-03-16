@@ -102,7 +102,7 @@ typedef std::vector<uint8_t> cdArgs_t;
 
 // Macros to check if DMA or SPI are busy - shouldn't need to check Stream5 as this is receive
 //#define SPI_DMA_Working	LCD_DMA_STREAM->NDTR || ((LCD_SPI->SR & (SPI_SR_TXE | SPI_SR_RXNE)) == 0 || (LCD_SPI->SR & SPI_SR_BSY))
-#define SPI_DMA_Working ((SPI3->SR & SPI_SR_TXP) == 0 && (SPI3->SR & SPI_SR_TXC) == 0)
+#define SPI_DMA_Working ((SPI3->SR & SPI_SR_TXP) == 0 || (SPI3->SR & SPI_SR_TXC) == 0)
 
 struct FontData {
 	const uint8_t Width;   // Font width in pixels
@@ -126,7 +126,7 @@ public:
 
 	uint16_t drawBuffer[2][(drawHeight + 1) * drawBufferWidth];
 
-	void Init(void);
+	void Init();
 	void ScreenFill(const uint16_t colour);
 	void ColourFill(const uint16_t x0, const uint16_t y0, const uint16_t x1, const uint16_t y1, const uint16_t colour);
 	void PatternFill(const uint16_t x0, const uint16_t y0, uint16_t x1, uint16_t y1, const uint16_t* PixelData);
@@ -145,7 +145,7 @@ private:
 	LCD_Orientation_t orientation = LCD_Portrait;
 	uint16_t charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
 	uint8_t currentCharBuffer = 0;
-	uint16_t dmaInt16;										// Used to buffer data for DMA transfer during colour fills
+	uint32_t dmaInt16;										// Used to buffer data for DMA transfer during colour fills
 
 	void Data(const uint8_t data);
 	void Data16b(const uint16_t data);

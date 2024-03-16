@@ -3,7 +3,7 @@
 #include "USB.h"
 #include "WaveTable.h"
 #include "Filter.h"
-
+#include "lcd.h"
 
 volatile uint32_t SysTickVal;
 extern uint32_t SystemCoreClock;
@@ -22,6 +22,7 @@ int main(void) {
 
 	InitClocks();					// Configure the clock and PLL
 	InitHardware();
+	lcd.Init();
 
 	filter.Init();					// Initialise filter coefficients, windows etc
 	usb.Init(false);

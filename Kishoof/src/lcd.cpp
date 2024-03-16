@@ -1,6 +1,8 @@
 #include "lcd.h"
 
-LCD lcd;
+//LCD lcd;
+
+LCD __attribute__((section (".ram_d1_data"))) lcd {};
 
 void LCD::Init()
 {
@@ -71,13 +73,18 @@ void LCD::Init()
 	Command(cmdGC9A01A::DISPON);		// Display on
 	Delay(150);
 
-
 	ScreenFill(LCD_BLACK);
+	ScreenFill(LCD_RED);
+
+	ColourFill(100, 100, 103, 103, LCD_RED);
+
+
 };
 
 void LCD::CommandData(const cmdGC9A01A cmd, const cdArgs_t data)
 {
 	Command(cmd);
+	while (SPI_DMA_Working);
 	DCPin.SetHigh();
 	for (uint8_t d : data) {
 		SPISendByte(d);
@@ -88,6 +95,7 @@ void LCD::CommandData(const cmdGC9A01A cmd, const cdArgs_t data)
 void LCD::CommandData(const uint8_t cmd, const cdArgs_t data)
 {
 	Command(cmd);
+	while (SPI_DMA_Working);
 	DCPin.SetHigh();
 	for (uint8_t d : data) {
 		SPISendByte(d);
@@ -179,28 +187,33 @@ void LCD::ColourFill(const uint16_t x0, const uint16_t y0, const uint16_t x1, co
 
 	SetCursorPosition(x0, y0, x1, y1);
 	dmaInt16 = colour;								// data to transfer - set early to avoid problem where F722 doesn't update buffer until midway through send
+	//dmaInt16 = 0xf8a5f80a;								// data to transfer - set early to avoid problem where F722 doesn't update buffer until midway through send
 	DCPin.SetHigh();
 
 	// Clear DMA errors and transfer complete status flags
 	SPI3->IFCR |= SPI_IFCR_TXTFC;
 
 	// Check SPI is not sending
-	while ((SPI3->SR & SPI_SR_TXP) == 0 && (SPI3->SR & SPI_SR_TXC) == 0) {};
+	while ((SPI3->SR & SPI_SR_TXP) == 0 || (SPI3->SR & SPI_SR_TXC) == 0) {};
 
 	SPI3->CR1 &= ~SPI_CR1_SPE;						// Disable SPI
-	SPI3->CR2 |= (pixelCount > 0xFFFF) ? pixelCount / 2 : pixelCount;			// Set the number of items to transfer
-	SPI3->CFG1 |= SPI_CFG1_TXDMAEN;					// Tx DMA stream enable
+	//SPI3->CR2 |= (pixelCount > 0xFFFF) ? pixelCount / 2 : pixelCount;			// Set the number of items to transfer
+	//SPI3->CFG1 |= SPI_CFG1_TXDMAEN;					// Tx DMA stream enable
 
-	BDMA_Channel0->CCR &= ~BDMA_CCR_EN;				// Disable BDMA
-	BDMA_Channel0->CNDTR = (pixelCount > 0xFFFF) ? pixelCount / 2 : pixelCount;			// Number of data items to transfer
-	BDMA_Channel0->CCR |= BDMA_CCR_EN;				// Enable DMA and wait
+	DMA1_Stream0->CR &= ~DMA_SxCR_EN;				// Disable DMA
+	DMA1_Stream0->CR &= ~DMA_SxCR_MINC;				// Memory not in increment mode
+	DMA1_Stream0->CR |= DMA_SxCR_MSIZE_0;			// Memory size 16 bit
+	DMA1_Stream0->CR |= DMA_SxCR_PSIZE_0;			// Peripheral size 16 bit
+	DMA1_Stream0->M0AR = reinterpret_cast<uint32_t>(&dmaInt16);					// Configure the memory data register address
+//	pixelCount = 16;
+	DMA1_Stream0->NDTR = pixelCount;				// Number of data items to transfer
+	DMA1_Stream0->CR |= DMA_SxCR_EN;				// Enable DMA and wait
+	SPI3->CFG1 |= 15;
+	SPI3->CFG1 |= SPI_CFG1_TXDMAEN;					// Tx DMA stream enable
 	SPI3->CR1 |= SPI_CR1_SPE;						// Enable SPI
 	SPI3->CR1 |= SPI_CR1_CSTART;					// Start SPI
 
-	SPI6->CR2 |= sizeof(*this);						// Set the number of items to transfer
-	SPI6->CFG1 |= SPI_CFG1_TXDMAEN;					// Tx DMA stream enable
-	SPI6->CR1 |= SPI_CR1_SPE;						// Enable SPI
-	BDMA_Channel0->CM0AR = reinterpret_cast<uint32_t>(this);		// Configure the memory data register address
+
 
 
 	/*
@@ -402,10 +415,13 @@ inline void LCD::SPISendByte(const uint8_t data)
 	while (SPI_DMA_Working);
 
 	// check if in 16 bit mode
-	if (((SPI3->CFG1 & SPI_CFG1_DSIZE) >> SPI_CFG1_DSIZE_Pos) == 15) {
+	if (((SPI3->CFG1 & SPI_CFG1_DSIZE) >> SPI_CFG1_DSIZE_Pos) != 7) {
 		SPISetDataSize(SPIDataSize_8b);
 	}
-	SPI3->TXDR = data;
+	uint8_t& tx8bit = (uint8_t&)(SPI3->TXDR);
+	tx8bit = data;
+	//SPI3->TXDR = data;
+	SPI3->CR1 |= SPI_CR1_CSTART;
 
 	while (SPI_DMA_Working);						// Wait for transmission to complete
 }
