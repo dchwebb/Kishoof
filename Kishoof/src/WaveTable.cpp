@@ -1,6 +1,7 @@
 #include "WaveTable.h"
 #include "Filter.h"
 #include "GpioPin.h"
+#include "LCD.h"
 #include <cmath>
 #include <cstring>
 
@@ -57,6 +58,10 @@ void WaveTable::CalcSample()
 
 	SPI2->TXDR = (int32_t)(outputSample * floatToIntMult);
 	SPI2->TXDR = (int32_t)(outputSample * floatToIntMult);;
+
+	// Enter sample in draw table to enable LCD update
+	const uint8_t drawPos = readPos * (240.0f / 2048.0f);		// convert position from position in 2048 sample wavetable to 240 wide screen
+	drawData[drawPos] = (uint8_t)((1.0f + outputSample) * 120.0f);
 
 	debugTiming = StopDebugTimer();
 
@@ -175,3 +180,11 @@ bool WaveTable::LoadWaveTable(uint32_t* startAddr)
 
 
 
+void WaveTable::Draw()
+{
+	// Populate a frame buffer to display the wavetable values
+	memset(lcd.drawBuffer[0], 0, sizeof(lcd.drawBuffer[0]));
+	for (uint8_t i = 0; i < 240; ++i) {
+
+	}
+}

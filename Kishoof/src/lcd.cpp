@@ -6,17 +6,7 @@ LCD __attribute__((section (".ram_d1_data"))) lcd {};
 
 void LCD::Init()
 {
-	/*
-	// Force reset
-	LCD_RST_RESET;		// Set reset pin low
-	Delay(20000);
-	LCD_RST_SET;		// Set reset pin high
-	Delay(20000);
-*/
-
-
-	// Software reset
-	Command(cmdGC9A01A::SWRESET);
+	Command(cmdGC9A01A::SWRESET);			// Software reset
 	Delay(50000);
 
 	Command(cmdGC9A01A::INREGEN2);
@@ -74,70 +64,16 @@ void LCD::Init()
 	Delay(150);
 
 	ScreenFill(LCD_BLACK);
-	ScreenFill(LCD_RED);
 
-	ColourFill(100, 100, 103, 103, LCD_RED);
+	Rotate(LCD_Portrait_Flipped);
+
+	ColourFill(50, 50, 57, 57, LCD_YELLOW);
+	ColourFill(90, 90, 97, 97, LCD_RED);
+	ColourFill(130, 130, 137, 137, LCD_BLUE);
+	ColourFill(170, 170, 177, 177, LCD_GREEN);
 
 
 };
-
-void LCD::CommandData(const cmdGC9A01A cmd, const cdArgs_t data)
-{
-	Command(cmd);
-	while (SPI_DMA_Working);
-	DCPin.SetHigh();
-	for (uint8_t d : data) {
-		SPISendByte(d);
-	}
-}
-
-
-void LCD::CommandData(const uint8_t cmd, const cdArgs_t data)
-{
-	Command(cmd);
-	while (SPI_DMA_Working);
-	DCPin.SetHigh();
-	for (uint8_t d : data) {
-		SPISendByte(d);
-	}
-}
-
-
-void LCD::Delay(volatile uint32_t delay)		// delay must be declared volatile or will be optimised away
-{
-	for (; delay != 0; delay--);
-}
-
-
-void LCD::Command(const uint8_t cmd)
-{
-	while (SPI_DMA_Working);
-	DCPin.SetLow();
-	SPISendByte(static_cast<uint8_t>(cmd));
-}
-
-void LCD::Command(const cmdGC9A01A cmd)
-{
-	while (SPI_DMA_Working);
-	DCPin.SetLow();
-	SPISendByte(static_cast<uint8_t>(cmd));
-}
-
-
-//	Send data in either 8 or 16 bit modes
-void LCD::Data(const uint8_t data)
-{
-	DCPin.SetHigh();
-	SPISendByte(data);
-}
-
-
-void LCD::Data16b(const uint16_t data)
-{
-	DCPin.SetHigh();
-	SPISendByte(data >> 8);
-	SPISendByte(data & 0xFF);
-}
 
 
 void LCD::SetCursorPosition(const uint16_t x1, const uint16_t y1, const uint16_t x2, const uint16_t y2)
@@ -150,7 +86,7 @@ void LCD::SetCursorPosition(const uint16_t x1, const uint16_t y1, const uint16_t
 	Data16b(y1);
 	Data16b(y2);
 
-	Command(cmdGC9A01A::RAMWR);		// Write to RAM
+	Command(cmdGC9A01A::RAMWR);			// Write to RAM
 }
 
 
@@ -165,13 +101,6 @@ void LCD::Rotate(const LCD_Orientation_t o)
 	}
 
 	orientation = o;
-//	if (o == LCD_Portrait || o == LCD_Portrait_Flipped) {
-//		width = 240;
-//		height = 320;
-//	} else {
-//		width = 320;
-//		height = 240;
-//	}
 }
 
 
@@ -183,56 +112,29 @@ void LCD::ScreenFill(const uint16_t colour)
 
 void LCD::ColourFill(const uint16_t x0, const uint16_t y0, const uint16_t x1, const uint16_t y1, const uint16_t colour)
 {
-	uint32_t pixelCount = (x1 - x0 + 1) * (y1 - y0 + 1);
+	const uint32_t pixelCount = (x1 - x0 + 1) * (y1 - y0 + 1);
 
 	SetCursorPosition(x0, y0, x1, y1);
-	dmaInt16 = colour;								// data to transfer - set early to avoid problem where F722 doesn't update buffer until midway through send
-	//dmaInt16 = 0xf8a5f80a;								// data to transfer - set early to avoid problem where F722 doesn't update buffer until midway through send
-	DCPin.SetHigh();
+	dmaInt16 = colour;
 
 	// Clear DMA errors and transfer complete status flags
 	SPI3->IFCR |= SPI_IFCR_TXTFC;
+	DMA1->LIFCR |= DMA_LIFCR_CFEIF0 | DMA_LIFCR_CHTIF0 | DMA_LIFCR_CTCIF0;
 
-	// Check SPI is not sending
-	while ((SPI3->SR & SPI_SR_TXP) == 0 || (SPI3->SR & SPI_SR_TXC) == 0) {};
+	while (SPI_DMA_Working);
+
+	DCPin.SetHigh();
 
 	SPI3->CR1 &= ~SPI_CR1_SPE;						// Disable SPI
-	//SPI3->CR2 |= (pixelCount > 0xFFFF) ? pixelCount / 2 : pixelCount;			// Set the number of items to transfer
-	//SPI3->CFG1 |= SPI_CFG1_TXDMAEN;					// Tx DMA stream enable
-
 	DMA1_Stream0->CR &= ~DMA_SxCR_EN;				// Disable DMA
 	DMA1_Stream0->CR &= ~DMA_SxCR_MINC;				// Memory not in increment mode
-	DMA1_Stream0->CR |= DMA_SxCR_MSIZE_0;			// Memory size 16 bit
-	DMA1_Stream0->CR |= DMA_SxCR_PSIZE_0;			// Peripheral size 16 bit
-	DMA1_Stream0->M0AR = reinterpret_cast<uint32_t>(&dmaInt16);					// Configure the memory data register address
-//	pixelCount = 16;
+	DMA1_Stream0->M0AR = (uint32_t)&dmaInt16;		// Configure the memory data register address
 	DMA1_Stream0->NDTR = pixelCount;				// Number of data items to transfer
 	DMA1_Stream0->CR |= DMA_SxCR_EN;				// Enable DMA and wait
-	SPI3->CFG1 |= 15;
+	SPI3->CFG1 |= 15;								// Set SPI to 16 bit mode
 	SPI3->CFG1 |= SPI_CFG1_TXDMAEN;					// Tx DMA stream enable
 	SPI3->CR1 |= SPI_CR1_SPE;						// Enable SPI
 	SPI3->CR1 |= SPI_CR1_CSTART;					// Start SPI
-
-
-
-
-	/*
-	SPISetDataSize(SPIDataSize_16b);				// 16-bit SPI mode
-
-	LCD_CLEAR_DMA_FLAGS
-	LCD_DMA_STREAM->CR &= ~DMA_SxCR_MINC;			// Memory not in increment mode
-	LCD_DMA_STREAM->NDTR = (pixelCount > 0xFFFF) ? pixelCount / 2 : pixelCount;						// Number of data items to transfer
-	LCD_DMA_STREAM->M0AR = (uint32_t) &dmaInt16;	// DMA_InitStruct.DMA_Memory0BaseAddr;
-	LCD_DMA_STREAM->CR |= DMA_SxCR_EN;				// Enable DMA transfer stream
-	LCD_SPI->CR2 |= SPI_CR2_TXDMAEN;				// Enable SPI TX DMA
-
-	if (pixelCount > 0xFFFF) {						// Send remaining data
-		while (SPI_DMA_Working);
-		LCD_CLEAR_DMA_FLAGS
-		LCD_DMA_STREAM->NDTR = pixelCount / 2;		// Number of data items to transfer
-		LCD_DMA_STREAM->CR |= DMA_SxCR_EN;			// Enable DMA transfer stream
-	}
-	*/
 }
 
 
@@ -398,15 +300,70 @@ void LCD::DrawStringMem(uint16_t x0, const uint16_t y0, uint16_t const memWidth,
 }
 
 
+void LCD::CommandData(const cmdGC9A01A cmd, const cdArgs_t data)
+{
+	Command(cmd);
+	while (SPI_DMA_Working);
+	DCPin.SetHigh();
+	for (uint8_t d : data) {
+		SPISendByte(d);
+	}
+}
+
+
+void LCD::CommandData(const uint8_t cmd, const cdArgs_t data)
+{
+	Command(cmd);
+	while (SPI_DMA_Working);
+	DCPin.SetHigh();
+	for (uint8_t d : data) {
+		SPISendByte(d);
+	}
+}
+
+
+void LCD::Command(const uint8_t cmd)
+{
+	while (SPI_DMA_Working);
+	DCPin.SetLow();
+	SPISendByte(cmd);
+}
+
+
+void LCD::Command(const cmdGC9A01A cmd)
+{
+	while (SPI_DMA_Working);
+//	SPI3->CFG1 &= ~SPI_CFG1_TXDMAEN;
+	DCPin.SetLow();
+	SPISendByte(static_cast<uint8_t>(cmd));
+}
+
+
+void LCD::Data(const uint8_t data)
+{
+	DCPin.SetHigh();
+	SPISendByte(data);
+}
+
+
+void LCD::Data16b(const uint16_t data)
+{
+	DCPin.SetHigh();
+	SPISendByte(data >> 8);
+	SPISendByte(data & 0xFF);
+}
+
+
 void LCD::SPISetDataSize(const SPIDataSize_t& Mode)
 {
+	SPI3->CR1 &= ~SPI_CR1_SPE;
 	SPI3->CFG1 &= ~SPI_CFG1_DSIZE;
 	if (Mode == SPIDataSize_16b) {
 		SPI3->CFG1 |= 15 << SPI_CFG1_DSIZE_Pos;				// Data size (N-1 bits)
 	} else {
 		SPI3->CFG1 |= 7 << SPI_CFG1_DSIZE_Pos;				// Data size (N-1 bits)
 	}
-
+	SPI3->CR1 |= SPI_CR1_SPE;
 }
 
 
@@ -414,19 +371,20 @@ inline void LCD::SPISendByte(const uint8_t data)
 {
 	while (SPI_DMA_Working);
 
-	// check if in 16 bit mode
-	if (((SPI3->CFG1 & SPI_CFG1_DSIZE) >> SPI_CFG1_DSIZE_Pos) != 7) {
+	if (((SPI3->CFG1 & SPI_CFG1_DSIZE) >> SPI_CFG1_DSIZE_Pos) != 7) {	// check if in 16 bit mode
 		SPISetDataSize(SPIDataSize_8b);
 	}
-	uint8_t& tx8bit = (uint8_t&)(SPI3->TXDR);
-	tx8bit = data;
-	//SPI3->TXDR = data;
+
+	spiTX8bit = data;								// Data must be written as 8 bit or will transfer 32 bit word
 	SPI3->CR1 |= SPI_CR1_CSTART;
 
 	while (SPI_DMA_Working);						// Wait for transmission to complete
 }
 
 
-
+void LCD::Delay(volatile uint32_t delay)		// delay must be declared volatile or will be optimised away
+{
+	for (; delay != 0; delay--);
+}
 
 

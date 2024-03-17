@@ -84,24 +84,10 @@ enum class cmdGC9A01A : uint8_t {
 };
 
 
-
-
-// Define LCD DMA and SPI registers
-#define LCD_DMA_STREAM			DMA1_Stream5
-#define LCD_SPI 				SPI3
-#define LCD_CLEAR_DMA_FLAGS		DMA1->HIFCR = DMA_HIFCR_CHTIF5 | DMA_HIFCR_CTCIF5 | DMA_HIFCR_CTEIF5;
-
-// Define macros for setting and clearing GPIO SPI pins
-//#define LCD_RST_RESET	GPIOC->BSRR |= GPIO_BSRR_BR_14
-//#define LCD_RST_SET 	GPIOC->BSRR |= GPIO_BSRR_BS_14
-//#define LCD_DCX_RESET	GPIOC->BSRR |= GPIO_BSRR_BR_13
-//#define LCD_DCX_SET		GPIOC->BSRR |= GPIO_BSRR_BS_13
-
 // Macro for creating arguments to CommandData function
 typedef std::vector<uint8_t> cdArgs_t;
 
-// Macros to check if DMA or SPI are busy - shouldn't need to check Stream5 as this is receive
-//#define SPI_DMA_Working	LCD_DMA_STREAM->NDTR || ((LCD_SPI->SR & (SPI_SR_TXE | SPI_SR_RXNE)) == 0 || (LCD_SPI->SR & SPI_SR_BSY))
+// Macro to check if DMA or SPI are busy
 #define SPI_DMA_Working ((SPI3->SR & SPI_SR_TXP) == 0 || (SPI3->SR & SPI_SR_TXC) == 0)
 
 struct FontData {
@@ -113,18 +99,14 @@ struct FontData {
 
 class LCD {
 public:
-	uint16_t width = 240;
-	uint16_t height = 240;
-
-	static constexpr uint16_t drawWidth = 320;
-	static constexpr uint16_t drawHeight = 216;
-	static constexpr uint16_t drawBufferWidth = 106;		// Maximum width of draw buffer (3 * 106 = 318 which is two short of full width but used in FFT for convenience
+	static constexpr uint16_t width = 240;
+	static constexpr uint16_t height = 240;
 
 	static constexpr FontData Font_Small {7, 10, Font7x10};
 	static constexpr FontData Font_Large {11, 18, Font11x18};
 	static constexpr FontData Font_XLarge {16, 26, Font16x26};
 
-	uint16_t drawBuffer[2][(drawHeight + 1) * drawBufferWidth];
+	uint16_t drawBuffer[2][width * height];
 
 	void Init();
 	void ScreenFill(const uint16_t colour);
@@ -146,6 +128,7 @@ private:
 	uint16_t charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
 	uint8_t currentCharBuffer = 0;
 	uint32_t dmaInt16;										// Used to buffer data for DMA transfer during colour fills
+	uint8_t& spiTX8bit = (uint8_t&)(SPI3->TXDR);			// Byte data must be written as 8 bit or will transfer 32 bit word
 
 	void Data(const uint8_t data);
 	void Data16b(const uint16_t data);

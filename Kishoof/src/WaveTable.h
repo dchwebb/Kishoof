@@ -11,6 +11,7 @@ public:
 	void CalcSample();						// Called by interrupt handler to generate next sample
 	void Init();							// Initialise caches, buffers etc
 	bool LoadWaveTable(uint32_t* startAddr);
+	void Draw();
 
 	float testWavetable[2048];
 
@@ -43,6 +44,8 @@ private:
 	// Private class functions
 	int32_t OutputMix(float wetSample);
 	float FastTanh(float x);
+
+	uint8_t drawData[240];
 };
 
 extern WaveTable wavetable;

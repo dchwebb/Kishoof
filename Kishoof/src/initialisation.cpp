@@ -214,12 +214,11 @@ void InitDisplaySPI()
 	// Configure DMA
 	RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
 
-	DMA1_Stream0->CR &= ~DMA_SxCR_MSIZE;			// Memory size: 8 bit; 01 = 16 bit; 10 = 32 bit
-	DMA1_Stream0->CR &= ~DMA_SxCR_PSIZE;			// Peripheral size: 8 bit; 01 = 16 bit; 10 = 32 bit
+	DMA1_Stream0->CR |= DMA_SxCR_MSIZE_0;			// Memory size 16 bit [8 bit; 01 = 16 bit; 10 = 32 bit]
+	DMA1_Stream0->CR |= DMA_SxCR_PSIZE_0;			// Peripheral size 16 bit
 	DMA1_Stream0->CR |= DMA_SxCR_DIR_0;				// data transfer direction: 00: peripheral-to-memory; 01: memory-to-peripheral; 10: memory-to-memory
 	DMA1_Stream0->CR |= DMA_SxCR_PL_0;				// Priority: 00 = low; 01 = Medium; 10 = High; 11 = Very High
 	DMA1_Stream0->CR |= DMA_SxCR_MINC;				// Memory in increment mode
-
 	DMA1_Stream0->PAR = (uint32_t)(&(SPI3->TXDR));	// Configure the peripheral data register address
 
 	DMAMUX1_Channel0->CCR |= 62; 					// DMA request MUX input 62 = spi3_tx_dma (See p.695)
