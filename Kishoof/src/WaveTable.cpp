@@ -60,7 +60,8 @@ void WaveTable::CalcSample()
 	SPI2->TXDR = (int32_t)(outputSample * floatToIntMult);;
 
 	// Enter sample in draw table to enable LCD update
-	const uint8_t drawPos = readPos * (240.0f / 2048.0f);		// convert position from position in 2048 sample wavetable to 240 wide screen
+	constexpr float heightMult = (float)LCD::height / 2048.0f;
+	const uint8_t drawPos = readPos * heightMult;		// convert position from position in 2048 sample wavetable to 240 wide screen
 	drawData[drawPos] = (uint8_t)((1.0f + outputSample) * 120.0f);
 
 	debugTiming = StopDebugTimer();
@@ -185,6 +186,7 @@ void WaveTable::Draw()
 	// Populate a frame buffer to display the wavetable values
 	memset(lcd.drawBuffer[0], 0, sizeof(lcd.drawBuffer[0]));
 	for (uint8_t i = 0; i < 240; ++i) {
-
+		uint32_t pos = drawData[i] * LCD::height + i;
+		lcd.drawBuffer[0][pos] = LCD_GREEN;
 	}
 }

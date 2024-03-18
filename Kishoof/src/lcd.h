@@ -142,7 +142,7 @@ private:
 
 	inline void SPISendByte(const uint8_t data);
 	void SPISetDataSize(const SPIDataSize_t& Mode);
-	void SPI_DMA_SendHalfWord(const uint16_t& value, const uint16_t& count);
+	void DMASend(const uint16_t x0, const uint16_t y0, const uint16_t x1, const uint16_t y1, const uint16_t* pixelData, bool memInc);
 
 	GpioPin DCPin {GPIOC, 11, GpioPin::Type::Output};
 	GpioPin CSPin {GPIOE, 3, GpioPin::Type::Output};

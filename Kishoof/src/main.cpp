@@ -33,6 +33,10 @@ int main(void) {
 		filter.Update();			// Check if filter coefficients need to be updated
 		usb.cdc.ProcessCommand();	// Check for incoming USB serial commands
 
+		if (!(SPI_DMA_Working)) {
+			wavetable.Draw();
+		}
+
 #if (USB_DEBUG)
 		if ((GPIOB->IDR & GPIO_IDR_ID4) == 0 && USBDebug) {
 			USBDebug = false;

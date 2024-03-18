@@ -110,8 +110,44 @@ void LCD::ScreenFill(const uint16_t colour)
 }
 
 
+void LCD::DMASend(const uint16_t x0, const uint16_t y0, const uint16_t x1, const uint16_t y1, const uint16_t* pixelData, bool memInc)
+{
+	const uint32_t pixelCount = (x1 - x0 + 1) * (y1 - y0 + 1);
+
+	SetCursorPosition(x0, y0, x1, y1);
+
+	while (SPI_DMA_Working);
+
+	DCPin.SetHigh();
+
+	DMA1_Stream0->CR &= ~DMA_SxCR_EN;				// Disable DMA
+	DMA1->LIFCR |= DMA_LIFCR_CFEIF0 | DMA_LIFCR_CHTIF0 | DMA_LIFCR_CTCIF0;	// Clear DMA errors and transfer complete status flags
+
+	if (memInc) {
+		DMA1_Stream0->CR |= DMA_SxCR_MINC;			// Memory in increment mode
+	} else {
+		DMA1_Stream0->CR &= ~DMA_SxCR_MINC;			// Memory not in increment mode
+	}
+	DMA1_Stream0->M0AR = (uint32_t)pixelData;		// Configure the memory data register address
+	DMA1_Stream0->NDTR = pixelCount;				// Number of data items to transfer
+	DMA1_Stream0->CR |= DMA_SxCR_EN;				// Enable DMA and wait
+
+	SPI3->CR1 &= ~SPI_CR1_SPE;						// Disable SPI
+	SPI3->IFCR |= SPI_IFCR_TXTFC;					// Clear Transmission Transfer Filled flag
+	SPI3->CFG1 |= 15;								// Set SPI to 16 bit mode
+	SPI3->CFG1 |= SPI_CFG1_TXDMAEN;					// Tx DMA stream enable
+	SPI3->CR1 |= SPI_CR1_SPE;						// Enable SPI
+	SPI3->CR1 |= SPI_CR1_CSTART;					// Start SPI
+}
+
+
+
 void LCD::ColourFill(const uint16_t x0, const uint16_t y0, const uint16_t x1, const uint16_t y1, const uint16_t colour)
 {
+	/*
+	dmaInt16 = colour;
+	DMASend(x0, y0, x1, y1, &dmaInt16, false);
+	*/
 	const uint32_t pixelCount = (x1 - x0 + 1) * (y1 - y0 + 1);
 
 	SetCursorPosition(x0, y0, x1, y1);
@@ -129,8 +165,10 @@ void LCD::ColourFill(const uint16_t x0, const uint16_t y0, const uint16_t x1, co
 	DMA1_Stream0->CR &= ~DMA_SxCR_EN;				// Disable DMA
 	DMA1_Stream0->CR &= ~DMA_SxCR_MINC;				// Memory not in increment mode
 	DMA1_Stream0->M0AR = (uint32_t)&dmaInt16;		// Configure the memory data register address
+
 	DMA1_Stream0->NDTR = pixelCount;				// Number of data items to transfer
 	DMA1_Stream0->CR |= DMA_SxCR_EN;				// Enable DMA and wait
+
 	SPI3->CFG1 |= 15;								// Set SPI to 16 bit mode
 	SPI3->CFG1 |= SPI_CFG1_TXDMAEN;					// Tx DMA stream enable
 	SPI3->CR1 |= SPI_CR1_SPE;						// Enable SPI
@@ -140,20 +178,7 @@ void LCD::ColourFill(const uint16_t x0, const uint16_t y0, const uint16_t x1, co
 
 void LCD::PatternFill(const uint16_t x0, const uint16_t y0, const uint16_t x1, const uint16_t y1, const uint16_t* PixelData)
 {
-	uint32_t pixelCount = (x1 - x0 + 1) * (y1 - y0 + 1);
-
-	SetCursorPosition(x0, y0, x1, y1);
-
-	DCPin.SetHigh();
-	SPISetDataSize(SPIDataSize_16b);				// 16-bit SPI mode
-/*
-	LCD_CLEAR_DMA_FLAGS
-	LCD_DMA_STREAM->CR |= DMA_SxCR_MINC;			// Memory in increment mode
-	LCD_DMA_STREAM->NDTR = pixelCount;				// Number of data items to transfer
-	LCD_DMA_STREAM->M0AR = (uint32_t)PixelData;		// DMA_InitStruct.DMA_Memory0BaseAddr
-	LCD_DMA_STREAM->CR |= DMA_SxCR_EN;				// Enable DMA transfer stream
-	LCD_SPI->CR2 |= SPI_CR2_TXDMAEN;				// Enable SPI TX DMA
-	*/
+	DMASend(x0, y0, x1, y1, PixelData, true);
 }
 
 
