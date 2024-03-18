@@ -189,4 +189,5 @@ void WaveTable::Draw()
 		uint32_t pos = drawData[i] * LCD::height + i;
 		lcd.drawBuffer[0][pos] = LCD_GREEN;
 	}
+	lcd.PatternFill(0, 0, LCD::width - 1, LCD::height - 1, lcd.drawBuffer[0]);
 }
