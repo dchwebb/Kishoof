@@ -195,6 +195,7 @@ void InitSysTick()
 
 void InitDisplaySPI()
 {
+	// SPI123 uses per_ck by default; per_ck configured in CKPERSEL in RCC_D1CCIPR (64MHz HSI RC clock by default)
 	RCC->APB1LENR |= RCC_APB1LENR_SPI3EN;
 
 	GpioPin::Init(GPIOC, 10, GpioPin::Type::AlternateFunction, 6);		// PC10: SPI3_SCK AF6
@@ -205,10 +206,8 @@ void InitDisplaySPI()
 	SPI3->CFG2 |= SPI_CFG2_SSM;						// Software slave management: When SSM bit is set, NSS pin input is replaced with the value from the SSI bit
 	SPI3->CR1 |= SPI_CR1_SSI;						// Internal slave select
 	SPI3->CFG2 |= SPI_CFG2_SSOM;					// SS output management in master mode
-	SPI3->CFG1 |= SPI_CFG1_MBR_2 | SPI_CFG1_MBR_0;	// Master Baud rate p2238: 100: SPI clock/32; 101: SPI clock/64
+	SPI3->CFG1 |= SPI_CFG1_MBR_1 | SPI_CFG1_MBR_0;	// Master Baud rate p2238: 010: ck/8; *011: ck/16; 100: ck/32; 101: ck/64
 	SPI3->CFG2 |= SPI_CFG2_MASTER;					// Master selection
-
-
 	SPI3->CR1 |= SPI_CR1_SPE;						// Enable SPI
 
 	// Configure DMA

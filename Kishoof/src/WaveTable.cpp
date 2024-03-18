@@ -185,9 +185,18 @@ void WaveTable::Draw()
 {
 	// Populate a frame buffer to display the wavetable values
 	memset(lcd.drawBuffer[0], 0, sizeof(lcd.drawBuffer[0]));
+
+	uint8_t oldHeight = drawData[0];
 	for (uint8_t i = 0; i < 240; ++i) {
-		uint32_t pos = drawData[i] * LCD::height + i;
-		lcd.drawBuffer[0][pos] = LCD_GREEN;
+		// do while loop needed to draw vertical lines where adjacent samples are vertically spaced by more than a pixel
+		uint8_t currHeight = drawData[i];
+		do {
+			const uint32_t pos = currHeight * LCD::height + i;
+			lcd.drawBuffer[0][pos] = LCD_GREEN;
+			currHeight += currHeight > oldHeight ? -1 : 1;
+		} while (currHeight != oldHeight);
+
+		oldHeight = drawData[i];
 	}
 	lcd.PatternFill(0, 0, LCD::width - 1, LCD::height - 1, lcd.drawBuffer[0]);
 }

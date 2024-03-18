@@ -16,6 +16,8 @@ extern "C" {
 #include "interrupts.h"
 }
 
+float filterInterval = 0.0f;
+
 uint32_t lastVal;
 
 int main(void) {
@@ -31,10 +33,15 @@ int main(void) {
 
 	while (1) {
 		filter.Update();			// Check if filter coefficients need to be updated
+
+
 		usb.cdc.ProcessCommand();	// Check for incoming USB serial commands
 
 		if (!(SPI_DMA_Working)) {
+			StartDebugTimer();
 			wavetable.Draw();
+			filterInterval = StopDebugTimer();
+
 		}
 
 #if (USB_DEBUG)
