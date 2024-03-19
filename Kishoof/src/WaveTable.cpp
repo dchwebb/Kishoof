@@ -60,9 +60,9 @@ void WaveTable::CalcSample()
 	SPI2->TXDR = (int32_t)(outputSample * floatToIntMult);;
 
 	// Enter sample in draw table to enable LCD update
-	constexpr float heightMult = (float)LCD::height / 2048.0f;
-	const uint8_t drawPos = readPos * heightMult;		// convert position from position in 2048 sample wavetable to 240 wide screen
-	drawData[drawPos] = (uint8_t)((1.0f + outputSample) * 120.0f);
+	constexpr float widthMult = (float)LCD::width / 2048.0f;		// Scale to width of the LCD
+	const uint8_t drawPos = readPos * widthMult;		// convert position from position in 2048 sample wavetable to 240 wide screen
+	drawData[drawPos] = (uint8_t)((1.0f + outputSample) * 60.0f);
 
 	debugTiming = StopDebugTimer();
 
@@ -180,12 +180,15 @@ bool WaveTable::LoadWaveTable(uint32_t* startAddr)
 }
 
 
-
 void WaveTable::Draw()
 {
-
 	// Populate a frame buffer to display the wavetable values
-//	memset(lcd.drawBuffer[0], 0, sizeof(lcd.drawBuffer[0]));
+
+	if (!bufferClear) {		// Wait until the framebuffer has been cleared by the DMA blanking process
+		return;
+	}
+
+//	memset(lcd.drawBuffer[activeDrawBuffer], 0, sizeof(lcd.drawBuffer[0]) / 2);
 
 	debugDraw.SetHigh();			// Debug
 
@@ -195,14 +198,20 @@ void WaveTable::Draw()
 		uint8_t currHeight = drawData[i];
 		do {
 			const uint32_t pos = currHeight * LCD::height + i;
-			lcd.drawBuffer[0][pos] = LCD_GREEN;
+			lcd.drawBuffer[activeDrawBuffer][pos] = LCD_GREEN;
 			currHeight += currHeight > oldHeight ? -1 : 1;
 		} while (currHeight != oldHeight);
 
 		oldHeight = drawData[i];
 	}
+
+	lcd.PatternFill(0, 60, LCD::width - 1, 179, lcd.drawBuffer[activeDrawBuffer]);
+	activeDrawBuffer = !activeDrawBuffer;
+
+	// Trigger MDMA frame buffer blanking
+	MDMATransfer(lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 2);
+	bufferClear = false;
+
+
 	debugDraw.SetLow();			// Debug off
-	lcd.PatternFill(0, 0, LCD::width - 1, LCD::height - 1, lcd.drawBuffer[0]);
-
-
 }

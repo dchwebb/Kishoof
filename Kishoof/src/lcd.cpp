@@ -7,7 +7,7 @@ LCD __attribute__((section (".ram_d1_data"))) lcd {};
 void LCD::Init()
 {
 	Command(cmdGC9A01A::SWRESET);			// Software reset
-	Delay(50000);
+	Delay(100000);
 
 	Command(cmdGC9A01A::INREGEN2);
 	CommandData(0xEB, cdArgs_t {0x14});
@@ -59,20 +59,20 @@ void LCD::Init()
 	Command(cmdGC9A01A::TEON);
 	Command(cmdGC9A01A::INVON);
 	Command(cmdGC9A01A::SLPOUT);		// Exit sleep
-	Delay(150);
+	Delay(10000);
 	Command(cmdGC9A01A::DISPON);		// Display on
-	Delay(150);
+	Delay(10000);
 
 	ScreenFill(LCD_BLACK);
 
 	Rotate(LCD_Portrait_Flipped);
-
+/*
 	ColourFill(50, 50, 57, 57, LCD_YELLOW);
 	ColourFill(90, 90, 97, 97, LCD_RED);
 	ColourFill(130, 130, 137, 137, LCD_BLUE);
 	ColourFill(170, 170, 177, 177, LCD_GREEN);
 
-
+*/
 };
 
 

@@ -23,6 +23,14 @@ void SPI2_IRQHandler()
 }
 
 
+void MDMA_IRQHandler()
+{
+	// fires when MDMA Flash to memory transfer has completed
+	if (MDMA->GISR0 & MDMA_GISR0_GIF0) {
+		MDMA_Channel0->CIFCR |= MDMA_CIFCR_CBTIF;		// Clear transfer complete interrupt flag
+		wavetable.bufferClear = true;
+	}
+}
 
 // System interrupts
 void NMI_Handler(void) {}

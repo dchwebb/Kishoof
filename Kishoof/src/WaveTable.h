@@ -14,6 +14,7 @@ public:
 	void Draw();
 
 	float testWavetable[2048];
+	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
 
 	struct WavFile {
 		const uint8_t* startAddr;			// Address of data section
@@ -46,6 +47,7 @@ private:
 	float FastTanh(float x);
 
 	uint8_t drawData[240];
+	bool activeDrawBuffer = true;
 
 	GpioPin debugMain{GPIOE, 2, GpioPin::Type::Output};		// PE2: Debug
 	GpioPin debugDraw{GPIOE, 3, GpioPin::Type::Output};		// PE3: Debug
