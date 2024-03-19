@@ -14,7 +14,7 @@ volatile float dbg[5000];
 int idx = 0;
 void WaveTable::CalcSample()
 {
-	GpioPin::SetHigh(GPIOC, 10);		// Debug
+	debugMain.SetHigh();		// Debug
 	StartDebugTimer();
 
 	// 0v = 61200; 1v = 50110; 2v = 39020; 3v = 27910; 4v = 16790; 5v = 5670
@@ -66,7 +66,7 @@ void WaveTable::CalcSample()
 
 	debugTiming = StopDebugTimer();
 
-	GpioPin::SetLow(GPIOC, 10);			// Debug off
+	debugMain.SetLow();			// Debug off
 }
 
 
@@ -183,8 +183,11 @@ bool WaveTable::LoadWaveTable(uint32_t* startAddr)
 
 void WaveTable::Draw()
 {
+
 	// Populate a frame buffer to display the wavetable values
-	memset(lcd.drawBuffer[0], 0, sizeof(lcd.drawBuffer[0]));
+//	memset(lcd.drawBuffer[0], 0, sizeof(lcd.drawBuffer[0]));
+
+	debugDraw.SetHigh();			// Debug
 
 	uint8_t oldHeight = drawData[0];
 	for (uint8_t i = 0; i < 240; ++i) {
@@ -198,5 +201,8 @@ void WaveTable::Draw()
 
 		oldHeight = drawData[i];
 	}
+	debugDraw.SetLow();			// Debug off
 	lcd.PatternFill(0, 0, LCD::width - 1, LCD::height - 1, lcd.drawBuffer[0]);
+
+
 }

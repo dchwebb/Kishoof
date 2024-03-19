@@ -2,7 +2,7 @@
 
 #include "initialisation.h"
 #include "Filter.h"
-
+#include "GpioPIn.h"
 
 struct WaveTable {
 	friend class CDCHandler;				// Allow the serial handler access to private data for debug printing
@@ -46,6 +46,9 @@ private:
 	float FastTanh(float x);
 
 	uint8_t drawData[240];
+
+	GpioPin debugMain{GPIOE, 2, GpioPin::Type::Output};		// PE2: Debug
+	GpioPin debugDraw{GPIOE, 3, GpioPin::Type::Output};		// PE3: Debug
 };
 
 extern WaveTable wavetable;

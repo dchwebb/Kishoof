@@ -591,12 +591,11 @@ float StopDebugTimer() {
 void InitIO()
 {
 	GpioPin::Init(GPIOA, 7, GpioPin::Type::Input);				// PA7: tempo clock
-	GpioPin::Init(GPIOE, 2, GpioPin::Type::InputPullup);		// PE2: Mode 1, low in reverse mode
 
 	GpioPin::Init(GPIOC, 10, GpioPin::Type::Output);			// PC10: SCLK [ex LED1]
 	GpioPin::Init(GPIOC, 12, GpioPin::Type::Output);			// PC12: MOSI [ex Delay Chorus]
 	GpioPin::Init(GPIOC, 11, GpioPin::Type::Output);			// PC11: DC [ex LED2]
-	GpioPin::Init(GPIOE, 3, GpioPin::Type::Output);				// PE3: CS [ex Mode 2], low in short mode
+
 
 }
 
