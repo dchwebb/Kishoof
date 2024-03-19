@@ -62,7 +62,10 @@ void WaveTable::CalcSample()
 	// Enter sample in draw table to enable LCD update
 	constexpr float widthMult = (float)LCD::width / 2048.0f;		// Scale to width of the LCD
 	const uint8_t drawPos = readPos * widthMult;		// convert position from position in 2048 sample wavetable to 240 wide screen
-	drawData[drawPos] = (uint8_t)((1.0f + outputSample) * 60.0f);
+
+	// NB smoothed version is slightly slower than than non-smoothed (~10ns)
+	drawData[drawPos] = (uint8_t)(((1.0f + outputSample) * 60.0f * 0.1f) + (0.9f * drawData[drawPos]));
+	//drawData[drawPos] = (uint8_t)((1.0f + outputSample) * 60.0f);
 
 	debugTiming = StopDebugTimer();
 
@@ -179,21 +182,52 @@ bool WaveTable::LoadWaveTable(uint32_t* startAddr)
 	return true;
 }
 
-
+/*
 void WaveTable::Draw()
 {
-	// Populate a frame buffer to display the wavetable values
+	// Populate a frame buffer to display the wavetable values (half screen refresh)
 
 	if (!bufferClear) {		// Wait until the framebuffer has been cleared by the DMA blanking process
 		return;
 	}
 
-//	memset(lcd.drawBuffer[activeDrawBuffer], 0, sizeof(lcd.drawBuffer[0]) / 2);
+	debugDraw.SetHigh();			// Debug
 
+	const uint8_t startPos = activeDrawBuffer ? 0 : 120;
+	uint8_t oldHeight = drawData[activeDrawBuffer ? 0 : 119];
+	for (uint8_t i = 0; i < 120; ++i) {
+		// do while loop needed to draw vertical lines where adjacent samples are vertically spaced by more than a pixel
+		uint8_t currHeight = drawData[i + startPos];
+		do {
+			const uint32_t pos = currHeight * 120 + i;
+			lcd.drawBuffer[activeDrawBuffer][pos] = LCD_GREEN;
+			currHeight += currHeight > oldHeight ? -1 : 1;
+		} while (currHeight != oldHeight);
+
+		oldHeight = drawData[i + startPos];
+	}
+
+	lcd.PatternFill(startPos, 60, startPos + 119, 179, lcd.drawBuffer[activeDrawBuffer]);
+	activeDrawBuffer = !activeDrawBuffer;
+
+	// Trigger MDMA frame buffer blanking (memset too slow)
+	MDMATransfer(lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 4);
+	bufferClear = false;
+
+
+	debugDraw.SetLow();			// Debug off
+}
+*/
+
+
+void WaveTable::Draw()
+{
+	// Populate a frame buffer to display the wavetable values (full screen refresh)
 	debugDraw.SetHigh();			// Debug
 
 	uint8_t oldHeight = drawData[0];
 	for (uint8_t i = 0; i < 240; ++i) {
+
 		// do while loop needed to draw vertical lines where adjacent samples are vertically spaced by more than a pixel
 		uint8_t currHeight = drawData[i];
 		do {
@@ -212,6 +246,6 @@ void WaveTable::Draw()
 	MDMATransfer(lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 2);
 	bufferClear = false;
 
-
 	debugDraw.SetLow();			// Debug off
+
 }

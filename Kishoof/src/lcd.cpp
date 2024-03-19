@@ -2,7 +2,9 @@
 
 //LCD lcd;
 
-LCD __attribute__((section (".ram_d1_data"))) lcd {};
+LCD  lcd {};
+uint16_t __attribute__((section (".dma_buffer"))) LCD::drawBuffer[2][width * height];
+uint16_t __attribute__((section (".dma_buffer"))) LCD::dmaInt16;										// Used to buffer data for DMA transfer during colour fills
 
 void LCD::Init()
 {

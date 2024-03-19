@@ -182,7 +182,7 @@ void InitCache()
 				 (1 << MPU_CTRL_ENABLE_Pos);		// Enable the MPU
 
 	// Enable data and instruction caches
-	//SCB_EnableDCache();
+	SCB_EnableDCache();
 	SCB_EnableICache();
 }
 
@@ -640,6 +640,7 @@ void InitMDMA()
 	NVIC_SetPriority(MDMA_IRQn, 0x3);				// Lower is higher priority
 	NVIC_EnableIRQ(MDMA_IRQn);
 }
+
 
 void MDMATransfer(const uint16_t* destAddr, const uint32_t bytes)
 {

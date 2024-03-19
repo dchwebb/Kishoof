@@ -106,7 +106,7 @@ public:
 	static constexpr FontData Font_Large {11, 18, Font11x18};
 	static constexpr FontData Font_XLarge {16, 26, Font16x26};
 
-	uint16_t drawBuffer[2][width * height];
+	static uint16_t drawBuffer[2][width * height];		// declared static to allow placement in non chached RAM
 
 	void Init();
 	void ScreenFill(const uint16_t colour);
@@ -127,7 +127,7 @@ private:
 	LCD_Orientation_t orientation = LCD_Portrait;
 	uint16_t charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
 	uint8_t currentCharBuffer = 0;
-	uint16_t dmaInt16;										// Used to buffer data for DMA transfer during colour fills
+	static uint16_t dmaInt16;										// Used to buffer data for DMA transfer during colour fills
 	uint8_t& spiTX8bit = (uint8_t&)(SPI3->TXDR);			// Byte data must be written as 8 bit or will transfer 32 bit word
 
 	void Data(const uint8_t data);
@@ -145,7 +145,7 @@ private:
 	void DMASend(const uint16_t x0, const uint16_t y0, const uint16_t x1, const uint16_t y1, const uint16_t* pixelData, bool memInc);
 
 	GpioPin DCPin {GPIOC, 11, GpioPin::Type::Output};
-	GpioPin CSPin {GPIOE, 3, GpioPin::Type::Output};
+	//GpioPin CSPin {GPIOE, 3, GpioPin::Type::Output};
 };
 
 
