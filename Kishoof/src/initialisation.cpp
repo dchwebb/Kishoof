@@ -199,8 +199,8 @@ void InitDisplaySPI()
 	// SPI123 uses per_ck by default; per_ck configured in CKPERSEL in RCC_D1CCIPR (64MHz HSI RC clock by default)
 	RCC->APB1LENR |= RCC_APB1LENR_SPI3EN;
 
-	GpioPin::Init(GPIOC, 10, GpioPin::Type::AlternateFunction, 6);		// PC10: SPI3_SCK AF6
-	GpioPin::Init(GPIOC, 12, GpioPin::Type::AlternateFunction, 6);		// PC12: SPI3_MOSI AF6
+	GpioPin::Init(GPIOC, 10, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::VeryHigh);		// PC10: SPI3_SCK AF6
+	GpioPin::Init(GPIOC, 12, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::VeryHigh);		// PC12: SPI3_MOSI AF6
 
 	// Configure SPI
 	SPI3->CFG2 |= SPI_CFG2_COMM_0;					// 00: full-duplex, *01: simplex transmitter, 10: simplex receiver, 11: half-duplex
