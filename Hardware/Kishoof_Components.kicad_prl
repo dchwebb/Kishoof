@@ -4,7 +4,16 @@
     "active_layer_preset": "All Layers",
     "auto_track_width": true,
     "hidden_netclasses": [],
-    "hidden_nets": [],
+    "hidden_nets": [
+      "+12V",
+      "GND",
+      "-12V",
+      "+3.3VA",
+      "+3.3V",
+      "+3V3",
+      "/+12V_IN",
+      "/-12V_IN"
+    ],
     "high_contrast_mode": 0,
     "net_color_mode": 1,
     "opacity": {
