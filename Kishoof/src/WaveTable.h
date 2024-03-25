@@ -34,11 +34,13 @@ private:
 	TestData wavetableType = TestData::wavetable;
 
 	float* activeWaveTable;
-	float wavetableIdx;
+	float wavetableIdxA, wavetableIdxB;		// Smoothed ADC value
 
 	float pitchInc = 0.0f;
 	float readPos = 0;
 	int32_t oldReadPos;
+
+	bool stepped = true;
 
 	float debugTiming;
 

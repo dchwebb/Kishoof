@@ -9,6 +9,12 @@ WaveTable wavetable;
 
 // C:\Users\Dominic\Documents\Xfer\Serum Presets\Tables
 
+/* Currently used adcs:
+adc.FeedbackCV 	> 1V/Oct CV
+adc.DelayCV_L 	> Channel A wavetable position
+adc.FilterPot 	> Channel B wavetable position
+*/
+
 volatile int susp = 0;
 volatile float dbg[5000];
 int idx = 0;
@@ -38,34 +44,45 @@ void WaveTable::CalcSample()
 
 	// Get wavetable position
 	float wtPos = ((float)(wavFile.tableCount - 1) / 43000.0f) * (65536 - adc.DelayCV_L);
-	wavetableIdx = std::clamp((float)(0.99f * wavetableIdx + 0.01f * wtPos), 0.0f, (float)(wavFile.tableCount - 1));
-	uint32_t sampleOffset = 2048 * std::floor(wavetableIdx);
+	wavetableIdxA = std::clamp((float)(0.99f * wavetableIdxA + 0.01f * wtPos), 0.0f, (float)(wavFile.tableCount - 1));
+	uint32_t sampleOffset = 2048 * std::floor(wavetableIdxA);
 
-	float outputSample;
+	float outputSampleA, outputSampleB;
 	float ratio = readPos - (uint32_t)readPos;
 	if (ratio > 0.00001f) {
-		outputSample = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset, ratio);
+		outputSampleA = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset, ratio);
 	} else {
-		outputSample = filter.CalcFilter((uint32_t)readPos, activeWaveTable + sampleOffset);
+		outputSampleA = filter.CalcFilter((uint32_t)readPos, activeWaveTable + sampleOffset);
 	}
 
-	// Interpolate between wavetables
-	ratio = wavetableIdx - (uint32_t)wavetableIdx;
-	if (ratio > 0.0001f) {
-		float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset + 2048, ratio);
-		outputSample = std::lerp(outputSample, outputSample2, ratio);
+	if (stepped) {
+		// Get wavetable position
+		wtPos = ((float)(wavFile.tableCount - 1) / 43000.0f) * (65536 - adc.FilterPot);
+		wavetableIdxB = std::clamp((float)(0.99f * wavetableIdxB + 0.01f * wtPos), 0.0f, (float)(wavFile.tableCount - 1));
+		sampleOffset = 2048 * std::floor(wavetableIdxB);
+		outputSampleB = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset, ratio);
+
+	} else {
+		// Interpolate between wavetables
+		ratio = wavetableIdxA - (uint32_t)wavetableIdxA;
+		if (ratio > 0.0001f) {
+			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset + 2048, ratio);
+			outputSampleA = std::lerp(outputSampleA, outputSample2, ratio);
+		}
+		outputSampleB = outputSampleA;		// FIXME
 	}
 
-	SPI2->TXDR = (int32_t)(outputSample * floatToIntMult);
-	SPI2->TXDR = (int32_t)(outputSample * floatToIntMult);;
+
+	SPI2->TXDR = (int32_t)(outputSampleA * floatToIntMult);
+	SPI2->TXDR = (int32_t)(outputSampleB * floatToIntMult);;
 
 	// Enter sample in draw table to enable LCD update
 	constexpr float widthMult = (float)LCD::width / 2048.0f;		// Scale to width of the LCD
 	const uint8_t drawPos = readPos * widthMult;		// convert position from position in 2048 sample wavetable to 240 wide screen
 
 	// NB smoothed version is slightly slower than than non-smoothed (~10ns)
-	drawData[drawPos] = (uint8_t)(((1.0f + outputSample) * 60.0f * 0.1f) + (0.9f * drawData[drawPos]));
-	//drawData[drawPos] = (uint8_t)((1.0f + outputSample) * 60.0f);
+	drawData[drawPos] = (uint8_t)(((1.0f - outputSampleA) * 60.0f * 0.1f) + (0.9f * drawData[drawPos]));
+	//drawData[drawPos] = (uint8_t)((1.0f + outputSample) * 60.0f);		// Change + to - to invert waveform
 
 	debugTiming = StopDebugTimer();
 
