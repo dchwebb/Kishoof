@@ -2,6 +2,7 @@
 #include "Filter.h"
 #include "GpioPin.h"
 #include "LCD.h"
+
 #include <cmath>
 #include <cstring>
 
@@ -14,6 +15,9 @@ adc.FeedbackCV 	> 1V/Oct CV
 adc.DelayCV_L 	> Channel A wavetable position
 adc.FilterPot 	> Channel B wavetable position
 */
+
+// Create sine look up table as constexpr so will be stored in flash (create one extra entry to simplify interpolation)
+constexpr std::array<float, WaveTable::sinLUTSize + 1> sineLUT = wavetable.CreateSinLUT();
 
 volatile int susp = 0;
 volatile float dbg[5000];
@@ -69,12 +73,22 @@ void WaveTable::CalcSample()
 			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset + 2048, ratio);
 			outputSampleA = std::lerp(outputSampleA, outputSample2, ratio);
 		}
-		outputSampleB = outputSampleA;		// FIXME
+
+		// Calculate channel B as additive wave
+		outputSampleB = 0.0f;
+		float pos = 0.0f;
+		for (uint32_t i = 0; i < harmonicCount; ++i) {
+			pos += readPos;
+			while (pos >= 2048.0f) {
+				pos -= 2048.0f;
+			}
+			//outputSampleB += additiveHarmonics[i] * std::lerp(sineLUT[(uint32_t)pos], sineLUT[std::ceil(pos)], pos - std::floor(pos));
+			outputSampleB += additiveHarmonics[i] * sineLUT[(uint32_t)pos];
+		}
 	}
 
-
 	SPI2->TXDR = (int32_t)(outputSampleA * floatToIntMult);
-	SPI2->TXDR = (int32_t)(outputSampleB * floatToIntMult);;
+	SPI2->TXDR = (int32_t)(outputSampleB * floatToIntMult);
 
 	// Enter sample in draw table to enable LCD update
 	constexpr float widthMult = (float)LCD::width / 2048.0f;		// Scale to width of the LCD

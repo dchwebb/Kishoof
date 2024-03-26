@@ -3,14 +3,17 @@ void OTG_FS_IRQHandler(void) {
 }
 
 void __attribute__((optimize("O0"))) TinyDelay() {
-	for (int x = 0; x < 2; ++x);
+	for (int x = 0; x < 200; ++x);
 }
+
+uint32_t underrun = 0;
 
 // I2S Interrupt
 void SPI2_IRQHandler()
 {
 	if ((SPI2->SR & SPI_SR_UDR) == SPI_SR_UDR) {		// Check for Underrun condition
 		SPI2->IFCR |= SPI_IFCR_UDRC;					// Clear underrun condition
+		++underrun;
 		return;
 	}
 

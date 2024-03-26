@@ -29,6 +29,31 @@ public:
 		bool valid;							// false if header cannot be processed
 	} wavFile;
 
+	static constexpr uint32_t harmonicCount = 10;
+	float additiveHarmonics[harmonicCount] = {
+			1.0f,
+			0.0f,
+			1.0f / 3.0f,
+			0.0f,
+			1.0f / 5.0f,
+			0.0f,
+			1.0f / 7.0f,
+			0.0f,
+			1.0f / 9.0f,
+			0.0f
+	};
+
+	static constexpr uint32_t sinLUTSize = 2048;
+	static constexpr float scaleSin = 0.9f;			// Scale the sine wave to avoid overloading
+	constexpr auto CreateSinLUT()		// constexpr function to generate LUT in Flash
+	{
+		std::array<float, sinLUTSize + 1> array {};		// Create one extra entry to simplify interpolation
+		for (uint32_t s = 0; s < sinLUTSize + 1; ++s){
+			array[s] = std::sin(s * 2.0f * std::numbers::pi / sinLUTSize) * scaleSin;
+		}
+		return array;
+	}
+
 private:
 	enum class TestData {noise, twintone, wavetable};
 	TestData wavetableType = TestData::wavetable;
@@ -39,8 +64,9 @@ private:
 	float pitchInc = 0.0f;
 	float readPos = 0;
 	int32_t oldReadPos;
+	//float additivePos = 0.0f;
 
-	bool stepped = true;
+	bool stepped = false;
 
 	float debugTiming;
 
