@@ -7,7 +7,8 @@ void __attribute__((optimize("O0"))) TinyDelay() {
 }
 
 uint32_t underrun = 0;
-uint32_t i2sTime = 1463;
+uint32_t i2sTime = 1463;		// Time in ticks at 280MHz for I2S frame to complete (20.9uS)
+uint32_t i2SEarly = 0;
 
 // I2S Interrupt
 void SPI2_IRQHandler()
@@ -18,8 +19,10 @@ void SPI2_IRQHandler()
 		return;
 	}
 
+	// Botch to prevent I2S timer from firing early - cannot find correct FIFO settings to prevent this
 	i2sTime = ReadI2STimer();							// Each tick is 14.28nS so each I2S frame should be ~1463 tick
 	if (i2sTime > 0 && i2sTime < 1400) {
+		++i2SEarly;
 		return;
 	}
 

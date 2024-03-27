@@ -153,6 +153,7 @@ void InitHardware()
 	InitCache();
 	InitIO();										// Initialise switches and LEDs
 	InitMDMA();
+	InitDAC();			// Only needed on prototype hardware to activate VCA
 	InitADC();
 	InitDebugTimer();
 	InitI2STimer();
@@ -223,6 +224,21 @@ void InitDisplaySPI()
 
 	DMAMUX1_Channel0->CCR |= 62; 					// DMA request MUX input 62 = spi3_tx_dma (See p.695)
 	DMAMUX1_ChannelStatus->CFR |= DMAMUX_CFR_CSOF0; // Clear synchronization overrun event flag
+}
+
+
+// Only needed on prototype hardware to activate VCA
+void InitDAC()
+{
+	// DAC1_OUT2 on PA5
+	RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN;			// GPIO port clock
+	RCC->APB1LENR |= RCC_APB1LENR_DAC12EN;			// Enable DAC Clock
+
+	DAC1->CR |= DAC_CR_EN1;							// Enable DAC using PA4 (DAC_OUT1)
+	DAC1->MCR &= DAC_MCR_MODE1_Msk;					// Mode = 0 means Buffer activated, Connected to external pin
+
+	DAC1->CR |= DAC_CR_EN2;							// Enable DAC using PA5 (DAC_OUT2)
+	DAC1->MCR &= DAC_MCR_MODE2_Msk;					// Mode = 0 means Buffer activated, Connected to external pin
 }
 
 

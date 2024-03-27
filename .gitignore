@@ -28,3 +28,4 @@ Hardware/jlcpcb/*
 *.kicad_sch-bak
 *.lck
 Serum_Wavetables.lnk
+Proto_Hardware/\#auto_saved_files\#
