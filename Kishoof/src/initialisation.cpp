@@ -483,8 +483,8 @@ void InitI2S() {
 	SPI2->I2SCFGR |= SPI_I2SCFGR_CHLEN;				// Channel Length = 32bits
 
 	SPI2->CFG1 |= SPI_CFG1_UDRCFG_1;				// In the event of underrun resend last transmitted data frame
-	SPI2->CFG1 |= 0x1f << SPI_CFG1_DSIZE_Pos;		// Data size to 32 bits
-	SPI2->CFG1 |= 1 << SPI_CFG1_FTHLV_Pos;			// FIFO threshold level. 0001: 2-data; 0010: 3 data; 0011: 4 data
+	SPI2->CFG1 |= 0x1f << SPI_CFG1_DSIZE_Pos;		// Data size to 32 bits (FIFO holds 16 bytes = 4 x 32 bit words)
+	SPI2->CFG1 |= 3 << SPI_CFG1_FTHLV_Pos;			// FIFO threshold level. 0001: 2-data; 0010: 3 data; 0011: 4 data
 
 	/* I2S Clock
 	000: pll1_q_ck clock selected as SPI/I2S1,2 and 3 kernel clock (default after reset)
@@ -534,18 +534,16 @@ void InitI2S() {
 #endif
 #endif
 
-	// Enable interrupt when TxFIFO threshold reached
-	SPI2->IER |= (SPI_IER_TXPIE | SPI_IER_UDRIE);
-
+	SPI2->IER |= (SPI_IER_TXPIE | SPI_IER_UDRIE);	// Enable interrupt when FIFO has free slot or underrun occurs
 	NVIC_SetPriority(SPI2_IRQn, 2);					// Lower is higher priority
 	NVIC_EnableIRQ(SPI2_IRQn);
 
 	SPI2->CR1 |= SPI_CR1_SPE;						// Enable I2S
 
-	SPI2->TXDR = 0;									// Preload the FIFO
-	SPI2->TXDR = 0;
-	SPI2->TXDR = 0;
-	SPI2->TXDR = 0;
+	SPI2->TXDR = (int32_t)0;						// Preload the FIFO
+	SPI2->TXDR = (int32_t)0;
+	SPI2->TXDR = (int32_t)0;
+	SPI2->TXDR = (int32_t)0;
 
 	SPI2->CR1 |= SPI_CR1_CSTART;					// Start I2S
 }

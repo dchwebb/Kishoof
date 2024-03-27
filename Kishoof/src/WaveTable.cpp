@@ -23,7 +23,9 @@ constexpr std::array<float, WaveTable::sinLUTSize + 1> sineLUT = wavetable.Creat
 void WaveTable::CalcSample()
 {
 	debugMain.SetHigh();		// Debug
-	StartDebugTimer();
+
+	SPI2->TXDR = outputSamples[0];
+	SPI2->TXDR = outputSamples[1];
 
 	// 0v = 61200; 1v = 50110; 2v = 39020; 3v = 27910; 4v = 16790; 5v = 5670
 	// C: 16.35 Hz 32.70 Hz; 65.41 Hz; 130.81 Hz; 261.63 Hz; 523.25 Hz; 1046.50 Hz; 2093.00 Hz; 4186.01 Hz
@@ -75,8 +77,11 @@ void WaveTable::CalcSample()
 		outputSampleB = AdditiveWave();						// Calculate channel B as additive wave
 	}
 
-	SPI2->TXDR = (int32_t)(outputSampleA * floatToIntMult);
-	SPI2->TXDR = (int32_t)(outputSampleB * floatToIntMult);
+//	SPI2->TXDR = (int32_t)(outputSampleA * floatToIntMult);
+//	SPI2->TXDR = (int32_t)(outputSampleB * floatToIntMult);
+
+	outputSamples[0] = (int32_t)(outputSampleA * floatToIntMult);
+	outputSamples[1] = (int32_t)(outputSampleB * floatToIntMult);
 
 	// Enter sample in draw table to enable LCD update
 	constexpr float widthMult = (float)LCD::width / 2048.0f;		// Scale to width of the LCD
@@ -85,8 +90,6 @@ void WaveTable::CalcSample()
 	// NB smoothed version is slightly slower than than non-smoothed (~10ns)
 	drawData[drawPos] = (uint8_t)(((1.0f - outputSampleA) * 60.0f * 0.1f) + (0.9f * drawData[drawPos]));
 	//drawData[drawPos] = (uint8_t)((1.0f + outputSample) * 60.0f);		// Change + to - to invert waveform
-
-	debugTiming = StopDebugTimer();
 
 	debugMain.SetLow();			// Debug off
 }
@@ -263,7 +266,7 @@ void WaveTable::Draw()
 void WaveTable::Draw()
 {
 	// Populate a frame buffer to display the wavetable values (full screen refresh)
-	debugDraw.SetHigh();			// Debug
+	//debugDraw.SetHigh();			// Debug
 
 	uint8_t oldHeight = drawData[0];
 	for (uint8_t i = 0; i < 240; ++i) {
@@ -286,6 +289,6 @@ void WaveTable::Draw()
 	MDMATransfer(lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 2);
 	bufferClear = false;
 
-	debugDraw.SetLow();			// Debug off
+	//debugDraw.SetLow();			// Debug off
 
 }

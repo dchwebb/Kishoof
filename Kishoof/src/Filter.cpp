@@ -1,5 +1,6 @@
 #include "Filter.h"
 
+
 Filter filter;
 
 void Filter::Init()
@@ -16,10 +17,14 @@ void Filter::Update(bool reset)
 	//cutoff = 0.999f * cutoff + 0.001 * (float)adc.FilterPot / 65536.0f;
 
 	if (reset || std::abs(cutoff - currentCutoff) > 0.001) {
+		debugFilter.SetHigh();
+
 		// round cutoff to 3dp
 		float omega = std::round(cutoff * 1000.0f) / 1000.0f;
 		InitFIRFilter(omega);
 		activeFilter = !activeFilter;
+
+		debugFilter.SetLow();
 	}
 
 }

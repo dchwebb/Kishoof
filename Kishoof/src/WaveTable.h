@@ -15,6 +15,7 @@ public:
 
 	float testWavetable[2048];
 	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
+	int32_t outputSamples[2] = {0, 0};
 
 	struct WavFile {
 		const uint8_t* startAddr;			// Address of data section

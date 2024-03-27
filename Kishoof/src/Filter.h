@@ -6,6 +6,7 @@
  */
 
 #include "initialisation.h"
+#include "GpioPin.h"
 #include <cmath>
 #include <complex>
 #include <array>
@@ -41,6 +42,8 @@ private:
 	void FIRFilterWindow();
 	float Bessel(float x);
 	void SwitchFilter();
+
+	GpioPin debugFilter{GPIOE, 3, GpioPin::Type::Output};		// PE3: Debug
 };
 
 
