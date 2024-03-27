@@ -17,6 +17,8 @@ public:
 	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
 	int32_t outputSamples[2] = {0, 0};
 
+	enum class Warp {none, squeeze, bend, mirror} warpType = Warp::bend;
+
 	struct WavFile {
 		const uint8_t* startAddr;			// Address of data section
 		uint32_t fileSize;
@@ -33,41 +35,9 @@ public:
 	static constexpr uint32_t harmonicSets = 3;
 	static constexpr uint32_t harmonicCount = 10;
 	float additiveHarmonics[harmonicSets][harmonicCount] = {
-		{	1.0f,		// Sine
-			0.0f,
-			0.0f,
-			0.0f,
-			0.0f,
-			0.0f,
-			0.0f,
-			0.0f,
-			0.0f,
-			0.0f
-		},
-		{
-			1.0f,		// Square
-			0.0f,
-			1.0f / 3.0f,
-			0.0f,
-			1.0f / 5.0f,
-			0.0f,
-			1.0f / 7.0f,
-			0.0f,
-			1.0f / 9.0f,
-			0.0f
-		},
-		{
-			 0.7f,		// Sawtooth
-			-0.7f / 2.0f,
-			 0.7f / 3.0f,
-			-0.7f / 4.0f,
-			 0.7f / 5.0f,
-			-0.7f / 6.0f,
-			 0.7f / 7.0f,
-			-0.7f / 8.0f,
-			 0.7f / 9.0f,
-			-0.7f / 10.0f
-		}
+		{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },								// Sine
+		{ 1.0f, 0.0f, 1.0f / 3.0f, 0.0f, 1.0f / 5.0f, 0.0f, 1.0f / 7.0f, 0.0f, 1.0f / 9.0f, 0.0f },	// Square
+		{ 0.7f, -0.7f / 2.0f, 0.7f / 3.0f, -0.7f / 4.0f, 0.7f / 5.0f, -0.7f / 6.0f, 0.7f / 7.0f, -0.7f / 8.0f, 0.7f / 9.0f, -0.7f / 10.0f } 		// Sawtooth
 	};
 
 	static constexpr uint32_t sinLUTSize = 2048;
