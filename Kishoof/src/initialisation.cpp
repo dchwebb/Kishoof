@@ -150,12 +150,12 @@ void InitClocks()
 void InitHardware()
 {
 	InitSysTick();
-	InitDAC();
 	InitCache();
 	InitIO();										// Initialise switches and LEDs
 	InitMDMA();
 	InitADC();
 	InitDebugTimer();
+	InitI2STimer();
 	InitDisplaySPI();
 
 	RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;
@@ -223,20 +223,6 @@ void InitDisplaySPI()
 
 	DMAMUX1_Channel0->CCR |= 62; 					// DMA request MUX input 62 = spi3_tx_dma (See p.695)
 	DMAMUX1_ChannelStatus->CFR |= DMAMUX_CFR_CSOF0; // Clear synchronization overrun event flag
-}
-
-
-void InitDAC()
-{
-	// DAC1_OUT2 on PA5
-	RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN;			// GPIO port clock
-	RCC->APB1LENR |= RCC_APB1LENR_DAC12EN;			// Enable DAC Clock
-
-	DAC1->CR |= DAC_CR_EN1;							// Enable DAC using PA4 (DAC_OUT1)
-	DAC1->MCR &= DAC_MCR_MODE1_Msk;					// Mode = 0 means Buffer activated, Connected to external pin
-
-	DAC1->CR |= DAC_CR_EN2;							// Enable DAC using PA5 (DAC_OUT2)
-	DAC1->MCR &= DAC_MCR_MODE2_Msk;					// Mode = 0 means Buffer activated, Connected to external pin
 }
 
 
@@ -482,7 +468,7 @@ void InitI2S() {
 
 	SPI2->CFG1 |= SPI_CFG1_UDRCFG_1;				// In the event of underrun resend last transmitted data frame
 	SPI2->CFG1 |= 0x1f << SPI_CFG1_DSIZE_Pos;		// Data size to 32 bits
-	SPI2->CFG1 |= 2 << SPI_CFG1_FTHLV_Pos;			// FIFO threshold level. 0001: 2-data; 0010: 3 data; 0011: 4 data
+	SPI2->CFG1 |= 1 << SPI_CFG1_FTHLV_Pos;			// FIFO threshold level. 0001: 2-data; 0010: 3 data; 0011: 4 data
 
 	/* I2S Clock
 	000: pll1_q_ck clock selected as SPI/I2S1,2 and 3 kernel clock (default after reset)
@@ -542,34 +528,39 @@ void InitI2S() {
 
 	SPI2->TXDR = 0;									// Preload the FIFO
 	SPI2->TXDR = 0;
+	SPI2->TXDR = 0;
+	SPI2->TXDR = 0;
 
 	SPI2->CR1 |= SPI_CR1_CSTART;					// Start I2S
 }
 
 
-//void suspendI2S()
-//{
-//	SPI2->CR1 |= SPI_CR1_CSUSP;
-//	while ((SPI2->SR & SPI_SR_SUSP) == 0);
-//}
-//
-//void resumeI2S()
-//{
-//	// to allow resume from debugging ensure suspended then clear buffer underrun flag
-//	SPI2->CR1 |= SPI_CR1_CSUSP;
-//	while ((SPI2->SR & SPI_SR_SUSP) == 0);
-//	SPI2->IFCR |= SPI_IFCR_UDRC;
-//
-//	// Clear suspend state and resume
-//	SPI2->IFCR |= SPI_IFCR_SUSPC;
-//	while ((SPI2->SR & SPI_SR_SUSP) != 0);
-//	SPI2->CR1 |= SPI_CR1_CSTART;
-//}
 
+void InitI2STimer()
+{
+	// Timer to try and control issues with I2S interrupt firing early
+	// Uses APB1 timer clock which is Main Clock / 2 [280MHz / 2 = 140MHz] Tick is 2 * 7.14nS = 14.28nS
+	RCC->APB1LENR |= RCC_APB1LENR_TIM4EN;
+	TIM4->ARR = 65535;
+	TIM4->PSC = 1;
+}
+
+
+void StartI2STimer()
+{
+	TIM4->EGR |= TIM_EGR_UG;
+	TIM4->CR1 |= TIM_CR1_CEN;
+}
+
+
+uint32_t ReadI2STimer()
+{
+	return TIM4->CNT;
+}
 
 void InitDebugTimer()
 {
-	// Configure timer to use in internal debug timing - uses APB1 timer clock which is 200MHz -
+	// Configure timer to use in internal debug timing - uses APB1 timer clock which is Main Clock / 2 [400MHz / 2 = 200MHz]
 	// Each tick is 5ns with PSC 10nS - full range is 655.350 uS
 	RCC->APB1LENR |= RCC_APB1LENR_TIM3EN;
 	TIM3->ARR = 65535;
@@ -578,13 +569,15 @@ void InitDebugTimer()
 }
 
 
-void StartDebugTimer() {
+void StartDebugTimer()
+{
 	TIM3->EGR |= TIM_EGR_UG;
 	TIM3->CR1 |= TIM_CR1_CEN;
 }
 
 
-float StopDebugTimer() {
+float StopDebugTimer()
+{
 	// Return time running in microseconds
 	const uint32_t count = TIM3->CNT;
 	TIM3->CR1 &= ~TIM_CR1_CEN;

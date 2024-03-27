@@ -3,10 +3,11 @@ void OTG_FS_IRQHandler(void) {
 }
 
 void __attribute__((optimize("O0"))) TinyDelay() {
-	for (int x = 0; x < 200; ++x);
+	for (int x = 0; x < 20; ++x);
 }
 
 uint32_t underrun = 0;
+uint32_t i2sTime = 1463;
 
 // I2S Interrupt
 void SPI2_IRQHandler()
@@ -17,10 +18,17 @@ void SPI2_IRQHandler()
 		return;
 	}
 
+	i2sTime = ReadI2STimer();							// Each tick is 14.28nS so each I2S frame should be ~1463 tick
+	if (i2sTime > 0 && i2sTime < 1400) {
+		return;
+	}
+
+	StartI2STimer();
+
 	wavetable.CalcSample();
 
 	// NB It appears we need something here to add a slight delay or the interrupt sometimes fires twice
-	TinyDelay();
+	//TinyDelay();
 
 	TriggerADC1();
 }

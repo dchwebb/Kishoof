@@ -29,9 +29,22 @@ public:
 		bool valid;							// false if header cannot be processed
 	} wavFile;
 
+	static constexpr uint32_t harmonicSets = 3;
 	static constexpr uint32_t harmonicCount = 10;
-	float additiveHarmonics[harmonicCount] = {
-			1.0f,
+	float additiveHarmonics[harmonicSets][harmonicCount] = {
+		{	1.0f,		// Sine
+			0.0f,
+			0.0f,
+			0.0f,
+			0.0f,
+			0.0f,
+			0.0f,
+			0.0f,
+			0.0f,
+			0.0f
+		},
+		{
+			1.0f,		// Square
 			0.0f,
 			1.0f / 3.0f,
 			0.0f,
@@ -41,6 +54,19 @@ public:
 			0.0f,
 			1.0f / 9.0f,
 			0.0f
+		},
+		{
+			 0.7f,		// Sawtooth
+			-0.7f / 2.0f,
+			 0.7f / 3.0f,
+			-0.7f / 4.0f,
+			 0.7f / 5.0f,
+			-0.7f / 6.0f,
+			 0.7f / 7.0f,
+			-0.7f / 8.0f,
+			 0.7f / 9.0f,
+			-0.7f / 10.0f
+		}
 	};
 
 	static constexpr uint32_t sinLUTSize = 2048;
@@ -55,6 +81,10 @@ public:
 	}
 
 private:
+	int32_t OutputMix(float wetSample);
+	float FastTanh(float x);
+	float AdditiveWave();
+
 	enum class TestData {noise, twintone, wavetable};
 	TestData wavetableType = TestData::wavetable;
 
@@ -64,18 +94,14 @@ private:
 	float pitchInc = 0.0f;
 	float readPos = 0;
 	int32_t oldReadPos;
-	//float additivePos = 0.0f;
 
 	bool stepped = false;
 
 	float debugTiming;
 
-	// Private class functions
-	int32_t OutputMix(float wetSample);
-	float FastTanh(float x);
-
 	uint8_t drawData[240];
 	bool activeDrawBuffer = true;
+
 
 	GpioPin debugMain{GPIOE, 2, GpioPin::Type::Output};		// PE2: Debug
 	GpioPin debugDraw{GPIOE, 3, GpioPin::Type::Output};		// PE3: Debug

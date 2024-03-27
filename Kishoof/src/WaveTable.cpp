@@ -19,9 +19,7 @@ adc.FilterPot 	> Channel B wavetable position
 // Create sine look up table as constexpr so will be stored in flash (create one extra entry to simplify interpolation)
 constexpr std::array<float, WaveTable::sinLUTSize + 1> sineLUT = wavetable.CreateSinLUT();
 
-volatile int susp = 0;
-volatile float dbg[5000];
-int idx = 0;
+
 void WaveTable::CalcSample()
 {
 	debugMain.SetHigh();		// Debug
@@ -74,17 +72,7 @@ void WaveTable::CalcSample()
 			outputSampleA = std::lerp(outputSampleA, outputSample2, ratio);
 		}
 
-		// Calculate channel B as additive wave
-		outputSampleB = 0.0f;
-		float pos = 0.0f;
-		for (uint32_t i = 0; i < harmonicCount; ++i) {
-			pos += readPos;
-			while (pos >= 2048.0f) {
-				pos -= 2048.0f;
-			}
-			//outputSampleB += additiveHarmonics[i] * std::lerp(sineLUT[(uint32_t)pos], sineLUT[std::ceil(pos)], pos - std::floor(pos));
-			outputSampleB += additiveHarmonics[i] * sineLUT[(uint32_t)pos];
-		}
+		outputSampleB = AdditiveWave();						// Calculate channel B as additive wave
 	}
 
 	SPI2->TXDR = (int32_t)(outputSampleA * floatToIntMult);
@@ -103,6 +91,27 @@ void WaveTable::CalcSample()
 	debugMain.SetLow();			// Debug off
 }
 
+
+float WaveTable::AdditiveWave()
+{
+	// Calculate which pair of harmonic sets to interpolate between
+	float harmonicPos = (float)((harmonicSets - 1) * adc.FilterPot) / 65536.0f;
+	uint32_t harmonicLow = (uint32_t)harmonicPos;
+	float ratio = harmonicPos - harmonicLow;
+
+	float sample = 0.0f;
+	float pos = 0.0f;
+	for (uint32_t i = 0; i < harmonicCount; ++i) {
+		pos += readPos;
+		while (pos >= 2048.0f) {
+			pos -= 2048.0f;
+		}
+		//outputSampleB += additiveHarmonics[i] * std::lerp(sineLUT[(uint32_t)pos], sineLUT[std::ceil(pos)], pos - std::floor(pos));
+		float harmonicLevel = std::lerp(additiveHarmonics[harmonicLow][i], additiveHarmonics[harmonicLow + 1][i], ratio);
+		sample += harmonicLevel * sineLUT[(uint32_t)pos];
+	}
+	return sample;
+}
 
 
 int32_t WaveTable::OutputMix(float wetSample)
