@@ -24,6 +24,7 @@ void WaveTable::CalcSample()
 {
 	debugMain.SetHigh();		// Debug
 
+	// Previously calculated samples output at beginning of interrupt to keep timing independent of calculation time
 	SPI2->TXDR = outputSamples[0];
 	SPI2->TXDR = outputSamples[1];
 
@@ -47,12 +48,12 @@ void WaveTable::CalcSample()
 	if (readPos >= 2048) { readPos -= 2048; }
 
 	// Calculate warping
-	float adjReadPos;					// Read position after warp applied
+	volatile float adjReadPos;					// Read position after warp applied
 	switch (warpType) {
 		case Warp::bend: {
 
 			float sinWarp = sineLUT[(uint32_t)readPos];			// Get amount of warp
-			float warpAmt = sinWarp * adc.DelayPot_R * (2048.0f / 65536.0f);
+			float warpAmt = sinWarp * adc.DelayPot_R * (1024.0f / 65536.0f);
 			adjReadPos = readPos + warpAmt;
 			if (adjReadPos >= 2048) { adjReadPos -= 2048; }
 			if (adjReadPos < 0) { adjReadPos += 2048; }
@@ -71,19 +72,14 @@ void WaveTable::CalcSample()
 
 	float outputSampleA, outputSampleB;
 	float ratio = adjReadPos - (uint32_t)adjReadPos;
-	if (ratio > 0.00001f) {
-		outputSampleA = filter.CalcInterpolatedFilter((uint32_t)adjReadPos, activeWaveTable + sampleOffset, ratio);
-	} else {
-		outputSampleA = filter.CalcFilter((uint32_t)adjReadPos, activeWaveTable + sampleOffset);
-	}
+	outputSampleA = filter.CalcInterpolatedFilter((uint32_t)adjReadPos, activeWaveTable + sampleOffset, ratio);
 
 	if (stepped) {
-		// Get wavetable position
+		// Get channel B wavetable position
 		wtPos = ((float)(wavFile.tableCount - 1) / 43000.0f) * (65536 - adc.FilterPot);
 		wavetableIdxB = std::clamp((float)(0.99f * wavetableIdxB + 0.01f * wtPos), 0.0f, (float)(wavFile.tableCount - 1));
 		sampleOffset = 2048 * std::floor(wavetableIdxB);
 		outputSampleB = filter.CalcInterpolatedFilter((uint32_t)adjReadPos, activeWaveTable + sampleOffset, ratio);
-
 	} else {
 		// Interpolate between wavetables
 		ratio = wavetableIdxA - (uint32_t)wavetableIdxA;
@@ -95,19 +91,13 @@ void WaveTable::CalcSample()
 		outputSampleB = AdditiveWave();						// Calculate channel B as additive wave
 	}
 
-//	SPI2->TXDR = (int32_t)(outputSampleA * floatToIntMult);
-//	SPI2->TXDR = (int32_t)(outputSampleB * floatToIntMult);
-
-	outputSamples[0] = (int32_t)(outputSampleA * floatToIntMult);
+	outputSamples[0] = (int32_t)(outputSampleA * floatToIntMult);	// Store outputs to display on next interrupt
 	outputSamples[1] = (int32_t)(outputSampleB * floatToIntMult);
 
 	// Enter sample in draw table to enable LCD update
 	constexpr float widthMult = (float)LCD::width / 2048.0f;		// Scale to width of the LCD
-	const uint8_t drawPos = adjReadPos * widthMult;		// convert position from position in 2048 sample wavetable to 240 wide screen
-
-	// NB smoothed version is slightly slower than than non-smoothed (~10ns)
-	drawData[drawPos] = (uint8_t)(((1.0f - outputSampleA) * 60.0f * 0.1f) + (0.9f * drawData[drawPos]));
-	//drawData[drawPos] = (uint8_t)((1.0f + outputSample) * 60.0f);		// Change + to - to invert waveform
+	const uint8_t drawPos = readPos * widthMult;		// convert position from position in 2048 sample wavetable to 240 wide screen
+	drawData[drawPos] = (uint8_t)(((1.0f - outputSampleA) * 60.0f * 0.1f) + (0.9f * drawData[drawPos]));		// Smoothed and inverted
 
 	debugMain.SetLow();			// Debug off
 }
@@ -149,14 +139,14 @@ int32_t WaveTable::OutputMix(float wetSample)
 }
 
 
-
 void WaveTable::Init()
 {
 	if (wavetableType == TestData::wavetable) {
 
 		//memcpy((uint8_t*)0x24000000, (uint8_t*)0x08100000, 131208);		// Copy wavetable to ram
 
-		LoadWaveTable((uint32_t*)0x08100000);
+		LoadWaveTable((uint32_t*)0x08100000);			// 4088.wav
+		//LoadWaveTable((uint32_t*)0x08130000);			// Basic Shapes.wav
 		activeWaveTable = (float*)wavFile.startAddr;
 	} else {
 		// Generate test waves

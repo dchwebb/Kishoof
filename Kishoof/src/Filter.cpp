@@ -52,6 +52,11 @@ float Filter::CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio)
 {
 	// FIR Convolution routine using folded FIR structure.
 	// Samples are interpolated according to ratio and filtering is carried out to minimise multiplications
+
+	if (ratio < 0.00001f) {								// To avoid a divide by zero and for better performance
+		return CalcFilter(pos, waveTable);
+	}
+
 	float outputSample = 0.0f;
 
 	const float invertedRatio = 1.0f / ratio - 1.0f;	// half the samples are interpolated during filtering, and then the total normalised

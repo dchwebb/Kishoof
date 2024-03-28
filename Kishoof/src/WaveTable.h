@@ -17,7 +17,7 @@ public:
 	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
 	int32_t outputSamples[2] = {0, 0};
 
-	enum class Warp {none, squeeze, bend, mirror} warpType = Warp::bend;
+	enum class Warp {none, squeeze, bend, mirror} warpType = Warp::none;
 
 	struct WavFile {
 		const uint8_t* startAddr;			// Address of data section
@@ -35,18 +35,17 @@ public:
 	static constexpr uint32_t harmonicSets = 3;
 	static constexpr uint32_t harmonicCount = 10;
 	float additiveHarmonics[harmonicSets][harmonicCount] = {
-		{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },								// Sine
-		{ 1.0f, 0.0f, 1.0f / 3.0f, 0.0f, 1.0f / 5.0f, 0.0f, 1.0f / 7.0f, 0.0f, 1.0f / 9.0f, 0.0f },	// Square
-		{ 0.7f, -0.7f / 2.0f, 0.7f / 3.0f, -0.7f / 4.0f, 0.7f / 5.0f, -0.7f / 6.0f, 0.7f / 7.0f, -0.7f / 8.0f, 0.7f / 9.0f, -0.7f / 10.0f } 		// Sawtooth
+		{ 0.9f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },								// Sine
+		{ 0.9f, 0.0f, 0.9f / 3.0f, 0.0f, 0.9f / 5.0f, 0.0f, 0.9f / 7.0f, 0.0f, 0.9f / 9.0f, 0.0f },	// Square
+		{ 0.6f, -0.6f / 2.0f, 0.6f / 3.0f, -0.6f / 4.0f, 0.6f / 5.0f, -0.6f / 6.0f, 0.6f / 7.0f, -0.6f / 8.0f, 0.6f / 9.0f, -0.6f / 10.0f } 		// Sawtooth
 	};
 
 	static constexpr uint32_t sinLUTSize = 2048;
-	static constexpr float scaleSin = 0.9f;			// Scale the sine wave to avoid overloading
 	constexpr auto CreateSinLUT()		// constexpr function to generate LUT in Flash
 	{
 		std::array<float, sinLUTSize + 1> array {};		// Create one extra entry to simplify interpolation
 		for (uint32_t s = 0; s < sinLUTSize + 1; ++s){
-			array[s] = std::sin(s * 2.0f * std::numbers::pi / sinLUTSize) * scaleSin;
+			array[s] = std::sin(s * 2.0f * std::numbers::pi / sinLUTSize);
 		}
 		return array;
 	}
