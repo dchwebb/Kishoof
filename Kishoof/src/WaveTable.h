@@ -17,7 +17,7 @@ public:
 	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
 	int32_t outputSamples[2] = {0, 0};
 
-	enum class Warp {none, squeeze, bend, mirror} warpType = Warp::none;
+	enum class Warp {none, squeeze, bend, mirror} warpType = Warp::bend;
 
 	struct WavFile {
 		const uint8_t* startAddr;			// Address of data section
@@ -65,7 +65,7 @@ private:
 	float readPos = 0;
 	int32_t oldReadPos;
 
-	bool stepped = false;
+	bool stepped = true;
 
 	float debugTiming;
 

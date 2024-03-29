@@ -14,6 +14,7 @@ WaveTable wavetable;
 adc.FeedbackCV 	> 1V/Oct CV
 adc.DelayCV_L 	> Channel A wavetable position
 adc.FilterPot 	> Channel B wavetable position
+adc.DelayPot_R	> Warp amount
 */
 
 // Create sine look up table as constexpr so will be stored in flash (create one extra entry to simplify interpolation)
@@ -50,19 +51,32 @@ void WaveTable::CalcSample()
 	// Calculate warping
 	volatile float adjReadPos;					// Read position after warp applied
 	switch (warpType) {
-		case Warp::bend: {
-
-			float sinWarp = sineLUT[(uint32_t)readPos];			// Get amount of warp
-			float warpAmt = sinWarp * adc.DelayPot_R * (1024.0f / 65536.0f);
-			adjReadPos = readPos + warpAmt;
-			if (adjReadPos >= 2048) { adjReadPos -= 2048; }
-			if (adjReadPos < 0) { adjReadPos += 2048; }
+	case Warp::bend: {
+		// Waveform is stretched to one side (or squeezed to the other side) [Like 'Asym' in Serum]
+		// https://www.desmos.com/calculator/u9aphhyiqm
+		float a = std::clamp((float)adc.DelayPot_R / 32768.0f, 0.1f, 1.9f);
+		if (readPos < 1024.0f * a) {
+			adjReadPos = readPos / a;
+		} else {
+			adjReadPos = (readPos + 2048.0f - 2048.0f * a) / (2.0f - a);
 		}
-		break;
+//		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
+//		if (adjReadPos < 0) { adjReadPos += 2048; }
+	}
+	break;
+	case Warp::squeeze: {
+		// Pinched: waveform is 'squashed' from the sides towards the center; Stretched: vice versa [Like 'Bend' in Serum]
+		float sinWarp = sineLUT[(uint32_t)readPos];			// Get amount of warp
+		float warpAmt = sinWarp * adc.DelayPot_R * (1.0f / 192.0f);
+		adjReadPos = readPos + warpAmt;
+		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
+		if (adjReadPos < 0) { adjReadPos += 2048; }
+	}
+	break;
 
-		default:
-			adjReadPos = readPos;
-			break;
+	default:
+		adjReadPos = readPos;
+		break;
 	}
 
 	// Get wavetable position
@@ -145,8 +159,8 @@ void WaveTable::Init()
 
 		//memcpy((uint8_t*)0x24000000, (uint8_t*)0x08100000, 131208);		// Copy wavetable to ram
 
-		LoadWaveTable((uint32_t*)0x08100000);			// 4088.wav
-		//LoadWaveTable((uint32_t*)0x08130000);			// Basic Shapes.wav
+		//LoadWaveTable((uint32_t*)0x08100000);			// 4088.wav
+		LoadWaveTable((uint32_t*)0x08130000);			// Basic Shapes.wav
 		activeWaveTable = (float*)wavFile.startAddr;
 	} else {
 		// Generate test waves

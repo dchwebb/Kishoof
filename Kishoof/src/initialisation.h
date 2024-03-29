@@ -19,6 +19,7 @@ extern volatile uint32_t SysTickVal;
 constexpr uint32_t sampleRate = 48000;
 constexpr float intToFloatMult = 1.0f / std::pow(2.0f, 31.0f);		// Multiple to convert 32 bit int to -1.0 - 1.0 float
 constexpr float floatToIntMult = std::pow(2.0f, 31.0f);				// Multiple to convert -1.0 - 1.0 float to 32 bit int
+constexpr float pi = std::numbers::pi;
 
 struct ADCValues {
 	uint16_t audio_L;
