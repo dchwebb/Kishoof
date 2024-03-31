@@ -17,7 +17,7 @@ public:
 	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
 	int32_t outputSamples[2] = {0, 0};
 
-	enum class Warp {none, squeeze, bend, mirror} warpType = Warp::bend;
+	enum class Warp {none, squeeze, bend, mirror, reverse} warpType = Warp::mirror;
 
 	struct WavFile {
 		const uint8_t* startAddr;			// Address of data section
@@ -53,6 +53,7 @@ public:
 private:
 	int32_t OutputMix(float wetSample);
 	float FastTanh(float x);
+	float CalcWarp();
 	float AdditiveWave();
 
 	enum class TestData {noise, twintone, wavetable};

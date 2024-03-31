@@ -48,36 +48,7 @@ void WaveTable::CalcSample()
 	readPos += pitchInc;
 	if (readPos >= 2048) { readPos -= 2048; }
 
-	// Calculate warping
-	volatile float adjReadPos;					// Read position after warp applied
-	switch (warpType) {
-	case Warp::bend: {
-		// Waveform is stretched to one side (or squeezed to the other side) [Like 'Asym' in Serum]
-		// https://www.desmos.com/calculator/u9aphhyiqm
-		float a = std::clamp((float)adc.DelayPot_R / 32768.0f, 0.1f, 1.9f);
-		if (readPos < 1024.0f * a) {
-			adjReadPos = readPos / a;
-		} else {
-			adjReadPos = (readPos + 2048.0f - 2048.0f * a) / (2.0f - a);
-		}
-//		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
-//		if (adjReadPos < 0) { adjReadPos += 2048; }
-	}
-	break;
-	case Warp::squeeze: {
-		// Pinched: waveform is 'squashed' from the sides towards the center; Stretched: vice versa [Like 'Bend' in Serum]
-		float sinWarp = sineLUT[(uint32_t)readPos];			// Get amount of warp
-		float warpAmt = sinWarp * adc.DelayPot_R * (1.0f / 192.0f);
-		adjReadPos = readPos + warpAmt;
-		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
-		if (adjReadPos < 0) { adjReadPos += 2048; }
-	}
-	break;
-
-	default:
-		adjReadPos = readPos;
-		break;
-	}
+	float adjReadPos = CalcWarp();
 
 	// Get wavetable position
 	float wtPos = ((float)(wavFile.tableCount - 1) / 43000.0f) * (65536 - adc.DelayCV_L);
@@ -102,7 +73,7 @@ void WaveTable::CalcSample()
 			outputSampleA = std::lerp(outputSampleA, outputSample2, ratio);
 		}
 
-		outputSampleB = AdditiveWave();						// Calculate channel B as additive wave
+		outputSampleB = AdditiveWave();								// Calculate channel B as additive wave
 	}
 
 	outputSamples[0] = (int32_t)(outputSampleA * floatToIntMult);	// Store outputs to display on next interrupt
@@ -117,7 +88,72 @@ void WaveTable::CalcSample()
 }
 
 
-float WaveTable::AdditiveWave()
+uint32_t debugWarp[2048];
+
+float bendAmt = 1.0f / 96.0f;		// Increase to extend bend amount range
+
+inline float WaveTable::CalcWarp()
+{
+	volatile float adjReadPos;					// Read position after warp applied
+	switch (warpType) {
+	case Warp::bend: {
+		// Waveform is stretched to one side (or squeezed to the other side) [Like 'Asym' in Serum]
+		// https://www.desmos.com/calculator/u9aphhyiqm
+		float a = std::clamp((float)adc.DelayPot_R / 32768.0f, 0.1f, 1.9f);
+		if (readPos < 1024.0f * a) {
+			adjReadPos = readPos / a;
+		} else {
+			adjReadPos = (readPos + 2048.0f - 2048.0f * a) / (2.0f - a);
+		}
+	}
+	break;
+
+	case Warp::squeeze: {
+		// Pinched: waveform is 'squashed' from sides to center; Stretched: from center to sides [Like 'Bend' in Serum]
+
+		if (adc.DelayPot_R > 32767) {
+			float sinWarp = sineLUT[((uint32_t)readPos + 1024) & 0x7ff];			// Get amount of warp
+			adjReadPos = readPos + sinWarp * (adc.DelayPot_R - 32767) * bendAmt;
+
+		} else {
+			float sinWarp = sineLUT[(uint32_t)readPos];			// Get amount of warp
+			adjReadPos = readPos + sinWarp * (32767 - adc.DelayPot_R) * bendAmt;
+		}
+
+		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
+		if (adjReadPos < 0) { adjReadPos += 2048; }
+	}
+	break;
+
+	case Warp::mirror: {
+		// Like bend but flips direction in center: https://www.desmos.com/calculator/8jtheoca0l
+		float a = std::clamp((float)adc.DelayPot_R / 32768.0f, 0.1f, 1.9f);
+		//float a = 1.0f;
+		if (readPos < 512.0f * a) {
+			adjReadPos = 2.0f * readPos / a;
+		} else if (readPos < 1024.0f) {
+			adjReadPos = (readPos * 2.0f) / (2.0f - a) + 2048.0f * (1.0f - a) / (2.0f - a);
+		} else if (readPos < 2048.0f * (4.0f - a) / 4) {
+			adjReadPos = (readPos * -2.0f) / (2.0f - a) + 2048.0f * (3.0f - a) / (2.0f - a);
+		} else {
+			adjReadPos = (4096.0f - readPos * 2.0f) / a;
+		}
+		debugWarp[(uint32_t)readPos] = (uint32_t)adjReadPos;
+	}
+	break;
+	case Warp::reverse: {
+		adjReadPos = 2048.0f - readPos;
+	}
+	break;
+	default:
+		adjReadPos = readPos;
+		break;
+	}
+	return adjReadPos;
+}
+
+
+inline float WaveTable::AdditiveWave()
 {
 	// Calculate which pair of harmonic sets to interpolate between
 	float harmonicPos = (float)((harmonicSets - 1) * adc.FilterPot) / 65536.0f;
