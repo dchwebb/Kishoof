@@ -19,7 +19,7 @@ public:
 	int32_t outputSamples[2] = {0, 0};
 
 	enum class Warp {none, squeeze, bend, mirror, reverse, count} warpType = Warp::none;
-	static constexpr std::string_view warpNames[] = {"none", "squeeze", "bend", "mirror", "reverse"};
+	static constexpr std::string_view warpNames[] = {" NONE  ", "SQUEEZE", " BEND  ", "MIRROR ", "REVERSE"};
 
 	struct WavFile {
 		const uint8_t* startAddr;			// Address of data section
@@ -54,6 +54,7 @@ public:
 
 private:
 	int32_t OutputMix(float wetSample);
+	float OutputSample(uint8_t channel, float ratio);
 	float FastTanh(float x);
 	float CalcWarp();
 	float AdditiveWave();
@@ -62,7 +63,10 @@ private:
 	TestData wavetableType = TestData::wavetable;
 
 	float* activeWaveTable;
-	float wavetableIdxA, wavetableIdxB;		// Smoothed ADC value
+	struct {
+		volatile uint16_t& adcControl;
+		float pos;		// Smoothed ADC value
+	} channel[2] = {{adc.DelayCV_L, 0.0f}, {adc.FilterPot, 0.0f}};
 
 	float pitchInc = 0.0f;
 	float readPos = 0;

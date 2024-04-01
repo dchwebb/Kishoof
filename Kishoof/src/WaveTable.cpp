@@ -42,70 +42,66 @@ void WaveTable::CalcSample()
 	float newInc = pitchBase * std::pow(2.0f, (float)adc.FeedbackCV * cvMult);			// for cycle length matching sample rate (48k)
 	pitchInc = 0.99 * pitchInc + 0.01 * newInc;
 
-	// Set filter for recalculation
-	filter.cutoff = 1.0f / pitchInc;
+	filter.cutoff = 1.0f / pitchInc;				// Set filter for recalculation
 
 	readPos += pitchInc;
 	if (readPos >= 2048) { readPos -= 2048; }
 
 	float adjReadPos = CalcWarp();
 
-	// Get wavetable position
-	float wtPos = ((float)(wavFile.tableCount - 1) / 43000.0f) * (65536 - adc.DelayCV_L);
-	wavetableIdxA = std::clamp((float)(0.99f * wavetableIdxA + 0.01f * wtPos), 0.0f, (float)(wavFile.tableCount - 1));
-	uint32_t sampleOffset = 2048 * std::floor(wavetableIdxA);
-
-	float outputSampleA, outputSampleB;
-	float ratio = adjReadPos - (uint32_t)adjReadPos;
-	outputSampleA = filter.CalcInterpolatedFilter((uint32_t)adjReadPos, activeWaveTable + sampleOffset, ratio);
-
-	if (stepped) {
-		// Get channel B wavetable position
-		wtPos = ((float)(wavFile.tableCount - 1) / 43000.0f) * (65536 - adc.FilterPot);
-		wavetableIdxB = std::clamp((float)(0.99f * wavetableIdxB + 0.01f * wtPos), 0.0f, (float)(wavFile.tableCount - 1));
-		sampleOffset = 2048 * std::floor(wavetableIdxB);
-		outputSampleB = filter.CalcInterpolatedFilter((uint32_t)adjReadPos, activeWaveTable + sampleOffset, ratio);
-	} else {
-		// Interpolate between wavetables
-		ratio = wavetableIdxA - (uint32_t)wavetableIdxA;
-		if (ratio > 0.0001f) {
-			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)adjReadPos, activeWaveTable + sampleOffset + 2048, ratio);
-			outputSampleA = std::lerp(outputSampleA, outputSample2, ratio);
-		}
-
-		outputSampleB = AdditiveWave();								// Calculate channel B as additive wave
-	}
+	float outputSampleB = stepped ? OutputSample(1, adjReadPos) : AdditiveWave();
+	float outputSampleA = OutputSample(0, adjReadPos);
 
 	outputSamples[0] = (int32_t)(outputSampleA * floatToIntMult);	// Store outputs to display on next interrupt
 	outputSamples[1] = (int32_t)(outputSampleB * floatToIntMult);
 
 	// Enter sample in draw table to enable LCD update
 	constexpr float widthMult = (float)LCD::width / 2048.0f;		// Scale to width of the LCD
-	const uint8_t drawPos = readPos * widthMult;		// convert position from position in 2048 sample wavetable to 240 wide screen
-	drawData[drawPos] = (uint8_t)(((1.0f - outputSampleA) * 60.0f * 0.1f) + (0.9f * drawData[drawPos]));		// Smoothed and inverted
+	const uint8_t drawPos = std::min((uint8_t)std::round(readPos * widthMult), (uint8_t)(LCD::width - 1));		// convert position from position in 2048 sample wavetable to 240 wide screen
+	//drawData[drawPos] = (uint8_t)((1.0f - outputSampleA) * 60.0f);
+	drawData[drawPos] = (uint8_t)(((1.0f - outputSampleA) * 60.0f * 0.5f) + (0.5f * drawData[drawPos]));		// Smoothed and inverted
 
 	debugMain.SetLow();			// Debug off
 }
 
 
-uint32_t debugWarp[2048];
+inline float WaveTable::OutputSample(uint8_t chn, float readPos)
+{
+	// Get smoothed wavetable position
+	const float wtPos = ((float)(wavFile.tableCount - 1) / 43000.0f) * (65536 - channel[chn].adcControl);
+	channel[chn].pos = std::clamp((float)(0.99f * channel[chn].pos + 0.01f * wtPos), 0.0f, (float)(wavFile.tableCount - 1));
+	const uint32_t sampleOffset = 2048 * std::floor(channel[chn].pos);
 
-float bendAmt = 1.0f / 96.0f;		// Increase to extend bend amount range
+	// Interpolate between samples
+	const float ratio = readPos - (uint32_t)readPos;
+	float output = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset, ratio);
+
+	// Interpolate between wavetables if channel A
+	if (!stepped && chn == 0) {
+		const float wtRatio = channel[chn].pos - (uint32_t)channel[chn].pos;
+		if (wtRatio > 0.0001f) {
+			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset + 2048, ratio);
+			output = std::lerp(output, outputSample2, wtRatio);
+		}
+	}
+	return output;
+}
+
 
 inline float WaveTable::CalcWarp()
 {
-	// Set warp type from knob
+	// Set warp type from knob with hysteresis
 	if (abs(warpVal - adc.DelayPot_L) > 100) {
 		warpVal = adc.DelayPot_L;
 		warpType = (Warp)((uint32_t)Warp::count * warpVal  / 65536);
 	}
 
-	volatile float adjReadPos;					// Read position after warp applied
+	float adjReadPos;					// Read position after warp applied
 	switch (warpType) {
 	case Warp::bend: {
 		// Waveform is stretched to one side (or squeezed to the other side) [Like 'Asym' in Serum]
 		// https://www.desmos.com/calculator/u9aphhyiqm
-		float a = std::clamp((float)adc.DelayPot_R / 32768.0f, 0.1f, 1.9f);
+		const float a = std::clamp((float)adc.DelayPot_R / 32768.0f, 0.1f, 1.9f);
 		if (readPos < 1024.0f * a) {
 			adjReadPos = readPos / a;
 		} else {
@@ -115,8 +111,8 @@ inline float WaveTable::CalcWarp()
 	break;
 
 	case Warp::squeeze: {
-		// Pinched: waveform is 'squashed' from sides to center; Stretched: from center to sides [Like 'Bend' in Serum]
-
+		// Pinched: waveform squashed from sides to center; Stretched: from center to sides [Like 'Bend' in Serum]
+		float bendAmt = 1.0f / 96.0f;		// Increase to extend bend amount range
 		if (adc.DelayPot_R > 32767) {
 			float sinWarp = sineLUT[((uint32_t)readPos + 1024) & 0x7ff];			// Get amount of warp
 			adjReadPos = readPos + sinWarp * (adc.DelayPot_R - 32767) * bendAmt;
@@ -126,15 +122,14 @@ inline float WaveTable::CalcWarp()
 			adjReadPos = readPos + sinWarp * (32767 - adc.DelayPot_R) * bendAmt;
 		}
 
-		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
-		if (adjReadPos < 0) { adjReadPos += 2048; }
+//		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
+//		if (adjReadPos < 0) { adjReadPos += 2048; }
 	}
 	break;
 
 	case Warp::mirror: {
 		// Like bend but flips direction in center: https://www.desmos.com/calculator/8jtheoca0l
-		float a = std::clamp((float)adc.DelayPot_R / 32768.0f, 0.1f, 1.9f);
-		//float a = 1.0f;
+		const float a = std::clamp((float)adc.DelayPot_R / 32768.0f, 0.1f, 1.9f);
 		if (readPos < 512.0f * a) {
 			adjReadPos = 2.0f * readPos / a;
 		} else if (readPos < 1024.0f) {
@@ -144,9 +139,9 @@ inline float WaveTable::CalcWarp()
 		} else {
 			adjReadPos = (4096.0f - readPos * 2.0f) / a;
 		}
-		debugWarp[(uint32_t)readPos] = (uint32_t)adjReadPos;
 	}
 	break;
+
 	case Warp::reverse: {
 		adjReadPos = 2048.0f - readPos;
 	}
@@ -335,7 +330,13 @@ void WaveTable::Draw()
 	if (warpType != oldWarpType) {
 		oldWarpType = warpType;
 		std::string_view s = warpNames[(uint8_t)warpType];
-		lcd.DrawString(60, 180, s, &lcd.Font_Small, LCD_WHITE, LCD_BLACK);
+		//lcd.DrawString(60, 180, s, &lcd.Font_Small, LCD_WHITE, LCD_BLACK);
+
+		const uint32_t textLeft = 75;
+		const uint32_t textTop = 190;
+		lcd.DrawStringMem(0, 0, lcd.Font_Large.Width * s.length(), lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, LCD_WHITE, LCD_BLACK);
+		lcd.PatternFill(textLeft, textTop, textLeft - 1 + lcd.Font_Large.Width * s.length(), textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
+
 	} else {
 		uint8_t oldHeight = drawData[0];
 		for (uint8_t i = 0; i < 240; ++i) {
@@ -352,12 +353,13 @@ void WaveTable::Draw()
 		}
 
 		lcd.PatternFill(0, 60, LCD::width - 1, 179, lcd.drawBuffer[activeDrawBuffer]);
-		activeDrawBuffer = !activeDrawBuffer;
-
-		// Trigger MDMA frame buffer blanking
-		MDMATransfer(lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 2);
-		bufferClear = false;
 	}
+	activeDrawBuffer = !activeDrawBuffer;
+
+	// Trigger MDMA frame buffer blanking
+	MDMATransfer(lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 2);
+	bufferClear = false;
+
 
 	//debugDraw.SetLow();			// Debug off
 
