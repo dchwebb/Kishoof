@@ -126,7 +126,7 @@ private:
 	enum SPIDataSize_t { SPIDataSize_8b, SPIDataSize_16b };			// SPI in 8-bits mode/16-bits mode
 
 	LCD_Orientation_t orientation = LCD_Portrait;
-	uint16_t charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
+	static uint16_t charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
 	uint8_t currentCharBuffer = 0;
 	static uint16_t dmaInt16;								// Used to buffer data for DMA transfer during colour fills (static for DMA non-buffered declaration)
 	uint8_t& spiTX8bit = (uint8_t&)(SPI3->TXDR);			// Byte data must be written as 8 bit or will transfer 32 bit word

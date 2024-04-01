@@ -3,6 +3,7 @@
 LCD  lcd {};
 uint16_t __attribute__((section (".dma_buffer"))) LCD::drawBuffer[2][width * height];
 uint16_t __attribute__((section (".dma_buffer"))) LCD::dmaInt16;
+uint16_t  __attribute__((section (".dma_buffer"))) LCD::charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
 
 void LCD::Init()
 {
@@ -66,13 +67,12 @@ void LCD::Init()
 	ScreenFill(LCD_BLACK);
 
 	Rotate(LCD_Portrait_Flipped);
-/*
-	ColourFill(50, 50, 57, 57, LCD_YELLOW);
-	ColourFill(90, 90, 97, 97, LCD_RED);
-	ColourFill(130, 130, 137, 137, LCD_BLUE);
-	ColourFill(170, 170, 177, 177, LCD_GREEN);
 
-*/
+
+//	ColourFill(50, 50, 57, 57, LCD_YELLOW);
+//	ColourFill(90, 90, 97, 97, LCD_RED);
+//	ColourFill(130, 130, 137, 137, LCD_BLUE);
+//	ColourFill(170, 170, 177, 177, LCD_GREEN);
 };
 
 

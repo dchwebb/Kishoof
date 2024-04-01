@@ -3,6 +3,7 @@
 #include "initialisation.h"
 #include "Filter.h"
 #include "GpioPIn.h"
+#include <string_view>
 
 struct WaveTable {
 	friend class CDCHandler;				// Allow the serial handler access to private data for debug printing
@@ -17,7 +18,8 @@ public:
 	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
 	int32_t outputSamples[2] = {0, 0};
 
-	enum class Warp {none, squeeze, bend, mirror, reverse} warpType = Warp::mirror;
+	enum class Warp {none, squeeze, bend, mirror, reverse, count} warpType = Warp::none;
+	static constexpr std::string_view warpNames[] = {"none", "squeeze", "bend", "mirror", "reverse"};
 
 	struct WavFile {
 		const uint8_t* startAddr;			// Address of data section
@@ -67,6 +69,8 @@ private:
 	int32_t oldReadPos;
 
 	bool stepped = true;
+	int32_t warpVal = 0;					// Used for setting hysteresis on warp type
+	Warp oldWarpType = Warp::none;
 
 	float debugTiming;
 

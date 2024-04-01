@@ -94,6 +94,12 @@ float bendAmt = 1.0f / 96.0f;		// Increase to extend bend amount range
 
 inline float WaveTable::CalcWarp()
 {
+	// Set warp type from knob
+	if (abs(warpVal - adc.DelayPot_L) > 100) {
+		warpVal = adc.DelayPot_L;
+		warpType = (Warp)((uint32_t)Warp::count * warpVal  / 65536);
+	}
+
 	volatile float adjReadPos;					// Read position after warp applied
 	switch (warpType) {
 	case Warp::bend: {
@@ -326,26 +332,32 @@ void WaveTable::Draw()
 	// Populate a frame buffer to display the wavetable values (full screen refresh)
 	//debugDraw.SetHigh();			// Debug
 
-	uint8_t oldHeight = drawData[0];
-	for (uint8_t i = 0; i < 240; ++i) {
+	if (warpType != oldWarpType) {
+		oldWarpType = warpType;
+		std::string_view s = warpNames[(uint8_t)warpType];
+		lcd.DrawString(60, 180, s, &lcd.Font_Small, LCD_WHITE, LCD_BLACK);
+	} else {
+		uint8_t oldHeight = drawData[0];
+		for (uint8_t i = 0; i < 240; ++i) {
 
-		// do while loop needed to draw vertical lines where adjacent samples are vertically spaced by more than a pixel
-		uint8_t currHeight = drawData[i];
-		do {
-			const uint32_t pos = currHeight * LCD::height + i;
-			lcd.drawBuffer[activeDrawBuffer][pos] = LCD_GREEN;
-			currHeight += currHeight > oldHeight ? -1 : 1;
-		} while (currHeight != oldHeight);
+			// do while loop needed to draw vertical lines where adjacent samples are vertically spaced by more than a pixel
+			uint8_t currHeight = drawData[i];
+			do {
+				const uint32_t pos = currHeight * LCD::height + i;
+				lcd.drawBuffer[activeDrawBuffer][pos] = LCD_GREEN;
+				currHeight += currHeight > oldHeight ? -1 : 1;
+			} while (currHeight != oldHeight);
 
-		oldHeight = drawData[i];
+			oldHeight = drawData[i];
+		}
+
+		lcd.PatternFill(0, 60, LCD::width - 1, 179, lcd.drawBuffer[activeDrawBuffer]);
+		activeDrawBuffer = !activeDrawBuffer;
+
+		// Trigger MDMA frame buffer blanking
+		MDMATransfer(lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 2);
+		bufferClear = false;
 	}
-
-	lcd.PatternFill(0, 60, LCD::width - 1, 179, lcd.drawBuffer[activeDrawBuffer]);
-	activeDrawBuffer = !activeDrawBuffer;
-
-	// Trigger MDMA frame buffer blanking
-	MDMATransfer(lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 2);
-	bufferClear = false;
 
 	//debugDraw.SetLow();			// Debug off
 
