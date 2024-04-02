@@ -20,14 +20,16 @@ adc.DelayPot_R	> Warp amount
 // Create sine look up table as constexpr so will be stored in flash (create one extra entry to simplify interpolation)
 constexpr std::array<float, WaveTable::sinLUTSize + 1> sineLUT = wavetable.CreateSinLUT();
 
+float unisonDebug[2][2000];
+volatile uint32_t debugIndex = 0;
 
 void WaveTable::CalcSample()
 {
 	debugMain.SetHigh();		// Debug
 
 	// Previously calculated samples output at beginning of interrupt to keep timing independent of calculation time
-	SPI2->TXDR = outputSamples[0];
-	SPI2->TXDR = outputSamples[1];
+	SPI2->TXDR = (int32_t)(outputSamples[0] * floatToIntMult);
+	SPI2->TXDR = (int32_t)(outputSamples[1] * floatToIntMult);
 
 	// 0v = 61200; 1v = 50110; 2v = 39020; 3v = 27910; 4v = 16790; 5v = 5670
 	// C: 16.35 Hz 32.70 Hz; 65.41 Hz; 130.81 Hz; 261.63 Hz; 523.25 Hz; 1046.50 Hz; 2093.00 Hz; 4186.01 Hz
@@ -47,44 +49,91 @@ void WaveTable::CalcSample()
 	readPos += pitchInc;
 	if (readPos >= 2048) { readPos -= 2048; }
 
-	float adjReadPos = CalcWarp();
+	if (mode == Mode::unison) {
+		float offset = (float)adc.FilterPot * (0.1f / 65536.0f);
 
-	float outputSampleB = stepped ? OutputSample(1, adjReadPos) : AdditiveWave();
-	float outputSampleA = OutputSample(0, adjReadPos);
+		unisonOffset[0] += offset;
+		if (unisonOffset[0] >= 2048) { unisonOffset[0] -= 2048; }
+		unisonOffset[1] -= offset;
+		if (unisonOffset[1] < 0) { unisonOffset[1] += 2048; }
 
-	outputSamples[0] = (int32_t)(outputSampleA * floatToIntMult);	// Store outputs to display on next interrupt
-	outputSamples[1] = (int32_t)(outputSampleB * floatToIntMult);
+		unisonDebug[0][debugIndex] = unisonOffset[0] + readPos;
+		unisonDebug[1][debugIndex] = unisonOffset[1] + readPos;
+		if (++debugIndex == 2000) {
+			debugIndex = 0;
+		}
+
+	}
+
+	float adjReadPos = CalcWarp();					// Calculate time warping effects
+
+	if (mode != Mode::unison) {
+
+		if (mode == Mode::smooth) {
+			AdditiveWave();
+		} else {
+			OutputSample(1, adjReadPos);
+		}
+
+		if (warpType == Warp::tzfm) {
+			// Through Zero FM: Phase distorts channel A using scaled bipolar version of channel B's waveform
+			float bendAmt = 1.0f / 48.0f;		// Increase to extend bend amount range
+			if (adc.DelayPot_R > 32767) {
+				adjReadPos = readPos + outputSamples[1] * (adc.DelayPot_R - 32767) * bendAmt;
+			} else {
+				adjReadPos = readPos - outputSamples[1] * (32767 - adc.DelayPot_R) * bendAmt;
+			}
+			if (adjReadPos >= 2048) { adjReadPos -= 2048; }
+			if (adjReadPos < 0) { adjReadPos += 2048; }
+		}
+	}
+
+	OutputSample(0, adjReadPos);
 
 	// Enter sample in draw table to enable LCD update
 	constexpr float widthMult = (float)LCD::width / 2048.0f;		// Scale to width of the LCD
 	const uint8_t drawPos = std::min((uint8_t)std::round(readPos * widthMult), (uint8_t)(LCD::width - 1));		// convert position from position in 2048 sample wavetable to 240 wide screen
 	//drawData[drawPos] = (uint8_t)((1.0f - outputSampleA) * 60.0f);
-	drawData[drawPos] = (uint8_t)(((1.0f - outputSampleA) * 60.0f * 0.5f) + (0.5f * drawData[drawPos]));		// Smoothed and inverted
+	drawData[drawPos] = (uint8_t)(((1.0f - outputSamples[0]) * 60.0f * 0.5f) + (0.5f * drawData[drawPos]));		// Smoothed and inverted
 
 	debugMain.SetLow();			// Debug off
 }
 
 
-inline float WaveTable::OutputSample(uint8_t chn, float readPos)
+inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 {
-	// Get smoothed wavetable position
+	// Get location of current wavetable frame in wavetable
 	const float wtPos = ((float)(wavFile.tableCount - 1) / 43000.0f) * (65536 - channel[chn].adcControl);
-	channel[chn].pos = std::clamp((float)(0.99f * channel[chn].pos + 0.01f * wtPos), 0.0f, (float)(wavFile.tableCount - 1));
-	const uint32_t sampleOffset = 2048 * std::floor(channel[chn].pos);
+	channel[chn].pos = std::clamp((float)(0.99f * channel[chn].pos + 0.01f * wtPos), 0.0f, (float)(wavFile.tableCount - 1));		//  Smooth
+	const uint32_t sampleOffset = 2048 * std::floor(channel[chn].pos);			// get sample position of wavetable frame
 
 	// Interpolate between samples
-	const float ratio = readPos - (uint32_t)readPos;
-	float output = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset, ratio);
+	if (mode == Mode::unison) {
+		float readPos0 = readPos + unisonOffset[0];
+		if (readPos0 >= 2048) { readPos0 -= 2048; }
 
-	// Interpolate between wavetables if channel A
-	if (!stepped && chn == 0) {
-		const float wtRatio = channel[chn].pos - (uint32_t)channel[chn].pos;
-		if (wtRatio > 0.0001f) {
-			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset + 2048, ratio);
-			output = std::lerp(output, outputSample2, wtRatio);
+		float readPos1 = readPos + unisonOffset[1];
+		if (readPos1 >= 2048) { readPos1 -= 2048; }
+
+		float ratio = readPos0 - (uint32_t)readPos0;
+		outputSamples[0] = filter.CalcInterpolatedFilter((uint32_t)readPos0, activeWaveTable + sampleOffset, ratio);
+
+		ratio = readPos1 - (uint32_t)readPos1;
+		outputSamples[1] = filter.CalcInterpolatedFilter((uint32_t)readPos1, activeWaveTable + sampleOffset, ratio);
+	} else {
+		const float ratio = readPos - (uint32_t)readPos;
+		outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset, ratio);
+
+		// Interpolate between wavetables
+		if (chn == 0 && mode == Mode::smooth) {
+			const float wtRatio = channel[chn].pos - (uint32_t)channel[chn].pos;
+			if (wtRatio > 0.0001f) {
+				float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset + 2048, ratio);
+				outputSamples[0] = std::lerp(outputSamples[0], outputSample2, wtRatio);
+			}
 		}
+
 	}
-	return output;
 }
 
 
@@ -112,6 +161,7 @@ inline float WaveTable::CalcWarp()
 
 	case Warp::squeeze: {
 		// Pinched: waveform squashed from sides to center; Stretched: from center to sides [Like 'Bend' in Serum]
+		// Deforms readPos using sine wave
 		float bendAmt = 1.0f / 96.0f;		// Increase to extend bend amount range
 		if (adc.DelayPot_R > 32767) {
 			float sinWarp = sineLUT[((uint32_t)readPos + 1024) & 0x7ff];			// Get amount of warp
@@ -154,7 +204,7 @@ inline float WaveTable::CalcWarp()
 }
 
 
-inline float WaveTable::AdditiveWave()
+inline void WaveTable::AdditiveWave()
 {
 	// Calculate which pair of harmonic sets to interpolate between
 	float harmonicPos = (float)((harmonicSets - 1) * adc.FilterPot) / 65536.0f;
@@ -172,7 +222,7 @@ inline float WaveTable::AdditiveWave()
 		float harmonicLevel = std::lerp(additiveHarmonics[harmonicLow][i], additiveHarmonics[harmonicLow + 1][i], ratio);
 		sample += harmonicLevel * sineLUT[(uint32_t)pos];
 	}
-	return sample;
+	outputSamples[1] = sample;
 }
 
 
@@ -196,8 +246,8 @@ void WaveTable::Init()
 
 		//memcpy((uint8_t*)0x24000000, (uint8_t*)0x08100000, 131208);		// Copy wavetable to ram
 
-		//LoadWaveTable((uint32_t*)0x08100000);			// 4088.wav
-		LoadWaveTable((uint32_t*)0x08130000);			// Basic Shapes.wav
+		LoadWaveTable((uint32_t*)0x08100000);			// 4088.wav
+		//LoadWaveTable((uint32_t*)0x08130000);			// Basic Shapes.wav
 		activeWaveTable = (float*)wavFile.startAddr;
 	} else {
 		// Generate test waves

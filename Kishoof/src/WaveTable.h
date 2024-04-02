@@ -16,10 +16,10 @@ public:
 
 	float testWavetable[2048];
 	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
-	int32_t outputSamples[2] = {0, 0};
+	float outputSamples[2] = {0.0f, 0.0f};
 
-	enum class Warp {none, squeeze, bend, mirror, reverse, count} warpType = Warp::none;
-	static constexpr std::string_view warpNames[] = {" NONE  ", "SQUEEZE", " BEND  ", "MIRROR ", "REVERSE"};
+	enum class Warp {none, squeeze, bend, mirror, reverse, tzfm, count} warpType = Warp::none;
+	static constexpr std::string_view warpNames[] = {" NONE  ", "SQUEEZE", " BEND  ", "MIRROR ", "REVERSE", " TZFM  "};
 
 	struct WavFile {
 		const uint8_t* startAddr;			// Address of data section
@@ -54,13 +54,13 @@ public:
 
 private:
 	int32_t OutputMix(float wetSample);
-	float OutputSample(uint8_t channel, float ratio);
+	void OutputSample(uint8_t channel, float ratio);
 	float FastTanh(float x);
 	float CalcWarp();
-	float AdditiveWave();
+	void AdditiveWave();
 
-	enum class TestData {noise, twintone, wavetable};
-	TestData wavetableType = TestData::wavetable;
+	enum class Mode {smooth, stepped, unison} mode = Mode::unison;
+	enum class TestData {noise, twintone, wavetable} wavetableType = TestData::wavetable;
 
 	float* activeWaveTable;
 	struct {
@@ -71,8 +71,8 @@ private:
 	float pitchInc = 0.0f;
 	float readPos = 0;
 	int32_t oldReadPos;
+	float unisonOffset[2] = {0.0f, 0.0f};
 
-	bool stepped = true;
 	int32_t warpVal = 0;					// Used for setting hysteresis on warp type
 	Warp oldWarpType = Warp::none;
 
