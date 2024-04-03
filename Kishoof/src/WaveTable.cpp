@@ -20,8 +20,6 @@ adc.DelayPot_R	> Warp amount
 // Create sine look up table as constexpr so will be stored in flash (create one extra entry to simplify interpolation)
 constexpr std::array<float, WaveTable::sinLUTSize + 1> sineLUT = wavetable.CreateSinLUT();
 
-float unisonDebug[2][2000];
-volatile uint32_t debugIndex = 0;
 
 void WaveTable::CalcSample()
 {
@@ -49,46 +47,28 @@ void WaveTable::CalcSample()
 	readPos += pitchInc;
 	if (readPos >= 2048) { readPos -= 2048; }
 
-	if (mode == Mode::unison) {
-		float offset = (float)adc.FilterPot * (0.1f / 65536.0f);
+	float adjReadPos = CalcWarp();
 
-		unisonOffset[0] += offset;
-		if (unisonOffset[0] >= 2048) { unisonOffset[0] -= 2048; }
-		unisonOffset[1] -= offset;
-		if (unisonOffset[1] < 0) { unisonOffset[1] += 2048; }
-
-		unisonDebug[0][debugIndex] = unisonOffset[0] + readPos;
-		unisonDebug[1][debugIndex] = unisonOffset[1] + readPos;
-		if (++debugIndex == 2000) {
-			debugIndex = 0;
-		}
-
+	if (stepped) {
+		OutputSample(1, adjReadPos);
+	} else {
+		AdditiveWave();
 	}
 
-	float adjReadPos = CalcWarp();					// Calculate time warping effects
-
-	if (mode != Mode::unison) {
-
-		if (mode == Mode::smooth) {
-			AdditiveWave();
+	if (warpType == Warp::tzfm) {
+		// Through Zero FM: Phase distorts channel A using scaled bipolar version of channel B's waveform
+		float bendAmt = 1.0f / 48.0f;		// Increase to extend bend amount range
+		if (adc.DelayPot_R > 32767) {
+			adjReadPos = readPos + outputSamples[1] * (adc.DelayPot_R - 32767) * bendAmt;
 		} else {
-			OutputSample(1, adjReadPos);
+			adjReadPos = readPos - outputSamples[1] * (32767 - adc.DelayPot_R) * bendAmt;
 		}
-
-		if (warpType == Warp::tzfm) {
-			// Through Zero FM: Phase distorts channel A using scaled bipolar version of channel B's waveform
-			float bendAmt = 1.0f / 48.0f;		// Increase to extend bend amount range
-			if (adc.DelayPot_R > 32767) {
-				adjReadPos = readPos + outputSamples[1] * (adc.DelayPot_R - 32767) * bendAmt;
-			} else {
-				adjReadPos = readPos - outputSamples[1] * (32767 - adc.DelayPot_R) * bendAmt;
-			}
-			if (adjReadPos >= 2048) { adjReadPos -= 2048; }
-			if (adjReadPos < 0) { adjReadPos += 2048; }
-		}
+		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
+		if (adjReadPos < 0) { adjReadPos += 2048; }
 	}
 
 	OutputSample(0, adjReadPos);
+
 
 	// Enter sample in draw table to enable LCD update
 	constexpr float widthMult = (float)LCD::width / 2048.0f;		// Scale to width of the LCD
@@ -104,35 +84,20 @@ inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 {
 	// Get location of current wavetable frame in wavetable
 	const float wtPos = ((float)(wavFile.tableCount - 1) / 43000.0f) * (65536 - channel[chn].adcControl);
-	channel[chn].pos = std::clamp((float)(0.99f * channel[chn].pos + 0.01f * wtPos), 0.0f, (float)(wavFile.tableCount - 1));		//  Smooth
+	channel[chn].pos = std::clamp((float)(0.99f * channel[chn].pos + 0.01f * wtPos), 0.0f, (float)(wavFile.tableCount - 1));	// Smooth
 	const uint32_t sampleOffset = 2048 * std::floor(channel[chn].pos);			// get sample position of wavetable frame
 
 	// Interpolate between samples
-	if (mode == Mode::unison) {
-		float readPos0 = readPos + unisonOffset[0];
-		if (readPos0 >= 2048) { readPos0 -= 2048; }
+	const float ratio = readPos - (uint32_t)readPos;
+	outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset, ratio);
 
-		float readPos1 = readPos + unisonOffset[1];
-		if (readPos1 >= 2048) { readPos1 -= 2048; }
-
-		float ratio = readPos0 - (uint32_t)readPos0;
-		outputSamples[0] = filter.CalcInterpolatedFilter((uint32_t)readPos0, activeWaveTable + sampleOffset, ratio);
-
-		ratio = readPos1 - (uint32_t)readPos1;
-		outputSamples[1] = filter.CalcInterpolatedFilter((uint32_t)readPos1, activeWaveTable + sampleOffset, ratio);
-	} else {
-		const float ratio = readPos - (uint32_t)readPos;
-		outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset, ratio);
-
-		// Interpolate between wavetables
-		if (chn == 0 && mode == Mode::smooth) {
-			const float wtRatio = channel[chn].pos - (uint32_t)channel[chn].pos;
-			if (wtRatio > 0.0001f) {
-				float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset + 2048, ratio);
-				outputSamples[0] = std::lerp(outputSamples[0], outputSample2, wtRatio);
-			}
+	// Interpolate between wavetables if channel A
+	if (!stepped && chn == 0) {
+		const float wtRatio = channel[chn].pos - (uint32_t)channel[chn].pos;
+		if (wtRatio > 0.0001f) {
+			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset + 2048, ratio);
+			outputSamples[0] = std::lerp(outputSamples[0], outputSample2, wtRatio);
 		}
-
 	}
 }
 

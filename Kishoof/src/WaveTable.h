@@ -59,7 +59,6 @@ private:
 	float CalcWarp();
 	void AdditiveWave();
 
-	enum class Mode {smooth, stepped, unison} mode = Mode::unison;
 	enum class TestData {noise, twintone, wavetable} wavetableType = TestData::wavetable;
 
 	float* activeWaveTable;
@@ -71,8 +70,8 @@ private:
 	float pitchInc = 0.0f;
 	float readPos = 0;
 	int32_t oldReadPos;
-	float unisonOffset[2] = {0.0f, 0.0f};
 
+	bool stepped = true;
 	int32_t warpVal = 0;					// Used for setting hysteresis on warp type
 	Warp oldWarpType = Warp::none;
 

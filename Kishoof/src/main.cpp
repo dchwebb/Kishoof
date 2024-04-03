@@ -12,6 +12,13 @@ extern uint32_t SystemCoreClock;
 volatile ADCValues __attribute__((section (".dma_buffer"))) adc;
 
 
+/* TODO:
+ * Adjust aliasing filters to cope with warp and tzfm
+ * Add channel B octave
+ * VCA on output ?
+ * channel B ring mod and mix
+ */
+
 extern "C" {
 #include "interrupts.h"
 }
