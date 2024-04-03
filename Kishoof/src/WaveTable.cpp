@@ -129,7 +129,7 @@ inline float WaveTable::CalcWarp()
 		// Deforms readPos using sine wave
 		float bendAmt = 1.0f / 96.0f;		// Increase to extend bend amount range
 		if (adc.DelayPot_R > 32767) {
-			float sinWarp = sineLUT[((uint32_t)readPos + 1024) & 0x7ff];			// Get amount of warp
+			float sinWarp = sineLUT[((uint32_t)readPos + 1024) & 0x7ff];			// Apply a 180 degree phase shift and limit to 2047
 			adjReadPos = readPos + sinWarp * (adc.DelayPot_R - 32767) * bendAmt;
 
 		} else {

@@ -12681,6 +12681,17 @@
 		)
 		(uuid "9f45e642-22e4-476b-92a0-cbffb342b20d")
 	)
+	(label "WARP_BIPOLAR"
+		(at 81.28 104.14 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "9f57fdf9-7120-4fd1-a86c-872dd17a3d88")
+	)
 	(label "USB_D+"
 		(at 480.06 177.8 0)
 		(fields_autoplaced yes)
@@ -12823,6 +12834,17 @@
 			(justify left bottom)
 		)
 		(uuid "ce2e3c2f-60a4-477c-9c7b-e725ca21ef06")
+	)
+	(label "WARP_BIPOLAR"
+		(at 480.06 199.39 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "cebd6c7b-8887-415d-85ee-65efa0d16fec")
 	)
 	(label "LCD_BACKLIGHT"
 		(at 431.8 172.72 0)
@@ -24407,22 +24429,22 @@
 			)
 		)
 		(pin "1"
-			(uuid "44489e12-2774-4851-800c-3c34bbb8b560")
+			(uuid "44489e12-2774-4851-800c-3c34bbb8b561")
 		)
 		(pin "2"
-			(uuid "d643bf2e-511f-403c-a084-937649b08735")
+			(uuid "d643bf2e-511f-403c-a084-937649b08736")
 		)
 		(pin "3"
-			(uuid "68605031-0f47-4a70-8970-f3c3f439f33b")
+			(uuid "68605031-0f47-4a70-8970-f3c3f439f33c")
 		)
 		(pin "5"
-			(uuid "d2263edb-f915-488f-b540-b9b7ba2bc06b")
+			(uuid "d2263edb-f915-488f-b540-b9b7ba2bc06c")
 		)
 		(pin "6"
-			(uuid "f7987cf0-d9bb-4b7f-8d55-626a9300edc4")
+			(uuid "f7987cf0-d9bb-4b7f-8d55-626a9300edc5")
 		)
 		(pin "7"
-			(uuid "854bfc10-0329-4b0a-8ce1-f95481598641")
+			(uuid "854bfc10-0329-4b0a-8ce1-f95481598642")
 		)
 		(pin "10"
 			(uuid "0d4c9221-7cc8-472b-b5f2-14d1a9b7fb74")
@@ -24434,19 +24456,19 @@
 			(uuid "8d565ebf-5e86-4edf-8249-4f0166b14238")
 		)
 		(pin "12"
-			(uuid "2ac9e386-f753-40c6-a49f-842b446f7d01")
+			(uuid "2ac9e386-f753-40c6-a49f-842b446f7d02")
 		)
 		(pin "13"
-			(uuid "d636c837-31fe-4486-b99e-792a9700562c")
+			(uuid "d636c837-31fe-4486-b99e-792a9700562d")
 		)
 		(pin "14"
-			(uuid "b2a49e28-c06d-4952-91c7-f21b805ad5e6")
+			(uuid "b2a49e28-c06d-4952-91c7-f21b805ad5e7")
 		)
 		(pin "11"
-			(uuid "2c5a6a1f-f64e-4903-87ab-88db794ec988")
+			(uuid "2c5a6a1f-f64e-4903-87ab-88db794ec989")
 		)
 		(pin "4"
-			(uuid "9e96f3a7-d496-4cc5-8a46-4ea4d824d3da")
+			(uuid "9e96f3a7-d496-4cc5-8a46-4ea4d824d3db")
 		)
 		(instances
 			(project "Kishoof_Components"
