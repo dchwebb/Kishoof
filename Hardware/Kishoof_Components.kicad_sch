@@ -10860,6 +10860,16 @@
 	)
 	(wire
 		(pts
+			(xy 542.29 140.97) (xy 544.83 140.97)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "00abfe94-3bfc-48ad-80e3-a4e2440107b4")
+	)
+	(wire
+		(pts
 			(xy 327.66 190.5) (xy 325.12 190.5)
 		)
 		(stroke
@@ -12010,6 +12020,16 @@
 	)
 	(wire
 		(pts
+			(xy 127 132.08) (xy 124.46 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3c5a01b8-64ac-46b3-8b67-6e1941c94c65")
+	)
+	(wire
+		(pts
 			(xy 472.44 57.15) (xy 472.44 59.69)
 		)
 		(stroke
@@ -12570,7 +12590,7 @@
 	)
 	(wire
 		(pts
-			(xy 523.24 139.7) (xy 523.24 140.97)
+			(xy 525.78 158.75) (xy 525.78 160.02)
 		)
 		(stroke
 			(width 0)
@@ -12627,6 +12647,16 @@
 			(type default)
 		)
 		(uuid "5c5fd9b1-15c7-4faa-b8ba-58c73713608d")
+	)
+	(wire
+		(pts
+			(xy 127 134.62) (xy 124.46 134.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5c80e041-5493-4a6e-9d8f-55d78a2d9cce")
 	)
 	(wire
 		(pts
@@ -12847,6 +12877,16 @@
 			(type default)
 		)
 		(uuid "6c756cfd-303a-43a6-b27c-c7fb4fe40cba")
+	)
+	(wire
+		(pts
+			(xy 462.28 162.56) (xy 464.82 162.56)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6d07f0ca-8a7b-42df-867f-b351c9205c68")
 	)
 	(wire
 		(pts
@@ -13157,6 +13197,16 @@
 			(type default)
 		)
 		(uuid "7fdc9f72-bc1d-4af7-8080-07f49883e15d")
+	)
+	(wire
+		(pts
+			(xy 458.47 157.48) (xy 458.47 158.75)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "807ddffc-c2c9-4d95-b56f-a20564729894")
 	)
 	(wire
 		(pts
@@ -13600,16 +13650,6 @@
 	)
 	(wire
 		(pts
-			(xy 127 114.3) (xy 124.46 114.3)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9b0c1f30-8f0f-4d03-9184-26ffad1f2110")
-	)
-	(wire
-		(pts
 			(xy 334.01 198.12) (xy 334.01 195.58)
 		)
 		(stroke
@@ -13807,6 +13847,16 @@
 			(type default)
 		)
 		(uuid "a629cf15-42d8-42f1-acb6-f468f3047457")
+	)
+	(wire
+		(pts
+			(xy 538.48 135.89) (xy 538.48 137.16)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a6db9356-0cd4-4e89-b90a-d10bb64aae03")
 	)
 	(wire
 		(pts
@@ -14187,6 +14237,16 @@
 			(type default)
 		)
 		(uuid "b9ec4251-c944-4afe-8c93-db835f1bb78b")
+	)
+	(wire
+		(pts
+			(xy 458.47 166.37) (xy 458.47 167.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ba1d77d0-21f3-4dc7-839a-f614cf2f3232")
 	)
 	(wire
 		(pts
@@ -14580,7 +14640,7 @@
 	)
 	(wire
 		(pts
-			(xy 527.05 144.78) (xy 529.59 144.78)
+			(xy 529.59 163.83) (xy 532.13 163.83)
 		)
 		(stroke
 			(width 0)
@@ -14670,7 +14730,7 @@
 	)
 	(wire
 		(pts
-			(xy 523.24 148.59) (xy 523.24 149.86)
+			(xy 525.78 167.64) (xy 525.78 168.91)
 		)
 		(stroke
 			(width 0)
@@ -15330,6 +15390,16 @@
 	)
 	(wire
 		(pts
+			(xy 538.48 144.78) (xy 538.48 146.05)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f4e16488-d80c-4c29-9d6f-f2c35965d87e")
+	)
+	(wire
+		(pts
 			(xy 204.47 63.5) (xy 208.28 63.5)
 		)
 		(stroke
@@ -15564,6 +15634,16 @@
 		)
 		(uuid "422b2550-0bc9-4fd1-80bc-e13c8be9d136")
 	)
+	(text "OCTOSPIM_P1_NCS"
+		(exclude_from_sim no)
+		(at 158.75 113.284 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "442673a6-88d1-4f3a-af62-59a31cbab1a8")
+	)
 	(text "ADC Pins\n--------\nPA0 ADC1_INP16       \nPA1 ADC1_INP17       \nPA2 ADC12_INP14      \nPA3 ADC12_INP15      \n[PA4 ADC12_INP18 DAC]\n[PA5 ADC12_INP19 DAC]\nPA6 ADC12_INP3       \nPA7 ADC12_INP7       \n                     \nPB0 ADC12_INP9       \nPB1 ADC12_INP5       \n                     \nPC0 ADC123_INP10     \nPC1 ADC123_INP11     \nPC2 ADC123_INP12     \n[PC3_C ADC3_INP1]    \nPC4 ADC12_INP4       \nPC5 ADC12_INP8       \n                     \nPF11 ADC1_INP2       \nPF12 ADC1_INP6       \nPF13 ADC2_INP2       \nPF14 ADC2_INP6       "
 		(exclude_from_sim no)
 		(at -46.228 170.18 0)
@@ -15619,16 +15699,6 @@
 		)
 		(uuid "bccf9daf-d066-4bc2-9fdc-3ea3e5f1455f")
 	)
-	(text "SPARE_ADC"
-		(exclude_from_sim no)
-		(at 131.572 133.858 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "c7f758ad-82cc-41a9-b7d4-693ee85fb8c9")
-	)
 	(text "OCTOSPIM_P1_IO4"
 		(exclude_from_sim no)
 		(at 44.704 121.158 0)
@@ -15669,16 +15739,6 @@
 			)
 		)
 		(uuid "f323a73a-493f-4795-9764-f2ac4815ef64")
-	)
-	(text "SPARE_ADC"
-		(exclude_from_sim no)
-		(at 131.572 131.318 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "fe340431-2b25-42c5-a5a5-931162b04001")
 	)
 	(label "OCTOSPIM_P1_NCS"
 		(at 212.09 157.48 180)
@@ -16263,6 +16323,17 @@
 		)
 		(uuid "55c7ffb7-6aab-493b-8b43-ec35974ea28f")
 	)
+	(label "WAVETABLE_POS_A_TRM"
+		(at 544.83 140.97 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "5fbec1fb-0e01-47a5-aeb2-fb39a719a69d")
+	)
 	(label "DAC_Out_R"
 		(at 237.49 53.34 0)
 		(fields_autoplaced yes)
@@ -16339,6 +16410,28 @@
 			(justify left bottom)
 		)
 		(uuid "6e9993fa-b804-4558-b761-6797ab0b5314")
+	)
+	(label "WARP_AMT_TRM"
+		(at 127 132.08 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "6ee51931-917f-47ef-bbbe-11b975fc84a0")
+	)
+	(label "WAVETABLE_POS_A_TRM"
+		(at 127 134.62 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "748b3b2b-63ad-4bfc-a9f0-4780cc379cfa")
 	)
 	(label "SWCLK"
 		(at 140.97 214.63 0)
@@ -16592,6 +16685,17 @@
 			(justify left bottom)
 		)
 		(uuid "99c420c4-4823-4741-954b-5eb67b8c0ece")
+	)
+	(label "WARP_AMT_TRM"
+		(at 464.82 162.56 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9a3e6ab4-9326-4bd6-83f1-c8f383f3894a")
 	)
 	(label "USB_DM"
 		(at 69.85 203.2 0)
@@ -16967,17 +17071,6 @@
 		)
 		(uuid "eb1c089c-176b-4e66-9908-5d702528f9fe")
 	)
-	(label "OCTOSPIM_P1_NCS"
-		(at 127 114.3 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "ebb5b05d-9222-46a4-b13f-edaf93eaeca6")
-	)
 	(label "WavetablePosA_CV"
 		(at 355.6 165.1 0)
 		(fields_autoplaced yes)
@@ -17045,7 +17138,7 @@
 		(uuid "f13f0d1d-3c00-49b1-b8d6-baf858ee6321")
 	)
 	(label "WAVETABLE_POS_B_POT"
-		(at 529.59 144.78 0)
+		(at 532.13 163.83 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -17167,7 +17260,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 523.24 149.86 0)
+		(at 525.78 168.91 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -17175,7 +17268,7 @@
 		(dnp no)
 		(uuid "0025b5b6-87de-4117-8a88-5d218bc391de")
 		(property "Reference" "#PWR077"
-			(at 523.24 156.21 0)
+			(at 525.78 175.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17184,7 +17277,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 523.367 154.2542 0)
+			(at 525.907 173.3042 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17192,7 +17285,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 523.24 149.86 0)
+			(at 525.78 168.91 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17201,7 +17294,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 523.24 149.86 0)
+			(at 525.78 168.91 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17210,7 +17303,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 523.24 149.86 0)
+			(at 525.78 168.91 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -18231,7 +18324,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 211.7852 41.91 0)
 			(effects
 				(font
@@ -18965,7 +19058,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "2406dd1c-e338-4d94-8447-d0aa614c0e8f")
-		(property "Reference" "WaveTablePot2"
+		(property "Reference" "WavetableAPot1"
 			(at 524.0274 118.2116 0)
 			(effects
 				(font
@@ -19022,7 +19115,7 @@
 		(instances
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
-					(reference "WaveTablePot2")
+					(reference "WavetableAPot1")
 					(unit 1)
 				)
 			)
@@ -20581,19 +20674,19 @@
 			(uuid "d220ea48-46e0-4f3c-9586-69a86fe1082e")
 		)
 		(pin "5"
-			(uuid "1f942bd1-b9e5-4e48-afd7-8000c2cd22da")
+			(uuid "1f942bd1-b9e5-4e48-afd7-8000c2cd22db")
 		)
 		(pin "6"
-			(uuid "0d3000ad-cb5e-4655-8f21-7fe5bbaa09ef")
+			(uuid "0d3000ad-cb5e-4655-8f21-7fe5bbaa09f0")
 		)
 		(pin "7"
-			(uuid "e9370fa9-a6c6-4a62-8c46-b2609dba933f")
+			(uuid "e9370fa9-a6c6-4a62-8c46-b2609dba9340")
 		)
 		(pin "4"
-			(uuid "0010e38d-01d8-4620-8090-7b1ad0ec6c4f")
+			(uuid "0010e38d-01d8-4620-8090-7b1ad0ec6c50")
 		)
 		(pin "8"
-			(uuid "340af24e-5ed1-4df7-ade4-1e7983aca616")
+			(uuid "340af24e-5ed1-4df7-ade4-1e7983aca617")
 		)
 		(instances
 			(project "Kishoof_Components"
@@ -20965,6 +21058,78 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R_Potentiometer")
+		(at 538.48 140.97 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "445df631-7c09-49ea-97ad-26e30013cadc")
+		(property "Reference" "WavetableATrm1"
+			(at 536.7274 139.8016 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "B10k"
+			(at 536.7274 142.113 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "Custom_Footprints:Alpha_9mm_Potentiometer_Aligned"
+			(at 538.48 140.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 538.48 140.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Potentiometer"
+			(at 538.48 140.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "31495d02-fc10-4922-8505-9c846894076d")
+		)
+		(pin "2"
+			(uuid "4c6d9db9-5832-411e-b104-6141bb56f052")
+		)
+		(pin "3"
+			(uuid "82f5e61e-8a0e-494d-9219-24eb52753c1a")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "WavetableATrm1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Amplifier_Operational:MCP6004")
 		(at 344.17 165.1 0)
 		(mirror x)
@@ -21209,7 +21374,7 @@
 	)
 	(symbol
 		(lib_id "power:+3.3VA")
-		(at 523.24 139.7 0)
+		(at 525.78 158.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -21217,7 +21382,7 @@
 		(dnp no)
 		(uuid "45e4108d-1b3b-4ffb-be84-a0882702f911")
 		(property "Reference" "#PWR076"
-			(at 523.24 143.51 0)
+			(at 525.78 162.56 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21226,7 +21391,7 @@
 			)
 		)
 		(property "Value" "+3.3VA"
-			(at 520.7 135.89 0)
+			(at 523.24 154.94 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21235,7 +21400,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 523.24 139.7 0)
+			(at 525.78 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21244,7 +21409,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 523.24 139.7 0)
+			(at 525.78 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21253,7 +21418,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3.3VA\""
-			(at 523.24 139.7 0)
+			(at 525.78 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -23181,7 +23346,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "60b12883-b4e5-43d1-a068-3862a3dab381")
-		(property "Reference" "RV1"
+		(property "Reference" "WarpType1"
 			(at 473.71 132.08 0)
 			(effects
 				(font
@@ -23242,7 +23407,7 @@
 		(instances
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
-					(reference "RV1")
+					(reference "WarpType1")
 					(unit 2)
 				)
 			)
@@ -24051,7 +24216,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 240.9952 41.91 0)
 			(effects
 				(font
@@ -24384,19 +24549,19 @@
 			(uuid "b201288a-2021-4b3b-b1bf-1de3100d4bee")
 		)
 		(pin "5"
-			(uuid "1f942bd1-b9e5-4e48-afd7-8000c2cd22da")
+			(uuid "1f942bd1-b9e5-4e48-afd7-8000c2cd22dc")
 		)
 		(pin "6"
-			(uuid "0d3000ad-cb5e-4655-8f21-7fe5bbaa09ef")
+			(uuid "0d3000ad-cb5e-4655-8f21-7fe5bbaa09f1")
 		)
 		(pin "7"
-			(uuid "e9370fa9-a6c6-4a62-8c46-b2609dba933f")
+			(uuid "e9370fa9-a6c6-4a62-8c46-b2609dba9341")
 		)
 		(pin "4"
-			(uuid "0010e38d-01d8-4620-8090-7b1ad0ec6c4f")
+			(uuid "0010e38d-01d8-4620-8090-7b1ad0ec6c51")
 		)
 		(pin "8"
-			(uuid "340af24e-5ed1-4df7-ade4-1e7983aca616")
+			(uuid "340af24e-5ed1-4df7-ade4-1e7983aca618")
 		)
 		(instances
 			(project "Kishoof_Components"
@@ -25517,6 +25682,78 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R_Potentiometer")
+		(at 458.47 162.56 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "919d2fdd-7c0c-494e-afed-2eb9b9bb1f4a")
+		(property "Reference" "WarpAmtTrm2"
+			(at 456.7174 161.3916 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "B10k"
+			(at 456.7174 163.703 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "Custom_Footprints:Alpha_9mm_Potentiometer_Aligned"
+			(at 458.47 162.56 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 458.47 162.56 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Potentiometer"
+			(at 458.47 162.56 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "1aa0815b-c329-43f1-a9c3-c20eaa639ff8")
+		)
+		(pin "2"
+			(uuid "a5189de3-00c0-431b-8079-dde4f4c268e2")
+		)
+		(pin "3"
+			(uuid "30b8f2ae-babe-4d62-be47-411021ff30c5")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "WarpAmtTrm2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Jumper:Jumper_2_Open")
 		(at 77.47 207.01 0)
 		(unit 1)
@@ -25594,7 +25831,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "9273a8ef-d2db-447a-811a-43d197f06fae")
-		(property "Reference" "RV1"
+		(property "Reference" "WarpType1"
 			(at 466.09 118.1607 0)
 			(effects
 				(font
@@ -25657,7 +25894,7 @@
 		(instances
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
-					(reference "RV1")
+					(reference "WarpType1")
 					(unit 1)
 				)
 			)
@@ -26089,6 +26326,72 @@
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "R10")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3.3VA")
+		(at 458.47 157.48 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "99093896-b2d1-45c8-9035-3451d8430a42")
+		(property "Reference" "#PWR094"
+			(at 458.47 161.29 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3VA"
+			(at 455.93 153.67 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 458.47 157.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 458.47 157.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3VA\""
+			(at 458.47 157.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "a2852bef-7d5f-4886-8b50-30beeed16c66")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR094")
 					(unit 1)
 				)
 			)
@@ -26579,6 +26882,71 @@
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "J1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 458.47 167.64 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "a2ee8e07-2ce1-4c3a-99de-31db5e4110a9")
+		(property "Reference" "#PWR095"
+			(at 458.47 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 458.597 172.0342 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 458.47 167.64 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 458.47 167.64 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 458.47 167.64 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "ff657795-cb19-491e-9f67-28cecb9d3e19")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR095")
 					(unit 1)
 				)
 			)
@@ -28512,7 +28880,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" "Crystals:Crystal_SMD_5032-2pin_5.0x3.2mm_HandSoldering"
+		(property "Footprint" "Crystal:Crystal_SMD_Abracon_ABM3-2Pin_5.0x3.2mm"
 			(at 67.31 62.23 0)
 			(effects
 				(font
@@ -29859,6 +30227,71 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 538.48 146.05 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "cc1f1314-65a0-441e-acf5-608582bab4ce")
+		(property "Reference" "#PWR093"
+			(at 538.48 152.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 538.607 150.4442 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 538.48 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 538.48 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 538.48 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "e1c4c47a-5496-472a-a628-e52b1c162d43")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR093")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C_Small")
 		(at 127 30.48 180)
 		(unit 1)
@@ -31112,6 +31545,72 @@
 	)
 	(symbol
 		(lib_id "power:+3.3VA")
+		(at 538.48 135.89 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "de51246d-1077-4750-87b5-887b50f2aead")
+		(property "Reference" "#PWR092"
+			(at 538.48 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3VA"
+			(at 535.94 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 538.48 135.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 538.48 135.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3VA\""
+			(at 538.48 135.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "63a04b97-3938-46fe-82ab-27cebc5cc6fd")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR092")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3.3VA")
 		(at 454.66 83.82 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -32278,15 +32777,15 @@
 	)
 	(symbol
 		(lib_id "Device:R_Potentiometer")
-		(at 523.24 144.78 0)
+		(at 525.78 163.83 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(uuid "f03e8d7a-1047-477c-8daa-1c10e9cdfa04")
-		(property "Reference" "WaveTablePot1"
-			(at 521.4874 143.6116 0)
+		(property "Reference" "WavetableBPot1"
+			(at 524.0274 162.6616 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -32295,7 +32794,7 @@
 			)
 		)
 		(property "Value" "B10k"
-			(at 521.4874 145.923 0)
+			(at 524.0274 164.973 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -32304,7 +32803,7 @@
 			)
 		)
 		(property "Footprint" "Custom_Footprints:Alpha_9mm_Potentiometer_Aligned"
-			(at 523.24 144.78 0)
+			(at 525.78 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -32313,7 +32812,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 523.24 144.78 0)
+			(at 525.78 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -32322,7 +32821,7 @@
 			)
 		)
 		(property "Description" "Potentiometer"
-			(at 523.24 144.78 0)
+			(at 525.78 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -32342,7 +32841,7 @@
 		(instances
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
-					(reference "WaveTablePot1")
+					(reference "WavetableBPot1")
 					(unit 1)
 				)
 			)

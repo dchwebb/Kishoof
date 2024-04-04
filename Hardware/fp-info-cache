@@ -1,4 +1,4 @@
-23126712690701844
+23270886816982865
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -53661,6 +53661,622 @@ SMD SMT ceramic resonator filter filter hand-soldering
 0
 3
 3
+Custom_Footprints
+1.3mm_Test_Point
+1.3mm Test Point
+Through Hole Mount Test Points
+0
+1
+1
+Custom_Footprints
+1mm_Test_Point
+1.3mm Test Point
+Through Hole Mount Test Points
+0
+1
+1
+Custom_Footprints
+2mm_Connector
+
+
+0
+1
+1
+Custom_Footprints
+3D_Dummy
+
+
+0
+0
+0
+Custom_Footprints
+4_Layer_Markers
+
+
+0
+0
+0
+Custom_Footprints
+4pin_header
+http://www.farnell.com/datasheets/1520732.pdf
+connector multicomp MC9A MC9A12
+0
+4
+4
+Custom_Footprints
+18x0.8mmLCDConnector
+
+
+0
+18
+18
+Custom_Footprints
+100DP6T1B1M2QE_ON_ON_ON
+
+
+0
+6
+6
+Custom_Footprints
+ARM-UQFN-48-7x7mm_Pitch0.5mm
+UK Package; 48-Lead Plastic QFN (7mm x 7mm); (see Linear Technology QFN_48_05-08-1704.pdf)
+UQFN48
+0
+49
+49
+Custom_Footprints
+Alpha_9mm_Potentiometer
+Potentiometer, horizontally mounted, Omeg PC16PU, Omeg PC16PU, Omeg PC16PU, Vishay/Spectrol 248GJ/249GJ Single, Vishay/Spectrol 248GJ/249GJ Single, Vishay/Spectrol 248GJ/249GJ Single, Vishay/Spectrol 248GH/249GH Single, Vishay/Spectrol 148/149 Single, Vishay/Spectrol 148/149 Single, Vishay/Spectrol 148/149 Single, Vishay/Spectrol 148A/149A Single with mounting plates, Vishay/Spectrol 148/149 Double, Vishay/Spectrol 148A/149A Double with mounting plates, Piher PC-16 Single, Piher PC-16 Single, Piher PC-16 Single, Piher PC-16SV Single, Piher PC-16 Double, Piher PC-16 Triple, Piher T16H Single, Piher T16L Single, Piher T16H Double, Alps RK163 Single, Alps RK163 Double, Alps RK097 Single, Alps RK097 Double, Bourns PTV09A-2 Single with mounting sleve Single, Bourns PTV09A-1 with mounting sleve Single, Bourns PRS11S Single, Alps RK09K Single with mounting sleve Single, Alps RK09K with mounting sleve Single, http://www.alps.com/prod/info/E/HTML/Potentiometer/RotaryPotentiometers/RK09K/RK09D1130C1B.html
+Potentiometer horizontal  Omeg PC16PU  Omeg PC16PU  Omeg PC16PU  Vishay/Spectrol 248GJ/249GJ Single  Vishay/Spectrol 248GJ/249GJ Single  Vishay/Spectrol 248GJ/249GJ Single  Vishay/Spectrol 248GH/249GH Single  Vishay/Spectrol 148/149 Single  Vishay/Spectrol 148/149 Single  Vishay/Spectrol 148/149 Single  Vishay/Spectrol 148A/149A Single with mounting plates  Vishay/Spectrol 148/149 Double  Vishay/Spectrol 148A/149A Double with mounting plates  Piher PC-16 Single  Piher PC-16 Single  Piher PC-16 Single  Piher PC-16SV Single  Piher PC-16 Double  Piher PC-16 Triple  Piher T16H Single  Piher T16L Single  Piher T16H Double  Alps RK163 Single  Alps RK163 Double  Alps RK097 Single  Alps RK097 Double  Bourns PTV09A-2 Single with mounting sleve Single  Bourns PTV09A-1 with mounting sleve Single  Bourns PRS11S Single  Alps RK09K Single with mounting sleve Single  Alps RK09K with mounting sleve Single
+0
+3
+3
+Custom_Footprints
+Alpha_9mm_Potentiometer_Aligned
+Potentiometer 9mm
+Potentiometer 9mm
+0
+3
+3
+Custom_Footprints
+Alpha_9mm_pot_hole
+Mounting Hole 7mm
+mounting hole 7mm
+0
+0
+0
+Custom_Footprints
+BGA-24_5x5_6.0x8.0mm
+
+
+0
+24
+24
+Custom_Footprints
+Bourns_Switch_Potentiometer
+Potentiometer 9mm
+Potentiometer 9mm
+0
+5
+5
+Custom_Footprints
+CP_Elec_4x5.8_Big_pad
+SMT capacitor, aluminium electrolytic, 4x5.8
+
+0
+2
+2
+Custom_Footprints
+Cliff_3.5mm_Stereo_Jack
+
+
+0
+4
+3
+Custom_Footprints
+Cliff_8mm_Jack_Hole
+Mounting Hole 8mm
+mounting hole 8mm
+0
+0
+0
+Custom_Footprints
+Connector_27x2.54mm
+http://www.farnell.com/datasheets/1520732.pdf
+connector multicomp MC9A MC9A12
+0
+27
+27
+Custom_Footprints
+Crystal_SMD
+SMD Crystal HC-49-SD http://cdn-reichelt.de/documents/datenblatt/B400/xxx-HC49-SMD.pdf, 11.4x4.7mm^2 package
+SMD SMT crystal
+0
+2
+2
+Custom_Footprints
+Crystal_SMD_2pin_6.0x3.5mm
+SMD Crystal SERIES SMD0603/2 http://www.petermann-technik.de/fileadmin/petermann/pdf/SMD0603-2.pdf, hand-soldering, 6.0x3.5mm^2 package
+SMD SMT crystal hand-soldering
+0
+2
+2
+Custom_Footprints
+DPDT_Switch_MountingHole_6mm
+Mounting Hole 6mm, no annular
+mounting hole 6mm no annular
+0
+0
+0
+Custom_Footprints
+D_SOD-123_custom
+SOD-123
+SOD-123
+0
+2
+2
+Custom_Footprints
+Encoder
+
+rotary, encoder, ALPS
+0
+7
+6
+Custom_Footprints
+Eurorack_10_pin_header
+http://www.farnell.com/datasheets/1520732.pdf
+connector multicomp MC9A MC9A12
+0
+10
+10
+Custom_Footprints
+Eurorack_16_pin_header
+http://www.farnell.com/datasheets/1520732.pdf
+connector multicomp MC9A MC9A12
+0
+16
+16
+Custom_Footprints
+FBGA-24
+
+
+0
+24
+24
+Custom_Footprints
+ICE40_QFN-48-1EP_7x7mm_Pitch0.5mm
+UK Package; 48-Lead Plastic QFN (7mm x 7mm); (see Linear Technology QFN_48_05-08-1704.pdf)
+QFN 0.5
+0
+73
+49
+Custom_Footprints
+ICE40_QFN-48-stencil
+UK Package; 48-Lead Plastic QFN (7mm x 7mm); (see Linear Technology QFN_48_05-08-1704.pdf)
+QFN 0.5
+0
+64
+49
+Custom_Footprints
+ILI9341_SPI
+ILI9341 LCD
+ILI9341 LCD SPI
+0
+18
+14
+Custom_Footprints
+ILI9341_SPI_daughterboard
+ILI9341 LCD
+ILI9341 LCD SPI
+0
+24
+24
+Custom_Footprints
+Inductor_SMD_6x6mm
+3L COILS SNR6045K-680M
+inductor smd
+0
+2
+2
+Custom_Footprints
+JLC_SMT_Tooling_Hole
+Mounting Hole 1.152mm
+JLC mounting hole 1.152mm
+0
+0
+0
+Custom_Footprints
+Jack_3.5mm_QingPu_WQP-PJ302M_Horizontal
+
+
+0
+3
+3
+Custom_Footprints
+KS01-BLV
+Highly KS01-BLV LED Button
+Highly KS01-BLV LED Button
+0
+6
+6
+Custom_Footprints
+LED_Buttons_KS01-BLV
+Mounting Hole 7mm
+mounting hole 7mm
+0
+0
+0
+Custom_Footprints
+LED_D3.0mm
+LED, diameter 3.0mm, 2 pins
+LED diameter 3.0mm 2 pins
+0
+2
+2
+Custom_Footprints
+LED_D3.0mm-3
+LED, diameter 3.0mm, 3 pins, 2mm spacing
+LED, diameter 3.0mm, 3 pins, 2mm spacing
+0
+3
+3
+Custom_Footprints
+LED_Hole_3mm
+Mounting Hole 6mm, no annular
+mounting hole 6mm no annular
+0
+0
+0
+Custom_Footprints
+LED_RGB_PLCC4
+RGB LED PLCC4 Broadcom
+LED 3227
+0
+4
+4
+Custom_Footprints
+LFL212G45TC1A007
+
+
+0
+8
+8
+Custom_Footprints
+L_0806
+Resistor SMD 0805, reflow soldering, Vishay (see dcrcw.pdf)
+resistor 0805
+0
+2
+2
+Custom_Footprints
+MIDISocket_Hole_15mm
+Mounting Hole 15mm
+mounting hole 15mm
+0
+0
+0
+Custom_Footprints
+MIDI_DIN
+MIDI_DIN, standard DIN connector, 5 pins, midi
+MIDI_DIN DIN 5-pins connector midi
+0
+6
+6
+Custom_Footprints
+MLPF-WB-01E3
+
+
+0
+6
+6
+Custom_Footprints
+MiniVoltmeter
+
+
+0
+3
+3
+Custom_Footprints
+Miniature_Switch_MountingHole_6.35mm
+Mounting Hole 6mm, no annular
+mounting hole 6mm no annular
+0
+0
+0
+Custom_Footprints
+MountingHole_6.1mm
+Mounting Hole 6mm, no annular
+mounting hole 6mm no annular
+0
+0
+0
+Custom_Footprints
+MountingHole_6.7mm_Button
+Mounting Hole 6mm, no annular
+mounting hole 6mm no annular
+0
+0
+0
+Custom_Footprints
+NN01_102
+Ignion Fractus 2.4GHz Antenna
+
+0
+2
+2
+Custom_Footprints
+Oval_Mounting_Hole
+Mounting Hole 6mm, no annular
+mounting hole 6mm no annular
+0
+0
+0
+Custom_Footprints
+Potentiometer_Bourns_PTA4543_Slot
+Bourns single-gang slide potentiometer, 45.0mm travel, https://www.bourns.com/docs/Product-Datasheets/pta.pdf
+Bourns single-gang slide potentiometer 45.0mm
+0
+0
+0
+Custom_Footprints
+QFN-32-1EP_5x5mm_P0.5mm_EP3.1x3.1mm_ThermalVias
+QFN, 32 Pin (http://ww1.microchip.com/downloads/en/DeviceDoc/8008S.pdf#page=20), generated with kicad-footprint-generator ipc_noLead_generator.py
+QFN NoLead
+0
+59
+33
+Custom_Footprints
+RJ45_Amphenol_RJHSE-3080
+RJ45 vertical connector https://www.on-shore.com/wp-content/uploads/PJ012-8P8CX.pdf
+RJ45 PJ012
+0
+8
+8
+Custom_Footprints
+RJ45_Amphenol_RJHSE-3080_Mounting_Hole
+RJ45 vertical connector https://www.on-shore.com/wp-content/uploads/PJ012-8P8CX.pdf
+RJ45 PJ012
+0
+0
+0
+Custom_Footprints
+RJ45_Amphenol_Style
+8 Pol Shallow Latch Connector, Modjack, RJ45 (https://cdn.amphenol-icc.com/media/wysiwyg/files/drawing/c-bmj-0102.pdf)
+RJ45
+0
+8
+8
+Custom_Footprints
+RJ45_Molex_42878-8506
+RJ45 vertical connector https://www.on-shore.com/wp-content/uploads/PJ012-8P8CX.pdf
+RJ45 PJ012
+0
+8
+8
+Custom_Footprints
+RJ45_Molex_42878-8506_Mounting_Hole
+RJ45 vertical connector https://www.on-shore.com/wp-content/uploads/PJ012-8P8CX.pdf
+RJ45 PJ012
+0
+0
+0
+Custom_Footprints
+SP3T_Mini_Switch
+
+
+0
+3
+3
+Custom_Footprints
+SPDTSubMiniature
+SPDT Sub Miniature Switch
+Switch SPDT
+0
+3
+3
+Custom_Footprints
+SPDT_Miniature
+SPDT Sub Miniature Switch
+Switch SPDT
+0
+3
+3
+Custom_Footprints
+SPDT_Slide_Switch
+On-On PCB Slide Switch SPDT 0.3A 50VDC Switch Electronics p/n 482028
+Switch SPDT
+0
+3
+3
+Custom_Footprints
+SPDT_SubMiniature_Aligned
+SPDT Sub Miniature Switch
+Switch SPDT
+0
+3
+3
+Custom_Footprints
+SSOP-20_4.4x6.5mm_Pitch0.65mm_Round_Pads
+SSOP20: plastic shrink small outline package; 20 leads; body width 4.4 mm; (see NXP SSOP-TSSOP-VSO-REFLOW.pdf and sot266-1_po.pdf)
+SSOP 0.65
+0
+20
+20
+Custom_Footprints
+STF202-22T1G
+USB ESD Protection
+
+0
+6
+6
+Custom_Footprints
+SWD_header
+
+SWD ARM Header Programmer
+0
+4
+4
+Custom_Footprints
+SW_100DP3T1B1M2QEH
+
+
+0
+6
+6
+Custom_Footprints
+SW_PUSH_6mm_aligned
+https://www.omron.com/ecb/products/pdf/en-b3f.pdf
+tact sw push 6mm
+0
+4
+2
+Custom_Footprints
+SW_Rotary_2x5
+
+
+0
+12
+12
+Custom_Footprints
+SW_SPST_EVQQ2
+Light Touch Switch, https://industrial.panasonic.com/cdbs/www-data/pdf/ATK0000/ATK0000CE28.pdf
+
+0
+4
+2
+Custom_Footprints
+Small_Pushbutton_Hole_3.5mm
+Button Hole 3.5mm
+
+0
+0
+0
+Custom_Footprints
+Sub_Miniature_Switch_MountingHole_3.5mm
+Mounting Hole 6mm, no annular
+mounting hole 6mm no annular
+0
+0
+0
+Custom_Footprints
+Sub_Miniature_Switch_MountingHole_3mm
+Mounting Hole 6mm, no annular
+mounting hole 6mm no annular
+0
+0
+0
+Custom_Footprints
+Sub_Miniature_Switch_MountingHole_5mm
+Mounting Hole 6mm, no annular
+mounting hole 6mm no annular
+0
+0
+0
+Custom_Footprints
+TDK_Inductor_6.9x7.2
+Choke, SMD, 6.3x6.3mm 3mm height
+Choke SMD
+0
+2
+2
+Custom_Footprints
+THONKICONN_hole
+
+
+0
+3
+3
+Custom_Footprints
+TSOP-II-54_22.2x10.16mm_P0.8mm
+54-lead TSOP typ II package
+TSOPII TSOP2
+0
+54
+54
+Custom_Footprints
+Tall_Trimmer_Hole
+Mounting Hole 6.5mm
+mounting hole 6.5mm
+0
+0
+0
+Custom_Footprints
+Thonkiconn_Socket_MountingHole_6mm
+Mounting Hole 6mm, no annular
+mounting hole 6mm no annular
+0
+0
+0
+Custom_Footprints
+Thonkiconn_Stereo-PJ366ST
+T-R-S Vertical mounting jack AKA WQP-WQP419GR, Stereo Thonkiconn
+WQP-WQP419GR Thonkiconn
+0
+3
+3
+Custom_Footprints
+USB_B_CUTOUT
+
+
+0
+0
+0
+Custom_Footprints
+USB_B_Molex
+USB B female connector, straight, rugged
+USB_B_MUSB_Straight female connector straight rugged MUSB D511
+0
+6
+4
+Custom_Footprints
+USB_B_Wurth
+USB B female connector, straight, rugged
+USB_B_MUSB_Straight female connector straight rugged MUSB D511
+0
+6
+5
+Custom_Footprints
+USB_C_Cutout
+
+
+0
+0
+0
+Custom_Footprints
+USB_C_Receptacle_Amphenol_12401951E412A
+https://cdn.amphenol-cs.com/media/wysiwyg/files/documentation/datasheet/inputoutput/io_waterproof_usb_type_c.pdf
+USB C Type-C Receptacle SMD
+0
+28
+25
+Custom_Footprints
+USB_Micro-B_Amphenol
+Micro USB Type B Receptacle
+USB USB_B USB_micro USB_OTG
+0
+9
+6
+Custom_Footprints
+USB_TE_1734517-1
+
+
+0
+6
+6
+Custom_Footprints
+Wurth_2.4GHz_Filter_2.5mm_2.0mm
+
+
+0
+4
+4
+Custom_Footprints
+bluetooth
+
+
+0
+0
+0
 Diode_SMD
 D_0201_0603Metric
 Diode SMD 0201 (0603 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: https://www.vishay.com/docs/20052/crcw0201e3.pdf), generated with kicad-footprint-generator
