@@ -11067,7 +11067,7 @@
 		(uuid "c6e67c52-3231-4628-a441-1580ebdf4c02")
 	)
 	(no_connect
-		(at 69.85 135.89)
+		(at 69.85 151.13)
 		(uuid "ca4af9b4-289c-40ad-a9e7-4db37694f1d2")
 	)
 	(no_connect
@@ -14218,7 +14218,7 @@
 	)
 	(wire
 		(pts
-			(xy 67.31 151.13) (xy 69.85 151.13)
+			(xy 67.31 135.89) (xy 69.85 135.89)
 		)
 		(stroke
 			(width 0)
@@ -17103,7 +17103,7 @@
 		(uuid "adeabc9f-c585-4383-93d1-59b1092bd44d")
 	)
 	(label "B_Octave_Btn1"
-		(at 67.31 151.13 180)
+		(at 67.31 135.89 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
