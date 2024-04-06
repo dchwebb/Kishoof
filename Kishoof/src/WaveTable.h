@@ -71,7 +71,7 @@ private:
 	float readPos = 0;
 	int32_t oldReadPos;
 
-	bool stepped = true;
+	bool stepped = false;
 	int32_t warpVal = 0;					// Used for setting hysteresis on warp type
 	Warp oldWarpType = Warp::none;
 
