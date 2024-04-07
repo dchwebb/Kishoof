@@ -1,4 +1,4 @@
-23272599139307836
+23276024148019728
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -53900,6 +53900,13 @@ Highly KS01-BLV LED Button
 6
 6
 Custom_Footprints
+LCD_Riser
+
+
+0
+8
+8
+Custom_Footprints
 LED_Buttons_KS01-BLV
 Mounting Hole 7mm
 mounting hole 7mm
@@ -54060,6 +54067,13 @@ RJ45 PJ012
 0
 0
 0
+Custom_Footprints
+Round_LCD
+
+
+0
+12
+12
 Custom_Footprints
 SP3T_Mini_Switch
 

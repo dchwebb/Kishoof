@@ -1026,168 +1026,6 @@
 				)
 			)
 		)
-		(symbol "Connector:Conn_01x02_Socket"
-			(pin_names
-				(offset 1.016) hide)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "J"
-				(at 0 2.54 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "Conn_01x02_Socket"
-				(at 0 -5.08 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" "~"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "Generic connector, single row, 01x02, script generated"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_locked" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "connector"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_fp_filters" "Connector*:*_1x??_*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "Conn_01x02_Socket_1_1"
-				(arc
-					(start 0 -2.032)
-					(mid -0.5058 -2.54)
-					(end 0 -3.048)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 -2.54) (xy -0.508 -2.54)
-					)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 0) (xy -0.508 0)
-					)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
-					(start 0 0.508)
-					(mid -0.5058 0)
-					(end 0 -0.508)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(pin passive line
-					(at -5.08 0 0)
-					(length 3.81)
-					(name "Pin_1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -5.08 -2.54 0)
-					(length 3.81)
-					(name "Pin_2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "Connector:Conn_01x04_Pin"
 			(pin_names
 				(offset 1.016) hide)
@@ -7624,6 +7462,213 @@
 				)
 			)
 		)
+		(symbol "Mountjoy:LCD_Riser"
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "U"
+				(at 0 -14.732 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" ""
+				(at -10.16 7.62 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" "Custom_Footprints:LCD_Riser"
+				(at 0.254 -17.526 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" ""
+				(at -10.16 7.62 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" ""
+				(at -10.16 7.62 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "LCD_Riser_0_0"
+				(pin input line
+					(at -10.16 7.62 0)
+					(length 2.54)
+					(name "MOSI"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -10.16 5.08 0)
+					(length 2.54)
+					(name "CLK"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -10.16 2.54 0)
+					(length 2.54)
+					(name "DC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -10.16 0 0)
+					(length 2.54)
+					(name "RESET"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -10.16 -2.54 0)
+					(length 2.54)
+					(name "CS"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -10.16 -5.08 0)
+					(length 2.54)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -10.16 -7.62 0)
+					(length 2.54)
+					(name "VDD"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -10.16 -10.16 0)
+					(length 2.54)
+					(name "BACKLIGHT"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(symbol "LCD_Riser_0_1"
+				(rectangle
+					(start -7.62 10.795)
+					(end 7.62 -12.7)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+			)
+		)
 		(symbol "Mountjoy:Switch_Potentiometer"
 			(pin_names
 				(offset 1.016) hide)
@@ -10939,7 +10984,7 @@
 		(uuid "22e358db-befd-410f-827e-38ce2832c466")
 	)
 	(no_connect
-		(at 69.85 130.81)
+		(at 113.03 153.67)
 		(uuid "27742a31-7d09-4d44-a68d-82281ef4f27c")
 	)
 	(no_connect
@@ -11025,10 +11070,6 @@
 	(no_connect
 		(at 113.03 97.79)
 		(uuid "a12b005c-a132-4c6b-8203-cae018f6662d")
-	)
-	(no_connect
-		(at 113.03 143.51)
-		(uuid "aa26a9ef-f20a-4149-bc66-faaf770af999")
 	)
 	(no_connect
 		(at 618.49 205.74)
@@ -11575,6 +11616,26 @@
 			(type default)
 		)
 		(uuid "149a9bb8-060d-4d27-a6ad-9edfa6415319")
+	)
+	(wire
+		(pts
+			(xy 553.72 180.34) (xy 557.53 180.34)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "15656ff3-8a5c-43e5-9b55-a9ea993052f3")
+	)
+	(wire
+		(pts
+			(xy 553.72 185.42) (xy 557.53 185.42)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1769e3ea-86f7-4449-9b6d-fc100ccd4f23")
 	)
 	(wire
 		(pts
@@ -13078,7 +13139,7 @@
 	)
 	(wire
 		(pts
-			(xy 113.03 153.67) (xy 115.57 153.67)
+			(xy 69.85 130.81) (xy 67.31 130.81)
 		)
 		(stroke
 			(width 0)
@@ -14508,6 +14569,16 @@
 	)
 	(wire
 		(pts
+			(xy 553.72 198.12) (xy 557.53 198.12)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b41d2c32-6c9c-46c9-a639-94d9d5b0a76e")
+	)
+	(wire
+		(pts
 			(xy 331.47 229.87) (xy 331.47 231.14)
 		)
 		(stroke
@@ -14515,6 +14586,16 @@
 			(type default)
 		)
 		(uuid "b42d89fd-4d6f-4abd-b60b-346fce2de63d")
+	)
+	(wire
+		(pts
+			(xy 553.72 182.88) (xy 557.53 182.88)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b4511e9a-c5a9-4fa6-9347-20d5892649dd")
 	)
 	(wire
 		(pts
@@ -15158,6 +15239,16 @@
 	)
 	(wire
 		(pts
+			(xy 553.72 187.96) (xy 557.53 187.96)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d325cb66-5b85-4998-b722-9b7c2c67dc30")
+	)
+	(wire
+		(pts
 			(xy 205.74 134.62) (xy 205.74 140.97)
 		)
 		(stroke
@@ -15508,6 +15599,16 @@
 	)
 	(wire
 		(pts
+			(xy 553.72 190.5) (xy 557.53 190.5)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e556ab97-be07-4892-9f03-a86ec0692708")
+	)
+	(wire
+		(pts
 			(xy 294.64 68.58) (xy 290.83 68.58)
 		)
 		(stroke
@@ -15685,6 +15786,16 @@
 			(type default)
 		)
 		(uuid "ee3d3ef5-c891-4e51-ac60-0df3ab1f8d03")
+	)
+	(wire
+		(pts
+			(xy 113.03 143.51) (xy 115.57 143.51)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ee66a0c1-a530-4d0c-9314-6de8d10bb8a9")
 	)
 	(wire
 		(pts
@@ -16047,6 +16158,16 @@
 		)
 		(uuid "bccf9daf-d066-4bc2-9fdc-3ea3e5f1455f")
 	)
+	(text "Grounded for A/D signal separation"
+		(exclude_from_sim no)
+		(at 141.732 143.002 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "e264bd27-80f1-44c5-a171-5aba18f336c1")
+	)
 	(text "Analog 3.3V Supply"
 		(exclude_from_sim no)
 		(at 93.98 267.97 0)
@@ -16113,13 +16234,13 @@
 		(uuid "09b3fdc5-a43e-43f1-a7cc-d66bb2849ff1")
 	)
 	(label "ENCODER_BTN"
-		(at 115.57 153.67 0)
+		(at 67.31 130.81 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
+			(justify right bottom)
 		)
 		(uuid "0d2a668c-a3a1-4405-aafb-67f8c6bd82ef")
 	)
@@ -16234,7 +16355,7 @@
 		(uuid "1d91369c-5af3-4135-8927-b88c15919a7a")
 	)
 	(label "LCD_BACKLIGHT"
-		(at 530.86 204.47 180)
+		(at 553.72 198.12 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -16289,7 +16410,7 @@
 		(uuid "25a492f6-727d-48eb-b523-db3b356c7395")
 	)
 	(label "WAVETABLE_POS_A_POT"
-		(at 115.57 62.23 0)
+		(at 115.57 64.77 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -16465,7 +16586,7 @@
 		(uuid "3569261b-a71d-4539-82c2-e99104270db7")
 	)
 	(label "LCD_SPI3_SCK"
-		(at 530.86 185.42 180)
+		(at 553.72 182.88 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -16641,7 +16762,7 @@
 		(uuid "617ed2b1-a8ec-4dab-9e75-ff6d9c95c0b8")
 	)
 	(label "LCD_SPI3_MOSI"
-		(at 530.86 182.88 180)
+		(at 553.72 180.34 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -17070,7 +17191,7 @@
 		(uuid "a9c8827e-38d1-467f-8f7e-54daaf6956fe")
 	)
 	(label "VcaCV"
-		(at 115.57 64.77 0)
+		(at 115.57 62.23 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -17191,7 +17312,7 @@
 		(uuid "c41ab781-fbd5-4c34-96b9-24aa55dcdbef")
 	)
 	(label "LCD_RESET"
-		(at 530.86 191.77 180)
+		(at 553.72 187.96 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -17411,7 +17532,7 @@
 		(uuid "efd78223-7f2c-4d1e-93a5-5a787d9bd7da")
 	)
 	(label "LCD_DC"
-		(at 530.86 189.23 180)
+		(at 553.72 185.42 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -17499,7 +17620,7 @@
 		(uuid "f6f423d1-a5df-4a04-a6ce-f7409955523b")
 	)
 	(label "LCD_SPI3_SS"
-		(at 530.86 195.58 180)
+		(at 553.72 190.5 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -19866,76 +19987,6 @@
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "R12")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:Conn_01x02_Socket")
-		(at 535.94 189.23 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "28f2d710-fbe5-4b37-8286-4d428bb6f978")
-		(property "Reference" "J15"
-			(at 537.21 189.2299 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "Conn_01x02_Socket"
-			(at 537.21 191.7699 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Connector_PinSocket_2.54mm:PinSocket_1x02_P2.54mm_Vertical"
-			(at 535.94 189.23 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 535.94 189.23 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Generic connector, single row, 01x02, script generated"
-			(at 535.94 189.23 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "b946b5a0-6d93-4831-8134-f1b2ab447ffb")
-		)
-		(pin "2"
-			(uuid "8b2cdecb-63f7-4bac-bd43-d9cc39fdc2a8")
-		)
-		(instances
-			(project "Kishoof_Components"
-				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
-					(reference "J15")
 					(unit 1)
 				)
 			)
@@ -25293,6 +25344,71 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 115.57 143.51 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "7d0cd09f-40ba-40c5-a87e-1626d4e72051")
+		(property "Reference" "#PWR091"
+			(at 121.92 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 121.158 142.748 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 115.57 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 115.57 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 115.57 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "733b8521-7552-4cf2-9b2f-aa70b2fa3c39")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR091")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C_Small")
 		(at 331.47 187.96 0)
 		(unit 1)
@@ -25366,76 +25482,6 @@
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "C29")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:Conn_01x02_Socket")
-		(at 535.94 201.93 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "7e893c11-3242-49ce-aba8-72c64e5d0dfc")
-		(property "Reference" "J17"
-			(at 537.21 201.9299 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "Conn_01x02_Socket"
-			(at 537.21 204.4699 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Connector_PinSocket_2.54mm:PinSocket_1x02_P2.54mm_Vertical"
-			(at 535.94 201.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 535.94 201.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Generic connector, single row, 01x02, script generated"
-			(at 535.94 201.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "bdb43d09-ef9a-4e3d-a5f8-bf2377b3f11c")
-		)
-		(pin "2"
-			(uuid "6f1186e8-96d2-43a5-b664-8311f88a1438")
-		)
-		(instances
-			(project "Kishoof_Components"
-				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
-					(reference "J17")
 					(unit 1)
 				)
 			)
@@ -27014,16 +27060,15 @@
 	)
 	(symbol
 		(lib_id "power:+3.3V")
-		(at 530.86 201.93 90)
+		(at 557.53 195.58 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "9a504c02-7201-4ad5-9186-b280b9f2e2ca")
 		(property "Reference" "#PWR078"
-			(at 534.67 201.93 0)
+			(at 561.34 195.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27032,7 +27077,7 @@
 			)
 		)
 		(property "Value" "+3.3V"
-			(at 527.05 201.9299 90)
+			(at 554.228 195.072 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27041,7 +27086,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 530.86 201.93 0)
+			(at 557.53 195.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27050,7 +27095,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 530.86 201.93 0)
+			(at 557.53 195.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27059,7 +27104,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
-			(at 530.86 201.93 0)
+			(at 557.53 195.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27074,76 +27119,6 @@
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "#PWR078")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:Conn_01x02_Socket")
-		(at 535.94 195.58 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "9b59eb1e-ea43-47ef-a660-63e25e5cc03d")
-		(property "Reference" "J16"
-			(at 537.21 195.5799 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "Conn_01x02_Socket"
-			(at 537.21 198.1199 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Connector_PinSocket_2.54mm:PinSocket_1x02_P2.54mm_Vertical"
-			(at 535.94 195.58 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 535.94 195.58 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Generic connector, single row, 01x02, script generated"
-			(at 535.94 195.58 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "e68a78cb-4ae1-4b7a-a14e-88c30e96de39")
-		)
-		(pin "2"
-			(uuid "29da19e3-b989-4a8f-b45f-8e71a479df30")
-		)
-		(instances
-			(project "Kishoof_Components"
-				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
-					(reference "J16")
 					(unit 1)
 				)
 			)
@@ -27209,76 +27184,6 @@
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "#PWR036")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:Conn_01x02_Socket")
-		(at 535.94 182.88 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "a04d65f4-ceef-47eb-b6de-540b2704fb66")
-		(property "Reference" "J14"
-			(at 537.21 182.8799 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "Conn_01x02_Socket"
-			(at 537.21 185.4199 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Connector_PinSocket_2.54mm:PinSocket_1x02_P2.54mm_Vertical"
-			(at 535.94 182.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 535.94 182.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Generic connector, single row, 01x02, script generated"
-			(at 535.94 182.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "f5d436e1-476b-4720-a84d-938fb5812df8")
-		)
-		(pin "2"
-			(uuid "2c4bee74-b4e4-4e4e-8c15-c1957520224e")
-		)
-		(instances
-			(project "Kishoof_Components"
-				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
-					(reference "J14")
 					(unit 1)
 				)
 			)
@@ -30822,6 +30727,94 @@
 		)
 	)
 	(symbol
+		(lib_id "Mountjoy:LCD_Riser")
+		(at 567.69 187.96 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "cbe660f3-ba30-46cf-b918-9402f51e12e9")
+		(property "Reference" "U10"
+			(at 576.58 188.2774 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "~"
+			(at 576.58 190.1825 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Custom_Footprints:LCD_Riser"
+			(at 567.944 205.486 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 557.53 180.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 557.53 180.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "6a77b135-4c24-4072-a8e1-95523a8849a4")
+		)
+		(pin "4"
+			(uuid "0737e719-3ebc-4e07-8b4c-6f810f36ccab")
+		)
+		(pin "5"
+			(uuid "0b117040-7ec5-447a-8d24-0668d14e8671")
+		)
+		(pin "7"
+			(uuid "87af4d9a-9512-4e08-ace3-66bd2b5ef625")
+		)
+		(pin "6"
+			(uuid "63573df5-c9d8-4ae1-8544-8a63d64f7a07")
+		)
+		(pin "8"
+			(uuid "11f2b474-de9f-4e6e-8630-60f3570c1640")
+		)
+		(pin "3"
+			(uuid "4962bf1e-4bab-411e-978b-4d3769dd7020")
+		)
+		(pin "2"
+			(uuid "f147ff3a-8e36-4293-98bb-201fa101bcc0")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "U10")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 514.35 123.19 0)
 		(unit 1)
@@ -33893,7 +33886,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 530.86 198.12 270)
+		(at 557.53 193.04 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -33901,7 +33894,7 @@
 		(dnp no)
 		(uuid "f8bf1077-4bb7-4d7e-9502-6bc384f4c9e2")
 		(property "Reference" "#PWR079"
-			(at 524.51 198.12 0)
+			(at 551.18 193.04 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -33910,7 +33903,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 527.558 197.612 90)
+			(at 554.228 192.532 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -33919,7 +33912,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 530.86 198.12 0)
+			(at 557.53 193.04 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -33928,7 +33921,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 530.86 198.12 0)
+			(at 557.53 193.04 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -33937,7 +33930,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 530.86 198.12 0)
+			(at 557.53 193.04 0)
 			(effects
 				(font
 					(size 1.27 1.27)
