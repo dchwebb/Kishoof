@@ -12768,7 +12768,7 @@
 		(uuid "051db931-6118-4177-a818-d790ebd27442")
 	)
 	(label "Warp_Type_Pot"
-		(at 435.61 142.24 0)
+		(at 435.61 147.32 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -12812,7 +12812,7 @@
 		(uuid "0de970aa-6634-4735-8f69-438fd4f5ca12")
 	)
 	(label "VCA_CV_In"
-		(at 435.61 213.36 0)
+		(at 435.61 223.52 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -12845,7 +12845,7 @@
 		(uuid "19d9a64d-e19a-4407-bab9-eba2c280ff50")
 	)
 	(label "LCD_Backlight"
-		(at 435.61 200.66 0)
+		(at 435.61 160.02 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -13021,7 +13021,7 @@
 		(uuid "2e76e20c-67e6-4076-b9ec-477a65acaaba")
 	)
 	(label "Wavetable_Pos_A_CV_In"
-		(at 435.61 220.98 0)
+		(at 435.61 213.36 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -13318,7 +13318,7 @@
 		(uuid "617ed2b1-a8ec-4dab-9e75-ff6d9c95c0b8")
 	)
 	(label "Wavetable_Pos_B_CV_In"
-		(at 435.61 215.9 0)
+		(at 435.61 220.98 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -13450,7 +13450,7 @@
 		(uuid "82fd61a3-fcd8-4952-bdf6-cf3bf8873e80")
 	)
 	(label "Audio_Out_R"
-		(at 435.61 147.32 0)
+		(at 435.61 144.78 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -13659,7 +13659,7 @@
 		(uuid "a025f063-9bbb-42fe-903a-3c44bb0ac3ff")
 	)
 	(label "Audio_Out_L"
-		(at 435.61 144.78 0)
+		(at 435.61 142.24 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -13703,7 +13703,7 @@
 		(uuid "a849297b-32bc-4af8-ae51-d82bf27a89de")
 	)
 	(label "Pitch_CV_In"
-		(at 435.61 223.52 0)
+		(at 435.61 215.9 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -15223,6 +15223,72 @@
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "#PWR034")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 435.61 137.16 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1513a723-89e7-4724-8964-52bcebdccb99")
+		(property "Reference" "#PWR068"
+			(at 441.96 137.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 439.42 137.16 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 435.61 137.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 435.61 137.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 435.61 137.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "5b69b66c-90a2-439f-8e23-3872558ae488")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR068")
 					(unit 1)
 				)
 			)
@@ -17068,7 +17134,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 435.61 132.08 90)
+		(at 435.61 208.28 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -17076,7 +17142,7 @@
 		(dnp no)
 		(uuid "276848b9-7f75-42dd-bca0-37a11c10ac98")
 		(property "Reference" "#PWR059"
-			(at 441.96 132.08 0)
+			(at 441.96 208.28 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17085,7 +17151,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 441.452 132.08 90)
+			(at 441.452 208.28 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17093,7 +17159,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 435.61 132.08 0)
+			(at 435.61 208.28 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17102,7 +17168,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 435.61 132.08 0)
+			(at 435.61 208.28 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17111,7 +17177,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 435.61 132.08 0)
+			(at 435.61 208.28 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -18684,6 +18750,72 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 435.61 198.12 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "3947fc8b-3338-4766-a9ad-b353571e64b0")
+		(property "Reference" "#PWR061"
+			(at 441.96 198.12 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 439.42 198.12 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 435.61 198.12 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 435.61 198.12 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 435.61 198.12 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "02d1b953-3ce8-4e3a-acbd-07ecc412304e")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR061")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+3.3V")
 		(at 189.23 62.23 90)
 		(unit 1)
@@ -19779,6 +19911,72 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 435.61 139.7 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "47e4c85b-0bfd-4501-bdbd-789f7de61b95")
+		(property "Reference" "#PWR069"
+			(at 441.96 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 439.42 139.7 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 435.61 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 435.61 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 435.61 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "fb51fde9-5f8d-4704-b791-0d83d33431ff")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR069")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+3.3VA")
 		(at 279.4 177.8 270)
 		(unit 1)
@@ -20326,6 +20524,72 @@
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "C22")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 435.61 200.66 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "4d00a9d5-781b-49b1-8c4f-9444da119d59")
+		(property "Reference" "#PWR062"
+			(at 441.96 200.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 439.42 200.66 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 435.61 200.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 435.61 200.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 435.61 200.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "4137eb31-760d-4eb1-b5c6-caf148663a4c")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR062")
 					(unit 1)
 				)
 			)
@@ -22594,6 +22858,72 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 435.61 175.26 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "69504600-1af3-493d-9939-f8014f00a1d4")
+		(property "Reference" "#PWR067"
+			(at 441.96 175.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 439.42 175.26 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 435.61 175.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 435.61 175.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 435.61 175.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "6dad9513-632a-47be-a42c-16c7ba2b8e89")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR067")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+3.3VA")
 		(at 265.43 243.84 0)
 		(unit 1)
@@ -22997,6 +23327,72 @@
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "#PWR052")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 435.61 210.82 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "6f04d0bc-77c2-40ae-9777-2a3d74f1dae6")
+		(property "Reference" "#PWR063"
+			(at 441.96 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 439.42 210.82 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 435.61 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 435.61 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 435.61 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "390168a8-da48-4960-8488-e38e092406e7")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR063")
 					(unit 1)
 				)
 			)
@@ -23640,7 +24036,7 @@
 	)
 	(symbol
 		(lib_id "power:+3.3V")
-		(at 435.61 208.28 270)
+		(at 435.61 132.08 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -23649,7 +24045,7 @@
 		(fields_autoplaced yes)
 		(uuid "73c7d963-fd81-433f-9b0d-9f64c228d107")
 		(property "Reference" "#PWR053"
-			(at 431.8 208.28 0)
+			(at 431.8 132.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -23658,7 +24054,7 @@
 			)
 		)
 		(property "Value" "+3.3V"
-			(at 439.42 208.2799 90)
+			(at 439.42 132.0799 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -23667,7 +24063,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 435.61 208.28 0)
+			(at 435.61 132.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -23676,7 +24072,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 435.61 208.28 0)
+			(at 435.61 132.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -23685,7 +24081,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
-			(at 435.61 208.28 0)
+			(at 435.61 132.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -25945,6 +26341,72 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 435.61 157.48 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "98640d73-7e76-4310-96d4-ad33f3ea0223")
+		(property "Reference" "#PWR065"
+			(at 441.96 157.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 439.42 157.48 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 435.61 157.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 435.61 157.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 435.61 157.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "42f0f3d2-7dff-47e4-a2ac-40159b57fb9c")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR065")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C_Small")
 		(at 175.26 31.75 0)
 		(unit 1)
@@ -26753,6 +27215,72 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 435.61 218.44 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "a6feae26-4b77-4913-8bcb-a7d5273b8ae9")
+		(property "Reference" "#PWR064"
+			(at 441.96 218.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 439.42 218.44 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 435.61 218.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 435.61 218.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 435.61 218.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "a58e4119-189f-4141-8c7f-d437cce16ddf")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR064")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Connector:TestPoint")
 		(at 279.4 175.26 90)
 		(unit 1)
@@ -27009,6 +27537,72 @@
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "#PWR05")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 435.61 119.38 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "ad67b7a8-91b9-46e2-8f99-72b5b81d83d6")
+		(property "Reference" "#PWR071"
+			(at 441.96 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 439.42 119.38 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 435.61 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 435.61 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 435.61 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "48959893-de92-426e-a15b-847371564a32")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR071")
 					(unit 1)
 				)
 			)
@@ -33681,6 +34275,72 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 435.61 127 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "e6f3ee6c-d631-4f0b-b4e6-f68445076f79")
+		(property "Reference" "#PWR070"
+			(at 441.96 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 439.42 127 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 435.61 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 435.61 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 435.61 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "2a79d3cd-5f15-48e3-852b-bde55068b6e8")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR070")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Connector:Conn_01x12_Pin")
 		(at 430.53 170.18 0)
 		(unit 1)
@@ -33688,7 +34348,6 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "ea3b48e0-742f-4761-85b8-a66d88d5888a")
 		(property "Reference" "J3"
 			(at 431.165 152.4 0)
@@ -33699,7 +34358,7 @@
 			)
 		)
 		(property "Value" "Conn_01x12_Pin"
-			(at 431.165 154.94 0)
+			(at 434.086 154.178 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -34179,6 +34838,72 @@
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "C5")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 435.61 172.72 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "f06f71c3-13e9-444b-b78b-8cef8dafe6c4")
+		(property "Reference" "#PWR066"
+			(at 441.96 172.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 439.42 172.72 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 435.61 172.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 435.61 172.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 435.61 172.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "5bfd4693-91c6-4c2f-a8c6-7b65af301a17")
+		)
+		(instances
+			(project "Kishoof_Components"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR066")
 					(unit 1)
 				)
 			)
