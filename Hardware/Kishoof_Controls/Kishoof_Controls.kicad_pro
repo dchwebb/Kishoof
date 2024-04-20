@@ -230,9 +230,7 @@
     "equivalence_files": []
   },
   "erc": {
-    "erc_exclusions": [
-      "pin_to_pin|2755900|2578100|aadcb47d-d477-4c29-871d-0a3ad1b22d7d|ce03825f-d707-4058-80ca-df68e0fa00bb|/00778401-a8b8-4a7c-bae7-c4fa7505df01|/00778401-a8b8-4a7c-bae7-c4fa7505df01|/00778401-a8b8-4a7c-bae7-c4fa7505df01"
-    ],
+    "erc_exclusions": [],
     "meta": {
       "version": 0
     },
@@ -447,7 +445,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "Kishoof_Components.kicad_pro",
+    "filename": "Kishoof_Controls.kicad_pro",
     "version": 1
   },
   "net_settings": {

@@ -1,19 +1,12 @@
 {
   "board": {
-    "active_layer": 0,
+    "active_layer": 39,
     "active_layer_preset": "",
     "auto_track_width": true,
     "hidden_netclasses": [],
-    "hidden_nets": [
-      "+12V",
-      "GND",
-      "-12V",
-      "+3.3VA",
-      "+3.3V",
-      "/-5V_REF"
-    ],
+    "hidden_nets": [],
     "high_contrast_mode": 0,
-    "net_color_mode": 2,
+    "net_color_mode": 1,
     "opacity": {
       "images": 0.6,
       "pads": 1.0,
@@ -40,7 +33,6 @@
       2,
       3,
       4,
-      5,
       8,
       9,
       10,
@@ -49,7 +41,6 @@
       13,
       15,
       16,
-      18,
       19,
       20,
       21,
@@ -69,7 +60,7 @@
       36,
       40
     ],
-    "visible_layers": "ffcfeff_ffffffff",
+    "visible_layers": "fffffff_ffffffff",
     "zone_display_mode": 1
   },
   "git": {
@@ -79,7 +70,7 @@
     "ssh_key": ""
   },
   "meta": {
-    "filename": "Kishoof_Components.kicad_prl",
+    "filename": "Kishoof_Panel.kicad_prl",
     "version": 3
   },
   "project": {
