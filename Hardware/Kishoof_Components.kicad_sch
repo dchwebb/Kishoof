@@ -3234,127 +3234,6 @@
 				)
 			)
 		)
-		(symbol "Device:NetTie_2"
-			(pin_numbers hide)
-			(pin_names
-				(offset 0) hide)
-			(exclude_from_sim no)
-			(in_bom no)
-			(on_board yes)
-			(property "Reference" "NT"
-				(at 0 1.27 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "NetTie_2"
-				(at 0 -1.27 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" "~"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "Net tie, 2 pins"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_keywords" "net tie short"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_fp_filters" "Net*Tie*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "NetTie_2_0_1"
-				(polyline
-					(pts
-						(xy -1.27 0) (xy 1.27 0)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "NetTie_2_1_1"
-				(pin passive line
-					(at -2.54 0 0)
-					(length 2.54)
-					(name "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 2.54 0 180)
-					(length 2.54)
-					(name "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "Device:R"
 			(pin_numbers hide)
 			(pin_names
@@ -11574,7 +11453,7 @@
 	)
 	(wire
 		(pts
-			(xy 113.03 146.05) (xy 130.81 146.05)
+			(xy 113.03 146.05) (xy 115.57 146.05)
 		)
 		(stroke
 			(width 0)
@@ -12014,7 +11893,7 @@
 	)
 	(wire
 		(pts
-			(xy 113.03 138.43) (xy 130.81 138.43)
+			(xy 113.03 138.43) (xy 115.57 138.43)
 		)
 		(stroke
 			(width 0)
@@ -12824,16 +12703,6 @@
 	)
 	(wire
 		(pts
-			(xy 120.65 143.51) (xy 123.19 143.51)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d8a5f0f8-77fe-4ae8-a01a-c62d95a5e62e")
-	)
-	(wire
-		(pts
 			(xy 36.83 35.56) (xy 36.83 38.1)
 		)
 		(stroke
@@ -13574,7 +13443,7 @@
 	)
 	(text "Grounded for A/D signal separation"
 		(exclude_from_sim no)
-		(at 144.018 141.224 0)
+		(at 136.652 140.716 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -14312,7 +14181,7 @@
 		(uuid "74df0543-166b-4181-aa83-e0f66c09a6fe")
 	)
 	(label "OCTOSPIM_P1_DQS"
-		(at 130.81 146.05 0)
+		(at 115.57 146.05 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -14323,7 +14192,7 @@
 		(uuid "77bbc0a1-f869-4dd3-b17b-07a8d11c07be")
 	)
 	(label "OCTOSPIM_P1_IO2"
-		(at 130.81 138.43 0)
+		(at 115.57 138.43 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -15815,74 +15684,6 @@
 			(project "Kishoof_Components"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "TP7")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:NetTie_2")
-		(at 118.11 143.51 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board yes)
-		(dnp no)
-		(uuid "0a3d9732-4a88-4f7b-91b2-19c77962731d")
-		(property "Reference" "NT2"
-			(at 119.38 140.208 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "NetTie_2"
-			(at 119.126 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 118.11 143.51 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 118.11 143.51 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Net tie, 2 pins"
-			(at 118.11 143.51 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "20cc3f2b-9b61-4f49-998d-9c0736fb87ea")
-		)
-		(pin "1"
-			(uuid "ec3a70ba-083e-4bcc-b5d1-28d76abef69d")
-		)
-		(instances
-			(project "Kishoof_Components"
-				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
-					(reference "NT2")
 					(unit 1)
 				)
 			)
@@ -25387,7 +25188,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 123.19 143.51 90)
+		(at 115.57 143.51 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -25395,7 +25196,7 @@
 		(dnp no)
 		(uuid "7d0cd09f-40ba-40c5-a87e-1626d4e72051")
 		(property "Reference" "#PWR091"
-			(at 129.54 143.51 0)
+			(at 121.92 143.51 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -25404,7 +25205,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 128.778 142.748 90)
+			(at 121.158 142.748 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -25412,7 +25213,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 123.19 143.51 0)
+			(at 115.57 143.51 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -25421,7 +25222,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 123.19 143.51 0)
+			(at 115.57 143.51 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -25430,7 +25231,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 123.19 143.51 0)
+			(at 115.57 143.51 0)
 			(effects
 				(font
 					(size 1.27 1.27)
