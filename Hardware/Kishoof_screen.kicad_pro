@@ -465,7 +465,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "",
+      "plot": "gerbers/Kishoof_LCD_Riser/",
       "pos_files": "",
       "specctra_dsn": "",
       "step": "../../../kiCad/3d_Models/round_lcd_riser.step",

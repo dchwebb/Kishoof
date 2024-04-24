@@ -106,7 +106,7 @@
 			(mirror no)
 			(drillshape 0)
 			(scaleselection 1)
-			(outputdirectory "Gerbers/Quango_Panel/")
+			(outputdirectory "Gerbers/Kishoof_Panel/")
 		)
 	)
 	(net 0 "")
@@ -2498,6 +2498,7 @@
 			(at 0 -0.5 90)
 			(unlocked yes)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "871835ef-2ecd-4463-8657-b6dc8ebc9aa1")
 			(effects
 				(font
@@ -3760,7 +3761,7 @@
 			(justify mirror)
 		)
 	)
-	(gr_text "Mountjoy Modular 2024\nKishoof Panel v2.0"
+	(gr_text "Mountjoy Modular 2024\nKishoof Panel v1.0"
 		(at 90.5 34.85 0)
 		(layer "B.SilkS")
 		(uuid "96df35ba-bbb7-4ae9-a447-0e51d318ee93")

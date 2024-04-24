@@ -231,7 +231,7 @@
   },
   "erc": {
     "erc_exclusions": [
-      "pin_to_pin|2755900|2578100|aadcb47d-d477-4c29-871d-0a3ad1b22d7d|ce03825f-d707-4058-80ca-df68e0fa00bb|/00778401-a8b8-4a7c-bae7-c4fa7505df01|/00778401-a8b8-4a7c-bae7-c4fa7505df01|/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+      "pin_to_pin|1130300|1435100|ce03825f-d707-4058-80ca-df68e0fa00bb|aadcb47d-d477-4c29-871d-0a3ad1b22d7d|/00778401-a8b8-4a7c-bae7-c4fa7505df01|/00778401-a8b8-4a7c-bae7-c4fa7505df01|/00778401-a8b8-4a7c-bae7-c4fa7505df01"
     ],
     "meta": {
       "version": 0
@@ -586,6 +586,26 @@
       {
         "netclass": "Power",
         "pattern": "*5V*"
+      },
+      {
+        "netclass": "ADC",
+        "pattern": "/Wavetable_Pos_B_Pot"
+      },
+      {
+        "netclass": "ADC",
+        "pattern": "/Wavetable_Pos_A_Trm"
+      },
+      {
+        "netclass": "ADC",
+        "pattern": "/Wavetable_Pos_A_Pot"
+      },
+      {
+        "netclass": "ADC",
+        "pattern": "/Warp_Amt_Trm"
+      },
+      {
+        "netclass": "ADC",
+        "pattern": "/Warp_Amt_Pot"
       }
     ]
   },
@@ -597,7 +617,7 @@
       "plot": "gerbers/Kishoof_Components/",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "Kishoof_Components.step",
       "svg": "",
       "vrml": ""
     },
