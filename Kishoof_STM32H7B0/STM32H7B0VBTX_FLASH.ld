@@ -167,6 +167,12 @@ SECTIONS
     . = ALIGN(8);
   } >RAM
 
+  /* DW RAM Area for non-cached DMA buffers (ADC) */
+  .dma_buffer (NOLOAD) :
+  {
+    *(.dma_buffer)
+  } >RAM
+
   /* Remove information from the standard libraries */
   /DISCARD/ :
   {
