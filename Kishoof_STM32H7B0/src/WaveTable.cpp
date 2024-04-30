@@ -367,7 +367,7 @@ void WaveTable::Draw()
 }
 
 
-bool WaveTable::UpdateSampleList()
+bool WaveTable::UpdateWavetableList()
 {
 	// Updates list of samples from FAT root directory
 	FATFileInfo* dirEntry = fatTools.rootDirectory;
@@ -427,4 +427,18 @@ bool WaveTable::UpdateSampleList()
 
 
 	return changed;
+}
+
+
+int32_t WaveTable::ParseInt(const std::string_view cmd, const std::string_view precedingChar, const int32_t low, const int32_t high)
+{
+	int32_t val = -1;
+	const int8_t pos = cmd.find(precedingChar);		// locate position of character preceding
+	if (pos >= 0 && std::strspn(&cmd[pos + precedingChar.size()], "0123456789-") > 0) {
+		val = std::stoi(&cmd[pos + precedingChar.size()]);
+	}
+	if (high > low && (val > high || val < low)) {
+		return low - 1;
+	}
+	return val;
 }

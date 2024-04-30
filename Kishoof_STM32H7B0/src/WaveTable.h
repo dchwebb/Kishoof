@@ -3,6 +3,7 @@
 #include "initialisation.h"
 #include "Filter.h"
 #include "GpioPIn.h"
+#include "FatTools.h"
 #include <string_view>
 
 struct WaveTable {
@@ -13,7 +14,7 @@ public:
 	void Init();							// Initialise caches, buffers etc
 	bool LoadWaveTable(uint32_t* startAddr);
 	void Draw();
-	bool UpdateSampleList();
+	bool UpdateWavetableList();
 
 	float testWavetable[2048];
 	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
@@ -58,14 +59,34 @@ private:
 	float FastTanh(float x);
 	float CalcWarp();
 	void AdditiveWave();
+	int32_t ParseInt(const std::string_view cmd, const std::string_view precedingChar, const int32_t low, const int32_t high);
 
 	enum class TestData {noise, twintone, wavetable} wavetableType = TestData::wavetable;
+
+	char longFileName[100];
+	uint8_t lfnPosition = 0;
 
 	float* activeWaveTable;
 	struct {
 		volatile uint16_t& adcControl;
 		float pos;		// Smoothed ADC value
 	} channel[2] = {{adc.Wavetable_Pos_A_Pot, 0.0f}, {adc.Wavetable_Pos_B_Pot, 0.0f}};
+
+	struct Sample {
+		char name[11];
+		uint32_t size;						// Size of file in bytes
+		uint32_t cluster;					// Starting cluster
+		uint32_t lastCluster;				// If file spans multiple clusters store last cluster before jump - if 0xFFFFFFFF then clusters are contiguous
+		const uint8_t* startAddr;			// Address of data section
+		const uint8_t* endAddr;				// End Address of data section
+		uint32_t dataSize;					// Size of data section in bytes
+		uint32_t sampleCount;				// Number of samples (stereo samples only counted once)
+		uint32_t sampleRate;
+		uint8_t byteDepth;
+		uint16_t dataFormat;				// 1 = PCM; 3 = Float
+		uint8_t channels;					// 1 = mono, 2 = stereo
+		bool valid;							// false if header cannot be processed
+	} sampleList[128];
 
 	float pitchInc = 0.0f;
 	float readPos = 0;

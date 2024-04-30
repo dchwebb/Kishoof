@@ -5,17 +5,22 @@
 
 
 // Clock overview:
+// I2S 				PLL2 P 				61.44 MHz
+// SPI3 Display		PLL2 P
+// ADC		 		Peripheral Clock 	8 MHz
+// OCTOSPI			PPL2 R				102.4 MHz
+
 // Main clock 8MHz (HSE) / 2 (M) * 140 (N) / 2 (P) = 280MHz
 #define PLL_M1 2
 #define PLL_N1 140
 #define PLL_P1 2
-#define PLL_Q1 2
-#define PLL_R1 2
 
-// PPL2P used for I2S: 8MHz / 5 (M) * 192 (N) / 5 (P) = 61.44 MHz
+// PPL2P used for I2S: 		8MHz / 5 (M) * 192 (N) / 5 (P) = 61.44 MHz
+// PPL2R used for OctoSPI: 	8MHz / 5 (M) * 192 (N) / 3 (P) = 102.4 MHz
 #define PLL_M2 5
 #define PLL_N2 192
 #define PLL_P2 5
+#define PLL_R2 2
 
 
 void InitClocks()
@@ -37,13 +42,11 @@ void InitClocks()
 
 	// PLL 1 dividers
 	RCC->PLL1DIVR = (PLL_N1 - 1) << RCC_PLL1DIVR_N1_Pos |
-			        (PLL_P1 - 1) << RCC_PLL1DIVR_P1_Pos |
-			        (PLL_Q1 - 1) << RCC_PLL1DIVR_Q1_Pos |
-			        (PLL_R1 - 1) << RCC_PLL1DIVR_R1_Pos;
+			        (PLL_P1 - 1) << RCC_PLL1DIVR_P1_Pos;
 
 	RCC->PLLCFGR |= RCC_PLLCFGR_PLL1RGE_1;			// 10: The PLL1 input (ref1_ck) clock range frequency is between 4 and 8 MHz (Will be 4MHz for 8MHz clock divided by 2)
 	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLL1VCOSEL;		// 0: Wide VCO range:128 to 560 MHz (default); 1: Medium VCO range: 150 to 420 MHz
-	RCC->PLLCFGR |= RCC_PLLCFGR_DIVP1EN | RCC_PLLCFGR_DIVQ1EN;		// Enable divider outputs
+	RCC->PLLCFGR |= RCC_PLLCFGR_DIVP1EN;			// Enable P divider output
 
 	RCC->CR |= RCC_CR_PLL1ON;						// Turn on main PLL
 	while ((RCC->CR & RCC_CR_PLL1RDY) == 0);		// Wait till PLL is ready
@@ -52,11 +55,13 @@ void InitClocks()
 	RCC->PLLCKSELR |= PLL_M2 << RCC_PLLCKSELR_DIVM2_Pos;
 
 	RCC->PLL2DIVR = (PLL_N2 - 1) << RCC_PLL2DIVR_N2_Pos |
-					(PLL_P2 - 1) << RCC_PLL2DIVR_P2_Pos;
+					(PLL_P2 - 1) << RCC_PLL2DIVR_P2_Pos |
+					(PLL_R2 - 1) << RCC_PLL2DIVR_R2_Pos;
 
-	RCC->PLLCFGR |= RCC_PLLCFGR_PLL2RGE_1;			// 01: The PLL2 input (ref1_ck) clock range frequency is between 4 and 8 MHz
-	RCC->PLLCFGR |= RCC_PLLCFGR_PLL2VCOSEL;			// 1: Medium VCO range:150 to 420 MHz
-	RCC->PLLCFGR |= RCC_PLLCFGR_DIVP2EN;			// Enable P divider output
+	RCC->PLLCFGR |= RCC_PLLCFGR_PLL2RGE_1 |			// 01: The PLL2 input (ref1_ck) clock range frequency is between 4 and 8 MHz
+					RCC_PLLCFGR_PLL2VCOSEL |		// 1: Medium VCO range:150 to 420 MHz
+					RCC_PLLCFGR_DIVP2EN |			// Enable P divider output
+					RCC_PLLCFGR_DIVR2EN;			// Enable R divider output
 
 	RCC->CR |= RCC_CR_PLL2ON;						// Turn on PLL 2
 	while ((RCC->CR & RCC_CR_PLL2RDY) == 0);		// Wait till PLL is ready
@@ -396,7 +401,7 @@ void InitI2S()
 
 	RCC->CDCCIP1R |= RCC_CDCCIP1R_SPI123SEL_0;		// 001: pll2_p_ck clock selected as SPI/I2S1,2 and 3 kernel clock
 	SPI2->I2SCFGR |= (2 << SPI_I2SCFGR_I2SDIV_Pos);	// Set I2SDIV to 2 with Odd factor prescaler
-	SPI2->I2SCFGR != SPI_I2SCFGR_ODD;
+	SPI2->I2SCFGR |= SPI_I2SCFGR_ODD;
 
 	SPI2->IER |= (SPI_IER_TXPIE | SPI_IER_UDRIE);	// Enable interrupt when FIFO has free slot or underrun occurs
 	NVIC_SetPriority(SPI2_IRQn, 2);					// Lower is higher priority
@@ -434,6 +439,7 @@ uint32_t ReadI2STimer()
 {
 	return TIM4->CNT;
 }
+
 
 void InitDebugTimer()
 {
@@ -554,20 +560,20 @@ void InitEncoders()
 
 void InitOctoSPI()
 {
-	GpioPin::Init(GPIOB, 2, GpioPin::Type::AlternateFunction, 3, GpioPin::DriveStrength::VeryHigh);		// PB2  OCTOSPI_CLK AF3
-	GpioPin::Init(GPIOC, 9, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::VeryHigh);		// PC9  OCTOSPI_IO0 AF6
-	GpioPin::Init(GPIOD, 12, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::VeryHigh);	// PD12 OCTOSPI_IO1 AF6
+	GpioPin::Init(GPIOB, 2, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);		// PB2  OCTOSPI_CLK AF9
+	GpioPin::Init(GPIOC, 9, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);		// PC9  OCTOSPI_IO0 AF9
+	GpioPin::Init(GPIOD, 12, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);	// PD12 OCTOSPI_IO1 AF9
 	GpioPin::Init(GPIOC, 2, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);		// PC2  OCTOSPI_IO2 AF9
-	GpioPin::Init(GPIOD, 13, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::VeryHigh);	// PD13 OCTOSPI_IO3 AF6
+	GpioPin::Init(GPIOD, 13, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);	// PD13 OCTOSPI_IO3 AF9
 	GpioPin::Init(GPIOE, 7, GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh); 	// PE7  OCTOSPI_IO4 AF10
 	GpioPin::Init(GPIOE, 8, GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh); 	// PE8  OCTOSPI_IO5 AF10
-	GpioPin::Init(GPIOE, 9, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::VeryHigh);		// PE9  OCTOSPI_IO6 AF6
+	GpioPin::Init(GPIOE, 9, GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh);	// PE9  OCTOSPI_IO6 AF10
 	GpioPin::Init(GPIOE, 10, GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh);	// PE10 OCTOSPI_IO7 AF10
-	GpioPin::Init(GPIOE, 11, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);	// PE11 OCTOSPI_NCS AF10
+	GpioPin::Init(GPIOE, 11, GpioPin::Type::AlternateFunction, 11, GpioPin::DriveStrength::VeryHigh);	// PE11 OCTOSPI_NCS AF11
 	GpioPin::Init(GPIOC, 5, GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh);	// PC5  OCTOSPI_DQS AF10
 
 	RCC->AHB3ENR |= RCC_AHB3ENR_OSPI1EN;
-	RCC->CDCCIPR |= RCC_CDCCIPR_OCTOSPISEL_0;					// kernel clock 100MHz: 00 rcc_hclk4; *01 pll1_q_ck; 10 pll2_r_ck; 11 per_ck
+	RCC->CDCCIPR |= RCC_CDCCIPR_OCTOSPISEL_1;				// kernel clock 100MHz: 00 rcc_hclk3; 01 pll1_q_ck; *10 pll2_r_ck; 11 per_ck
 
 	// Various settings below taken from AN5050
 	OCTOSPI1->CR |= OCTOSPI_CR_FMODE_0;						// Mode: 00: Indirect-write; 01: Indirect-read; 10: Automatic status-polling; 11: Memory-mapped
@@ -576,7 +582,7 @@ void InitOctoSPI()
 	OCTOSPI1->DCR1 |= (3 << OCTOSPI_DCR1_CSHT_Pos);			// CSHT + 1: min no CLK cycles where NCS must stay high between commands (Min 10ns for reads 40ns for writes)
 	OCTOSPI1->DCR1 &= ~OCTOSPI_DCR1_CKMODE;					// Clock mode 0: CLK is low when NCS high
 
-	OCTOSPI1->DCR2 |= (9 << OCTOSPI_DCR2_PRESCALER_Pos);	// Set prescaler to n + 1 => 100MHz / 1 = 100MHz
+	OCTOSPI1->DCR2 |= (9 << OCTOSPI_DCR2_PRESCALER_Pos);	// Set prescaler to n + 1 => 102.4 MHz / 1 = 102.4 MHz
 
 //	OCTOSPI1->DCR3 |= (3 << OCTOSPI_DCR3_CSBOUND_Pos);		// Set Chip select boundary
 //	OCTOSPI1->DCR4 = 250; 									// Refresh Time: The chip select should be released every 4us

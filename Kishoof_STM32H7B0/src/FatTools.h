@@ -42,10 +42,10 @@ Blocks    Bytes			Description
 Cluster 2: 36864, Cluster 3: 38,912, Cluster 4: 40,960, Cluster 5: 43,008, Cluster 6: 45,056
 */
 static constexpr uint32_t fatSectorSize = 512;										// Sector size used by FAT
-static constexpr uint32_t fatSectorCount = 31250 * (dualFlashMode ? 2 : 1);			// 31250 sectors of 512 bytes = 16 MBytes
+static constexpr uint32_t fatSectorCount = 31250;									// 31250 sectors of 512 bytes = 16 MBytes
 static constexpr uint32_t fatClusterSize = 2048;									// Cluster size used by FAT (ie block size in data section)
 static constexpr uint32_t fatMaxCluster = (fatSectorSize * fatSectorCount) / fatClusterSize;		// Store largest cluster number
-static constexpr uint32_t fatEraseSectors = 8 * (dualFlashMode ? 2 : 1);			// Number of sectors in an erase block (4096 bytes per device)
+static constexpr uint32_t fatEraseSectors = 8;										// Number of sectors in an erase block (4096 bytes per device)
 //static constexpr uint32_t fatHeaderSectors = 72;									// Sectors in header [1 Boot sector; 63 FAT; 8 Root Directory]
 static constexpr uint32_t fatCacheSectors = 96;										// 72 in Header + extra for testing NB - must be divisible by 16 (fatEraseSectors)
 

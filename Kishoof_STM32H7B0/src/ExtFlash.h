@@ -2,6 +2,9 @@
 
 #include "initialisation.h"
 
+static uint8_t* const flashAddress = reinterpret_cast<uint8_t*>(0x90000000);			// Location that Flash storage will be accessed in memory mapped mode
+
+
 class ExtFlash {
 public:
 	// Octal mode commands - SPI mode are first 8 bits of octal command
@@ -22,6 +25,7 @@ public:
 	void MemoryMapped();
 
 	bool errorState = false;
+	bool flashCorrupt = false;
 private:
 
 	void MemMappedOff();

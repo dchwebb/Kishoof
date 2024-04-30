@@ -29,7 +29,7 @@ bool FatTools::InitFatFS()
 	// Store pointer to start of root directoy
 	rootDirectory = (FATFileInfo*)(headerCache + fatFs.dirbase * fatSectorSize);
 
-	wavetable.UpdateSampleList();				// Updated list of samples on flash
+	wavetable.UpdateWavetableList();				// Updated list of samples on flash
 
 	return true;
 }
@@ -121,11 +121,11 @@ void FatTools::CheckCache()
 		// Update the sample list to check if any meaningful data has changed (ignores Windows disk spam, assuming this occurs in the header cache)
 		bool sampleChanged = false;
 		if (dirtyCacheBlocks) {
-			sampleChanged = wavetable.UpdateSampleList();
+			sampleChanged = wavetable.UpdateWavetableList();
 		}
 
 		if (sampleChanged || writeCacheDirty) {
-// FIXME - restore
+// FIXME
 //			usb.PauseEndpoint(usb.msc);				// Sends NAKs from the msc endpoint whilst the Flash device is unavailable
 			FlushCache();
 //			usb.ResumeEndpoint(usb.msc);
@@ -194,8 +194,7 @@ const uint8_t* FatTools::GetSectorAddr(const uint32_t sector, const uint8_t* buf
 		if (buffer == nullptr) {
 			return sectorAddress;
 		} else {
-// FIXME - restore
-//			MDMATransfer(sectorAddress, buffer, bufferSize);
+			MDMATransfer(sectorAddress, buffer, bufferSize);
 			return nullptr;
 		}
 	}

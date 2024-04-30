@@ -1,4 +1,5 @@
 #include "USB.h"
+#include "GpioPin.h"
 
 volatile bool debugStart = false;
 
@@ -365,17 +366,12 @@ void USB::Init(bool softReset)
 		RCC->CR |= RCC_CR_HSI48ON;						// Enable Internal High Speed oscillator for USB
 		while ((RCC->CR & RCC_CR_HSI48RDY) == 0);		// Wait till internal USB oscillator is ready
 		RCC->CDCCIP2R |= RCC_CDCCIP2R_USBSEL;			// Set the USB CLock MUX to RC48
-		RCC->AHB1ENR |= RCC_AHB1ENR_USB1OTGHSEN;			// USB2OTG (OTG_HS1) Peripheral Clocks Enable
+		RCC->AHB1ENR |= RCC_AHB1ENR_USB1OTGHSEN;		// USB2OTG (OTG_HS1) Peripheral Clocks Enable
 		PWR->CR3 |= PWR_CR3_USB33DEN;					// Enable VDD33USB supply level detector
 
-		// USB_OTG_HS GPIO Configuration: PA8: USB_OTG_FS_SOF; PA9: USB_OTG_FS_VBUS; PA10: USB_OTG_FS_ID; PA11: USB_OTG_FS_DM; PA12: USB_OTG_FS_DP
-		RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN;			// GPIO port clock
-
-		// PA8 (SOF), PA10 (ID), PA11 (DM), PA12 (DP) (NB PA9 - VBUS uses default values)
-		GPIOA->MODER &= ~GPIO_MODER_MODE9;
-		GPIOA->MODER &= ~GPIO_MODER_MODE11_0;
-		GPIOA->MODER &= ~GPIO_MODER_MODE12_0;
-		GPIOA->AFR[1] |= (10 << GPIO_AFRH_AFSEL11_Pos) | (10 << GPIO_AFRH_AFSEL12_Pos);		// Alternate Function 10 is OTG_FS
+		GpioPin::Init(GPIOA, 9, GpioPin::Type::Input, 10);					// PA9: USB_OTG_HS_VBUS
+		GpioPin::Init(GPIOA, 11, GpioPin::Type::AlternateFunction, 10);		// PA11: USB_OTG_HS_DM
+		GpioPin::Init(GPIOA, 12, GpioPin::Type::AlternateFunction, 10);		// PA11: USB_OTG_HS_DP
 
 		NVIC_SetPriority(OTG_HS_IRQn, 2);
 		NVIC_EnableIRQ(OTG_HS_IRQn);
