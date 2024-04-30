@@ -13,6 +13,7 @@ public:
 	void Init();							// Initialise caches, buffers etc
 	bool LoadWaveTable(uint32_t* startAddr);
 	void Draw();
+	bool UpdateSampleList();
 
 	float testWavetable[2048];
 	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA

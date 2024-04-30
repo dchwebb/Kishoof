@@ -365,3 +365,66 @@ void WaveTable::Draw()
 	//debugDraw.SetLow();			// Debug off
 
 }
+
+
+bool WaveTable::UpdateSampleList()
+{
+	// Updates list of samples from FAT root directory
+	FATFileInfo* dirEntry = fatTools.rootDirectory;
+
+	uint32_t pos = 0;
+	bool changed = false;
+
+	while (dirEntry->name[0] != 0) {
+
+		if (dirEntry->name[0] != FATFileInfo::fileDeleted && dirEntry->attr == FATFileInfo::LONG_NAME) {
+			// Store long file name in temporary buffer as this may contain volume and panning information
+			const FATLongFilename* lfn = (FATLongFilename*)dirEntry;
+			const char tempFileName[13] {lfn->name1[0], lfn->name1[2], lfn->name1[4], lfn->name1[6], lfn->name1[8],
+				lfn->name2[0], lfn->name2[2], lfn->name2[4], lfn->name2[6], lfn->name2[8], lfn->name2[10],
+				lfn->name3[0], lfn->name3[2]};
+
+			const uint32_t pos = ((lfn->order & 0x3F) - 1) * 13;
+			if (pos + 13 < sizeof(longFileName)) {
+				memcpy(&longFileName[pos], tempFileName, 13);		// strip 0x40 marker from first LFN entry order field
+			}
+			lfnPosition += 13;
+
+		// Valid sample: not LFN, not deleted, not directory, extension = WAV
+		} else if (dirEntry->name[0] != FATFileInfo::fileDeleted && (dirEntry->attr & AM_DIR) == 0 && strncmp(&(dirEntry->name[8]), "WAV", 3) == 0) {
+			Sample* sample = &(sampleList[pos++]);
+
+			// If directory entry preceeded by long file name use that to check for volume/panning information
+			float newVolume = 1.0f;
+			if (lfnPosition > 0) {
+				longFileName[lfnPosition] = '\0';
+				const int32_t vol = ParseInt(longFileName, ".v", 0, 200);
+				if (vol > 0) {
+					newVolume = static_cast<float>(vol) / 100.0f;
+				}
+				lfnPosition = 0;
+			}
+
+			// Check if any fields have changed
+			if (sample->cluster != dirEntry->firstClusterLow || sample->size != dirEntry->fileSize ||
+					strncmp(sample->name, dirEntry->name, 11) != 0) {
+				changed = true;
+				strncpy(sample->name, dirEntry->name, 11);
+				sample->cluster = dirEntry->firstClusterLow;
+				sample->size = dirEntry->fileSize;
+
+				//sample->valid = GetSampleInfo(sample);
+			}
+		} else {
+			lfnPosition = 0;
+		}
+		dirEntry++;
+	}
+
+	// Blank next sample (if exists) to show end of list
+	Sample* sample = &(sampleList[pos++]);
+	sample->name[0] = 0;
+
+
+	return changed;
+}
