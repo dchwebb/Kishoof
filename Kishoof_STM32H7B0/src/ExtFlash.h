@@ -14,12 +14,12 @@ public:
 
 	void Init();
 	uint32_t Read(uint32_t address);
-	void Write(uint32_t address, uint32_t* val);
+	bool WriteData(uint32_t address, uint32_t* val, uint32_t words);
 	uint32_t GetID(bool forceOctalMode = false);
 	uint32_t ReadStatusReg();
 	uint32_t ReadReg(uint32_t address);
 	uint32_t ReadCfgReg(uint32_t address);
-	void SectorErase(const uint32_t address);
+	void BlockErase(const uint32_t address);
 	void SetOctoMode();
 	void Reset();
 	void MemoryMapped();

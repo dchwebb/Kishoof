@@ -394,17 +394,6 @@ bool WaveTable::UpdateWavetableList()
 		} else if (dirEntry->name[0] != FATFileInfo::fileDeleted && (dirEntry->attr & AM_DIR) == 0 && strncmp(&(dirEntry->name[8]), "WAV", 3) == 0) {
 			Sample* sample = &(sampleList[pos++]);
 
-			// If directory entry preceeded by long file name use that to check for volume/panning information
-			float newVolume = 1.0f;
-			if (lfnPosition > 0) {
-				longFileName[lfnPosition] = '\0';
-				const int32_t vol = ParseInt(longFileName, ".v", 0, 200);
-				if (vol > 0) {
-					newVolume = static_cast<float>(vol) / 100.0f;
-				}
-				lfnPosition = 0;
-			}
-
 			// Check if any fields have changed
 			if (sample->cluster != dirEntry->firstClusterLow || sample->size != dirEntry->fileSize ||
 					strncmp(sample->name, dirEntry->name, 11) != 0) {

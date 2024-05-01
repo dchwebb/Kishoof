@@ -1,4 +1,5 @@
 #include "ExtFlash.h"
+#include "FatTools.h"
 
 ExtFlash extFlash;
 
@@ -21,11 +22,11 @@ static constexpr uint32_t octoCCR =
 void ExtFlash::Init()
 {
 	// In DTR mode, it is recommended to set DHQC of OCTOSPI_TCR, to shift the outputs by a quarter of cycle and avoid holding issues on the memory side.
-	OCTOSPI1->TCR |= OCTOSPI_TCR_DHQC;		// Delay hold quarter cycle
+	OCTOSPI1->TCR |= OCTOSPI_TCR_DHQC;						// Delay hold quarter cycle
 	Reset();
 	SetOctoMode();
 	MemoryMapped();
-	return;
+	fatTools.InitFatFS();									// Initialise FatFS
 
 }
 
@@ -247,32 +248,76 @@ uint32_t ExtFlash::Read(uint32_t address)
 }
 
 
-void ExtFlash::Write(uint32_t address, uint32_t* val)
+bool ExtFlash::WriteData(uint32_t address, uint32_t* writeBuff, uint32_t words)
 {
-	// Writes 256 bytes at a time
-	WriteEnable();
+	// Writes up to 256 bytes at a time aligned to 256 boundary
+	bool eraseRequired = false;
+	bool dataChanged = false;
+	uint32_t* memAddr = (uint32_t*)(flashAddress + address);	// address is passed relative to zero - store the memory mapped address
 
-	OCTOSPI1->DLR = 255;									// Write 256 bytes
-	OCTOSPI1->CR &= ~OCTOSPI_CR_FMODE;						// *00: Indirect write mode; 01: Indirect read mode; 10: Automatic polling mode; 11: Memory-mapped mode
-	OCTOSPI1->TCR &= ~OCTOSPI_TCR_DCYC_Msk;					// Dummy cycles
-	OCTOSPI1->CCR = octoCCR;
-	OCTOSPI1->IR = writePage;
-	OCTOSPI1->CR |= OCTOSPI_CR_EN;							// Enable OCTOSPI
-	OCTOSPI1->AR = address;									// Set address register
-
-	for (uint32_t i = 0; i < 64; ++i) {
-		while ((OCTOSPI1->SR & OCTOSPI_SR_FTF) == 0) {};	// Wait until there is space in the FIFO
-		OCTOSPI1->DR = *val++;								// Set data register
+	for (uint32_t i = 0; i < words; ++i) {
+		if (memAddr[i] != writeBuff[i]) {
+			dataChanged = true;
+			if ((memAddr[i] & writeBuff[i]) != writeBuff[i]) {	// 'And' tests if any bits that need to be set are currently zero - ie needing an erase
+				eraseRequired = true;
+				break;
+			}
+		}
+	}
+	if (!dataChanged) {										// No difference between Flash contents and write data
+		return false;
 	}
 
-	while (OCTOSPI1->SR & OCTOSPI_SR_BUSY) {};
-	OCTOSPI1->CR &= ~OCTOSPI_CR_EN;							// Disable OCTOSPI
+	if (eraseRequired) {
+		BlockErase(address & ~(fatEraseSectors - 1));		// Force address to 4096 byte (8192 in dual flash mode) boundary
+	}
+
+	uint32_t remainingWords = words;
+
+	do {
+		WriteEnable();
+
+		// Mandated by Flash chip: Can write 256 bytes (64 words) at a time, and must be aligned to page boundaries (256 bytes)
+		constexpr uint32_t pageShift = 8;					// Will divide words into pages 256 bytes
+		const uint32_t startPage = (address >> pageShift);
+		const uint32_t endPage = (((address + (remainingWords * 4)) - 1) >> pageShift);
+
+		uint32_t writeSize = remainingWords * 4;			// Size of current write in bytes
+		if (endPage != startPage) {
+			writeSize = ((startPage + 1) << pageShift) - address;	// When crossing pages only write up to the 256 byte boundary
+		}
+
+		OCTOSPI1->DLR = writeSize - 1;						// number of bytes - 1 to transmit
+		OCTOSPI1->CR &= ~OCTOSPI_CR_FMODE;						// *00: Indirect write mode; 01: Indirect read mode; 10: Automatic polling mode; 11: Memory-mapped mode
+		OCTOSPI1->TCR &= ~OCTOSPI_TCR_DCYC_Msk;					// Dummy cycles
+		OCTOSPI1->CCR = octoCCR;
+		OCTOSPI1->IR = writePage;
+		OCTOSPI1->CR |= OCTOSPI_CR_EN;							// Enable OCTOSPI
+		OCTOSPI1->AR = address;									// Set address register
+
+		for (uint32_t i = 0; i < 64; ++i) {
+			while ((OCTOSPI1->SR & OCTOSPI_SR_FTF) == 0) {};	// Wait until there is space in the FIFO
+			OCTOSPI1->DR = *writeBuff++;								// Set data register
+		}
+
+		remainingWords -= (writeSize / 4);
+		address += writeSize;
+
+		while (OCTOSPI1->SR & OCTOSPI_SR_BUSY) {};
+		OCTOSPI1->CR &= ~OCTOSPI_CR_EN;							// Disable OCTOSPI
+	} while (remainingWords > 0);
+
+	SCB_InvalidateDCache_by_Addr(memAddr, words * 4);		// Ensure cache is refreshed after write or erase
+
+	MemoryMapped();											// Switch back to memory mapped mode
+
+	return true;
 }
 
 
-void ExtFlash::SectorErase(const uint32_t address)
+void ExtFlash::BlockErase(const uint32_t address)
 {
-	// Erase a 4k sector
+	// Erase a 4k sector (ie a FAT block) NB a 'Block' for the Flash is 64K
 	WriteEnable();
 	OCTOSPI1->DLR = 0;										// Write 1 byte
 	OCTOSPI1->TCR &= ~OCTOSPI_TCR_DCYC_Msk;					// Clear Dummy cycles
