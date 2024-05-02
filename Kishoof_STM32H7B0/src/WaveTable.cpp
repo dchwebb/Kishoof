@@ -357,8 +357,9 @@ void WaveTable::Draw()
 	}
 	activeDrawBuffer = !activeDrawBuffer;
 
-	// Trigger MDMA frame buffer blanking
-	MDMATransfer(lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 2);
+	// Trigger MDMA frame buffer blanking - FIXME
+	extern uint32_t blankData;
+	MDMATransfer((const uint8_t*)&blankData, (const uint8_t*)lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 2);
 	bufferClear = false;
 
 

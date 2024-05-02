@@ -32,8 +32,8 @@
 class USB {
 	friend class USBHandler;
 public:
-	enum Interface {NoInterface = -1, CDCCmdInterface = 0, CDCDataInterface = 1, interfaceCount = 2};
-	enum EndPoint {CDC_In = 0x81, CDC_Out = 0x1, CDC_Cmd = 0x82};
+	enum Interface {NoInterface = -1, CDCCmdInterface = 0, CDCDataInterface = 1, MSCInterface = 99, interfaceCount = 2};	// FIXME
+	enum EndPoint {CDC_In = 0x81, CDC_Out = 0x1, CDC_Cmd = 0x82, MSC_In = 0x83, MSC_Out = 0x3};
 	enum EndPointType {Control = 0, Isochronous = 1, Bulk = 2, Interrupt = 3};
 	enum class DeviceState {Default, Addressed, Configured, Suspended};
 	enum RequestRecipient {RequestRecipientDevice = 0x0, RequestRecipientInterface = 0x1, RequestRecipientEndpoint = 0x2};

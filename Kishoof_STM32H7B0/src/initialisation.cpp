@@ -510,11 +510,12 @@ void InitMDMA()
 	MDMA_Channel0->CTCR |= MDMA_CTCR_SWRM;			// Software Request Mode
 	MDMA_Channel0->CTCR |= MDMA_CTCR_TRGM;			// 01: Each MDMA request triggers a block transfer
 
-	MDMA_Channel0->CTBR &= ~MDMA_CTBR_SBUS;			// Source: AXI Bus used for SRAM
-	//MDMA_Channel0->CTBR |= MDMA_CTBR_DBUS;			// Destination: AHB Bus used for addresses starting 0x20xxxxxx (DTCMRAM)
+	// See p. 131: Main RAM is on AXI Bus
+	MDMA_Channel0->CTBR &= ~MDMA_CTBR_SBUS;			// Source: 0* System/AXI bus; 1 AHB bus/TCM
+	MDMA_Channel0->CTBR &= ~MDMA_CTBR_DBUS;			// Destination: 0* System/AXI bus; 1 AHB bus/TCM
 
 	blankData = 0;
-	MDMA_Channel0->CSAR = (uint32_t)&blankData;		// Configure the source address
+//	MDMA_Channel0->CSAR = (uint32_t)&blankData;		// Configure the source address
 
 	MDMA_Channel0->CCR |= MDMA_CCR_BTIE;			// Enable Block Transfer complete interrupt
 
@@ -523,11 +524,12 @@ void InitMDMA()
 }
 
 
-void MDMATransfer(const uint16_t* destAddr, const uint32_t bytes)
+void MDMATransfer(const uint8_t* srcAddr, const uint8_t* destAddr, const uint32_t bytes)
 {
 	MDMA_Channel0->CTCR |= ((bytes - 1) << MDMA_CTCR_TLEN_Pos);	// Transfer length in bytes - 1
 	MDMA_Channel0->CBNDTR |= (bytes << MDMA_CBNDTR_BNDT_Pos);	// Number of bytes in a block
 
+	MDMA_Channel0->CSAR = (uint32_t)srcAddr;		// Configure the source address
 	MDMA_Channel0->CDAR = (uint32_t)destAddr;		// Configure the destination address
 
 	MDMA_Channel0->CCR |= MDMA_CCR_EN;				// Enable DMA
