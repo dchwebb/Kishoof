@@ -29,6 +29,7 @@ void InitClocks()
 
 	// Voltage scaling - see Datasheet page 78. VOS0 > 225MHz; VOS1 > 160MHz; VOS2 > 88MHz; VOS3 < 88MHz
 	//PWR->CR3 &= ~PWR_CR3_SCUEN;						// Supply configuration update enable - this must be deactivated or VOS ready does not come on
+	PWR->CR3 |= PWR_CR3_BYPASS;						// power management unit bypassed: Must be set before changing VOS
 
 	PWR->SRDCR |= PWR_SRDCR_VOS;					// Configure voltage scaling level 0 (Highest)
 	while ((PWR->CSR1 & PWR_CSR1_ACTVOSRDY) == 0);	// Check Voltage ready 1= Ready, voltage level at or above VOS selected level
@@ -73,12 +74,14 @@ void InitClocks()
 	RCC->CDCFGR2 |= RCC_CDCFGR2_CDPPRE2_DIV2;		// APB2 Clocks
 	RCC->SRDCFGR |= RCC_SRDCFGR_SRDPPRE_DIV2;		// APB4 Clocks
 
+	// By default Flash latency is set to 6 wait states - See page 161
+	FLASH->ACR = FLASH_ACR_WRHIGHFREQ |
+				(FLASH->ACR & ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY_6WS;
+	while ((FLASH->ACR & FLASH_ACR_LATENCY_Msk) != FLASH_ACR_LATENCY_6WS);
+
 	RCC->CFGR |= RCC_CFGR_SW_PLL1;					// System clock switch: 011: PLL1 selected as system clock
 	while ((RCC->CFGR & RCC_CFGR_SWS_Msk) != (RCC_CFGR_SW_PLL1 << RCC_CFGR_SWS_Pos));		// Wait until PLL has been selected as system clock source
 
-	// By default Flash latency is set to 6 wait states - See page 161
-	FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY_6WS;
-	while ((FLASH->ACR & FLASH_ACR_LATENCY_Msk) != FLASH_ACR_LATENCY_6WS);
 
 	SystemCoreClockUpdate();						// Update SystemCoreClock (system clock frequency) derived from settings of oscillators, prescalers and PLL
 }
@@ -93,8 +96,8 @@ void InitHardware()
 	InitADC();
 	InitDebugTimer();
 	InitI2STimer();
-	InitDisplaySPI();
-	InitEncoders();
+//	InitDisplaySPI();
+//	InitEncoders();
 }
 
 
@@ -243,7 +246,7 @@ void InitADC1()
 	DMA1_Stream1->FCR &= ~DMA_SxFCR_FTH;			// Disable FIFO Threshold selection
 	DMA1->LIFCR = 0x3F << DMA_LIFCR_CFEIF1_Pos;		// clear all five interrupts for this stream
 
-	DMAMUX1_Channel1->CCR |= 9; 					// DMA request MUX input 9 = adc1_dma (See p.695)
+	DMAMUX1_Channel1->CCR |= 9; 					// DMA request MUX input 9 = adc1_dma (See p.653)
 	DMAMUX1_ChannelStatus->CFR |= DMAMUX_CFR_CSOF1; // Channel 1 Clear synchronization overrun event flag
 
 	ADC1->CR &= ~ADC_CR_DEEPPWD;					// Deep powDMA1_Stream2own: 0: ADC not in deep-power down	1: ADC in deep-power-down (default reset state)
@@ -260,8 +263,8 @@ void InitADC1()
 	ADC1->CFGR |= ADC_CFGR_OVRMOD;					// Overrun Mode 1: ADC_DR register is overwritten with the last conversion result when an overrun is detected.
 	ADC1->CFGR |= ADC_CFGR_DMNGT_0;					// Data Management configuration 01: DMA One Shot Mode selected, 11: DMA Circular Mode selected
 
-	// Boost mode 1: Boost mode on. Must be used when ADC clock > 20 MHz.
-	ADC1->CR |= ADC_CR_BOOST_1;						// Note this sets reserved bit according to SFR - HAL has notes about silicon revision
+	//00: ADC clock ≤ 6.25 MHz; 01: 6.25 MHz < clk ≤ 12.5 MHz; 10: 12.5 MHz < clk ≤ 25.0 MHz; 11: 25.0 MHz < clock ≤ 50.0 MHz
+	ADC1->CR |= ADC_CR_BOOST_0;
 
 	// For scan mode: set number of channels to be converted
 	ADC1->SQR1 |= (ADC1_BUFFER_LENGTH - 1);
@@ -317,7 +320,7 @@ void InitADC2()
 	DMA1_Stream2->FCR &= ~DMA_SxFCR_FTH;			// Disable FIFO Threshold selection
 	DMA1->LIFCR = 0x3F << DMA_LIFCR_CFEIF2_Pos;		// clear all five interrupts for this stream
 
-	DMAMUX1_Channel2->CCR |= 10; 					// DMA request MUX input 10 = adc2_dma (See p.695)
+	DMAMUX1_Channel2->CCR |= 10; 					// DMA request MUX input 10 = adc2_dma (See p.653)
 	DMAMUX1_ChannelStatus->CFR |= DMAMUX_CFR_CSOF2; // Channel 2 Clear synchronization overrun event flag
 
 	ADC2->CR &= ~ADC_CR_DEEPPWD;					// Deep power down: 0: ADC not in deep-power down	1: ADC in deep-power-down (default reset state)
@@ -335,7 +338,7 @@ void InitADC2()
 	ADC2->CFGR |= ADC_CFGR_DMNGT;					// Data Management configuration 11: DMA Circular Mode selected
 
 	// Boost mode 1: Boost mode on. Must be used when ADC clock > 20 MHz.
-	ADC2->CR |= ADC_CR_BOOST_1;						// Note this sets reserved bit according to SFR - HAL has notes about silicon revision
+	ADC2->CR |= ADC_CR_BOOST_0;						// Note this sets reserved bit according to SFR - HAL has notes about silicon revision
 	ADC2->SQR1 |= (ADC2_BUFFER_LENGTH - 1);			// For scan mode: set number of channels to be converted
 
 	// Start calibration
@@ -490,7 +493,8 @@ void DelayMS(uint32_t ms)
 }
 
 
-uint32_t __attribute__((section (".ram_d1_data"))) blankData;
+//uint32_t __attribute__((section (".ram_d1_data"))) blankData;
+uint32_t blankData;
 
 
 void InitMDMA()

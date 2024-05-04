@@ -1,9 +1,12 @@
 #include "lcd.h"
 
 LCD  lcd {};
-uint16_t __attribute__((section (".dma_buffer"))) LCD::drawBuffer[2][width * height];
-uint16_t __attribute__((section (".dma_buffer"))) LCD::dmaInt16;
-uint16_t  __attribute__((section (".dma_buffer"))) LCD::charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
+//uint16_t __attribute__((section (".dma_buffer"))) LCD::drawBuffer[2][width * height];
+//uint16_t __attribute__((section (".dma_buffer"))) LCD::dmaInt16;
+//uint16_t __attribute__((section (".dma_buffer"))) LCD::charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
+uint16_t LCD::drawBuffer[2][width * height];
+uint16_t LCD::dmaInt16;
+uint16_t LCD::charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
 
 void LCD::Init()
 {

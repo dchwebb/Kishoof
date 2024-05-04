@@ -85,7 +85,7 @@ main-build: Kishoof_STM32H7B0.elf secondary-outputs
 
 # Tool invocations
 Kishoof_STM32H7B0.elf Kishoof_STM32H7B0.map: $(OBJS) $(USER_OBJS) D:\Eurorack\Kishoof\Kishoof_STM32H7B0\STM32H7B0VBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "Kishoof_STM32H7B0.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\Eurorack\Kishoof\Kishoof_STM32H7B0\STM32H7B0VBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Kishoof_STM32H7B0.map" -Wl,--gc-sections -static -Wl,--no-warn-rwx-segment --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+	arm-none-eabi-g++ -o "Kishoof_STM32H7B0.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\Eurorack\Kishoof\Kishoof_STM32H7B0\STM32H7B0VBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Kishoof_STM32H7B0.map" -Wl,--gc-sections -static -Wl,--no-warn-rwx-segment --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
