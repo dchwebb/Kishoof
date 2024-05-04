@@ -33,13 +33,13 @@ int main(void) {
 	InitHardware();
 	//lcd.Init();
 
-	//filter.Init();					// Initialise filter coefficients, windows etc
+	filter.Init();					// Initialise filter coefficients, windows etc
 	//usb.Init(false);
-	//wavetable.Init();
-	//InitI2S();						// Initialise I2S which will start main sample interrupts
+	wavetable.Init();
+	InitI2S();						// Initialise I2S which will start main sample interrupts
 
 	while (1) {
-		//filter.Update();			// Check if filter coefficients need to be updated
+		filter.Update();			// Check if filter coefficients need to be updated
 
 
 		//usb.cdc.ProcessCommand();	// Check for incoming USB serial commands

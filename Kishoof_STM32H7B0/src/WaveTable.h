@@ -61,7 +61,7 @@ private:
 	void AdditiveWave();
 	int32_t ParseInt(const std::string_view cmd, const std::string_view precedingChar, const int32_t low, const int32_t high);
 
-	enum class TestData {noise, twintone, wavetable} wavetableType = TestData::wavetable;
+	enum class TestData {noise, twintone, wavetable} wavetableType = TestData::twintone;
 
 	char longFileName[100];
 	uint8_t lfnPosition = 0;
@@ -102,8 +102,8 @@ private:
 	bool activeDrawBuffer = true;
 
 
-	GpioPin debugMain{GPIOE, 2, GpioPin::Type::Output};		// PE2: Debug
-	GpioPin debugDraw{GPIOE, 3, GpioPin::Type::Output};		// PE3: Debug
+	GpioPin debugMain{GPIOD, 5, GpioPin::Type::Output};		// PD5: Debug
+	GpioPin debugDraw{GPIOD, 6, GpioPin::Type::Output};		// PD6: Debug
 };
 
 extern WaveTable wavetable;

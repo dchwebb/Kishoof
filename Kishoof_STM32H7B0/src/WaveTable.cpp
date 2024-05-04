@@ -227,9 +227,6 @@ void WaveTable::Init()
 		wavFile.tableCount = 1;
 		wavFile.startAddr = (uint8_t*)&testWavetable;
 	}
-
-	DAC1->DHR12R2 = 4095;				// Wet level
-	DAC1->DHR12R1 = 0;					// Dry level
 }
 
 

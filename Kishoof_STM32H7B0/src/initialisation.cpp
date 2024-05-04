@@ -261,13 +261,11 @@ void InitADC1()
 
 	ADC1->CFGR |= ADC_CFGR_CONT;					// 1: Continuous conversion mode for regular conversions
 	ADC1->CFGR |= ADC_CFGR_OVRMOD;					// Overrun Mode 1: ADC_DR register is overwritten with the last conversion result when an overrun is detected.
-	ADC1->CFGR |= ADC_CFGR_DMNGT_0;					// Data Management configuration 01: DMA One Shot Mode selected, 11: DMA Circular Mode selected
+	ADC1->CFGR |= ADC_CFGR_DMNGT;					// Data Management configuration 01: DMA One Shot Mode selected, 11: DMA Circular Mode selected
 
 	//00: ADC clock ≤ 6.25 MHz; 01: 6.25 MHz < clk ≤ 12.5 MHz; 10: 12.5 MHz < clk ≤ 25.0 MHz; 11: 25.0 MHz < clock ≤ 50.0 MHz
 	ADC1->CR |= ADC_CR_BOOST_0;
-
-	// For scan mode: set number of channels to be converted
-	ADC1->SQR1 |= (ADC1_BUFFER_LENGTH - 1);
+	ADC1->SQR1 |= (ADC1_BUFFER_LENGTH - 1);			// For scan mode: set number of channels to be converted
 
 	// Start calibration
 	ADC1->CR |= ADC_CR_ADCALLIN;					// Activate linearity calibration (as well as offset calibration)
@@ -399,12 +397,12 @@ void InitI2S()
 
 	/* I2S Clock
 		PLL2: ((8MHz / 5) * 192 / 5) = 61.44 MHz
-		I2S Clock: 61.44 MHz / (256  * ((2 * 2) + 1)) = 48 KHz
+		I2S Clock: 61.44 MHz / (64  * ((2 * 10) + 0)) = 48 KHz
 	*/
 
 	RCC->CDCCIP1R |= RCC_CDCCIP1R_SPI123SEL_0;		// 001: pll2_p_ck clock selected as SPI/I2S1,2 and 3 kernel clock
-	SPI2->I2SCFGR |= (2 << SPI_I2SCFGR_I2SDIV_Pos);	// Set I2SDIV to 2 with Odd factor prescaler
-	SPI2->I2SCFGR |= SPI_I2SCFGR_ODD;
+	SPI2->I2SCFGR |= (10 << SPI_I2SCFGR_I2SDIV_Pos);	// Set I2SDIV to 2 with Odd factor prescaler
+	//SPI2->I2SCFGR |= SPI_I2SCFGR_ODD;
 
 	SPI2->IER |= (SPI_IER_TXPIE | SPI_IER_UDRIE);	// Enable interrupt when FIFO has free slot or underrun occurs
 	NVIC_SetPriority(SPI2_IRQn, 2);					// Lower is higher priority
