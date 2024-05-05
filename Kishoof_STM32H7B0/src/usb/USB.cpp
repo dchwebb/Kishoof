@@ -1,3 +1,6 @@
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 #include "USB.h"
 #include "GpioPin.h"
 
@@ -32,7 +35,6 @@ void USB::EP0In(const uint8_t* buff, const uint32_t size)
 
 void USB::InterruptHandler()					// In Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_pcd.c
 {
-
 	uint32_t epnum, ep_intr, epint;
 
 	// Handle spurious interrupt
@@ -884,7 +886,7 @@ std::string HexByte(const uint16_t& v) {
 
 
 void USB::OutputDebug() {
-
+/*
 	uart.SendString("Event,Interrupt,Desc,Int Data,Desc,Endpoint,mRequest,Request,Value,Index,Length,Scsi,PacketSize,XferBuff\n");
 	uint16_t evNo = usbDebugEvent % USB_DEBUG_COUNT;
 	std::string interrupt, subtype;
@@ -977,6 +979,7 @@ void USB::OutputDebug() {
 		}
 		evNo = (evNo + 1) % USB_DEBUG_COUNT;
 	}
+*/
 }
 
 
@@ -1389,5 +1392,6 @@ Event,Interrupt,Desc,Int Data,Desc,Endpoint,mRequest,Request,Value,Index,Length,
 #endif
 
 
+#pragma GCC pop_options
 
 

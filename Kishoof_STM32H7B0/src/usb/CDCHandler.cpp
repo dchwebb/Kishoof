@@ -36,6 +36,7 @@ void CDCHandler::ProcessCommand()
 
 #if (USB_DEBUG)
 	} else if (cmd.compare("usbdebug") == 0) {				// Configure gate LED
+		extern bool USBDebug;
 		USBDebug = true;
 		usb->SendString("Press link button to dump output\r\n");
 #endif

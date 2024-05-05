@@ -28,6 +28,7 @@ extern "C" {
 float filterInterval = 0.0f;
 
 uint32_t lastVal;
+bool USBDebug = false;
 
 int main(void) {
 
@@ -36,7 +37,7 @@ int main(void) {
 	lcd.Init();
 
 	filter.Init();					// Initialise filter coefficients, windows etc
-	//usb.Init(false);
+	usb.Init(false);
 	wavetable.Init();
 	InitI2S();						// Initialise I2S which will start main sample interrupts
 
@@ -44,7 +45,7 @@ int main(void) {
 		filter.Update();			// Check if filter coefficients need to be updated
 
 
-		//usb.cdc.ProcessCommand();	// Check for incoming USB serial commands
+		usb.cdc.ProcessCommand();	// Check for incoming USB serial commands
 
 		if (!(SPI_DMA_Working)) {
 			//StartDebugTimer();

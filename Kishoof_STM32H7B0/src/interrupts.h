@@ -1,4 +1,4 @@
-void OTG_FS_IRQHandler(void) {
+void OTG_HS_IRQHandler(void) {
 	usb.InterruptHandler();
 }
 
