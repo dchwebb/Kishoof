@@ -16,7 +16,7 @@ public:
 	void Draw();
 	bool UpdateWavetableList();
 
-	float testWavetable[2048];
+	float testWavetable[4096];
 	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
 	float outputSamples[2] = {0.0f, 0.0f};
 
@@ -61,7 +61,7 @@ private:
 	void AdditiveWave();
 	int32_t ParseInt(const std::string_view cmd, const std::string_view precedingChar, const int32_t low, const int32_t high);
 
-	enum class TestData {noise, twintone, wavetable} wavetableType = TestData::twintone;
+	enum class TestData {noise, twintone, testwaves, wavetable} wavetableType = TestData::testwaves;
 
 	char longFileName[100];
 	uint8_t lfnPosition = 0;

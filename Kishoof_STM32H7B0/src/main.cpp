@@ -17,6 +17,8 @@ volatile ADCValues __attribute__((section (".dma_buffer"))) adc;
  * Add channel B octave
  * VCA on output ?
  * channel B ring mod and mix
+ *
+ * Check drive strength on SPI pins
  */
 
 extern "C" {
@@ -31,7 +33,7 @@ int main(void) {
 
 	InitClocks();					// Configure the clock and PLL
 	InitHardware();
-	//lcd.Init();
+	lcd.Init();
 
 	filter.Init();					// Initialise filter coefficients, windows etc
 	//usb.Init(false);
@@ -46,7 +48,7 @@ int main(void) {
 
 		if (!(SPI_DMA_Working)) {
 			//StartDebugTimer();
-			//wavetable.Draw();
+			wavetable.Draw();
 			//filterInterval = StopDebugTimer();
 
 		}

@@ -201,24 +201,6 @@ void WaveTable::Init()
 		//LoadWaveTable((uint32_t*)0x08130000);			// Basic Shapes.wav
 		activeWaveTable = (float*)wavFile.startAddr;
 	} else {
-		// Generate test waves
-		for (uint32_t i = 0; i < 2048; ++i) {
-			switch (wavetableType) {
-			case TestData::noise:
-				while ((RNG->SR & RNG_SR_DRDY) == 0) {};
-				testWavetable[i] = intToFloatMult * static_cast<int32_t>(RNG->DR);
-				activeWaveTable = testWavetable;
-				break;
-			case TestData::twintone:
-				testWavetable[i] = 0.5f * (std::sin((float)i * M_PI * 2.0f / 2048.0f) +
-						std::sin(200.0f * (float)i * M_PI * 2.0f / 2048.0f));
-				activeWaveTable = testWavetable;
-				break;
-			default:
-				break;
-			}
-		}
-
 		// Populate wavFile info
 		wavFile.dataFormat = 3;
 		wavFile.channels   = 1;
@@ -226,6 +208,32 @@ void WaveTable::Init()
 		wavFile.sampleCount = 2048;
 		wavFile.tableCount = 1;
 		wavFile.startAddr = (uint8_t*)&testWavetable;
+
+		activeWaveTable = testWavetable;
+
+		// Generate test waves
+		for (uint32_t i = 0; i < 2048; ++i) {
+			switch (wavetableType) {
+			case TestData::noise:
+				while ((RNG->SR & RNG_SR_DRDY) == 0) {};
+				testWavetable[i] = intToFloatMult * static_cast<int32_t>(RNG->DR);
+				break;
+			case TestData::testwaves:
+				testWavetable[i] = std::sin((float)i * M_PI * 2.0f / 2048.0f);
+				testWavetable[i + 2048] = (2.0f * i / 2048.0f) - 1.0f;
+				wavFile.sampleCount = 4096;
+				wavFile.tableCount = 2;
+				break;
+			case TestData::twintone:
+				testWavetable[i] = 0.5f * (std::sin((float)i * M_PI * 2.0f / 2048.0f) +
+						std::sin(200.0f * (float)i * M_PI * 2.0f / 2048.0f));
+				break;
+			default:
+				break;
+			}
+		}
+
+
 	}
 }
 

@@ -96,7 +96,7 @@ void InitHardware()
 	InitADC();
 	InitDebugTimer();
 	InitI2STimer();
-//	InitDisplaySPI();
+	InitDisplaySPI();
 //	InitEncoders();
 }
 
@@ -140,13 +140,14 @@ void InitDisplaySPI()
 
 	GpioPin::Init(GPIOC, 10, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::VeryHigh);		// PC10: SPI3_SCK AF6
 	GpioPin::Init(GPIOC, 12, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::VeryHigh);		// PC12: SPI3_MOSI AF6
+	//GpioPin::Init(GPIOA, 15, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::High);			// PA15: SPI3_SS AF6
 
 	// Configure SPI
 	SPI3->CFG2 |= SPI_CFG2_COMM_0;					// 00: full-duplex, *01: simplex transmitter, 10: simplex receiver, 11: half-duplex
 	SPI3->CFG2 |= SPI_CFG2_SSM;						// Software slave management: When SSM bit is set, NSS pin input is replaced with the value from the SSI bit
 	SPI3->CR1 |= SPI_CR1_SSI;						// Internal slave select
 	SPI3->CFG2 |= SPI_CFG2_SSOM;					// SS output management in master mode
-	SPI3->CFG1 |= SPI_CFG1_MBR_1;					// Master Baud rate p2238: 010: ck/8; 011: ck/16; 100: ck/32; 101: ck/64
+	SPI3->CFG1 |= SPI_CFG1_MBR_2;					// Master Baud rate p2238: 010: ck/8; 011: ck/16; 100: ck/32; 101: ck/64
 	SPI3->CFG2 |= SPI_CFG2_MASTER;					// Master selection
 	SPI3->CR1 |= SPI_CR1_SPE;						// Enable SPI
 

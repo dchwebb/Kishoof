@@ -10,7 +10,12 @@ uint16_t LCD::charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
 
 void LCD::Init()
 {
-	Command(cmdGC9A01A::SWRESET);			// Software reset
+	CSPin.SetHigh();
+	ResetPin.SetLow();
+	//Command(cmdGC9A01A::SWRESET);			// Software reset
+	Delay(100000);
+	ResetPin.SetHigh();
+	CSPin.SetLow();
 	Delay(100000);
 
 	Command(cmdGC9A01A::INREGEN2);
@@ -69,7 +74,7 @@ void LCD::Init()
 
 	ScreenFill(LCD_BLACK);
 
-	Rotate(LCD_Portrait_Flipped);
+	Rotate(LCD_Landscape);
 
 
 //	ColourFill(50, 50, 57, 57, LCD_YELLOW);
