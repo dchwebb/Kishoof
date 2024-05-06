@@ -145,7 +145,7 @@ private:
 	void SPISetDataSize(const SPIDataSize_t& Mode);
 	void DMASend(const uint16_t x0, const uint16_t y0, const uint16_t x1, const uint16_t y1, const uint16_t* pixelData, bool memInc);
 
-	GpioPin DCPin {GPIOB, 6, GpioPin::Type::Output, 0, GpioPin::DriveStrength::VeryHigh};
+	GpioPin DCPin {GPIOB, 6, GpioPin::Type::Output};
 	GpioPin ResetPin {GPIOB, 7, GpioPin::Type::Output};
 	GpioPin CSPin {GPIOA, 15, GpioPin::Type::Output};
 };

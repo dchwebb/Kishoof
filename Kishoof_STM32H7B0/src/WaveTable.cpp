@@ -10,13 +10,6 @@ WaveTable wavetable;
 
 // C:\Users\Dominic\Documents\Xfer\Serum Presets\Tables
 
-/* Currently used adcs:
-adc.FeedbackCV 	> 1V/Oct CV
-adc.DelayCV_L 	> Channel A wavetable position
-adc.FilterPot 	> Channel B wavetable position
-adc.DelayPot_R	> Warp amount
-*/
-
 // Create sine look up table as constexpr so will be stored in flash (create one extra entry to simplify interpolation)
 constexpr std::array<float, WaveTable::sinLUTSize + 1> sineLUT = wavetable.CreateSinLUT();
 

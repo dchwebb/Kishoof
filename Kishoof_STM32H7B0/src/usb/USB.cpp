@@ -453,8 +453,6 @@ void USB::Init(bool softReset)
 
 	USB_OTG_HS->GAHBCFG |= USB_OTG_GAHBCFG_GINT;						// Activate USB Interrupts
 	USBx_DEVICE->DCTL &= ~USB_OTG_DCTL_SDIS;							// Activate USB
-
-
 }
 
 

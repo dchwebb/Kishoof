@@ -74,7 +74,7 @@ void LCD::Init()
 
 	ScreenFill(LCD_BLACK);
 
-	Rotate(LCD_Landscape);
+	Rotate(LCD_Portrait);
 
 
 //	ColourFill(50, 50, 57, 57, LCD_YELLOW);
