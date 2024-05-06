@@ -6000,6 +6000,16 @@
 		)
 		(uuid "28986369-d442-43ac-a745-abdae76fd097")
 	)
+	(text "Errata: Warp Switched POt has incorrect mounting hole sizes (now fixed in library)"
+		(exclude_from_sim no)
+		(at 222.25 170.434 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "2904121b-b994-45d5-b824-908e995cadd2")
+	)
 	(text "Sockets"
 		(exclude_from_sim no)
 		(at 15.748 166.624 0)

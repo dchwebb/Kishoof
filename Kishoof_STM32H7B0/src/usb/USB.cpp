@@ -1,6 +1,3 @@
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-
 #include "USB.h"
 #include "GpioPin.h"
 
@@ -368,12 +365,13 @@ void USB::Init(bool softReset)
 		RCC->CR |= RCC_CR_HSI48ON;						// Enable Internal High Speed oscillator for USB
 		while ((RCC->CR & RCC_CR_HSI48RDY) == 0);		// Wait till internal USB oscillator is ready
 		RCC->CDCCIP2R |= RCC_CDCCIP2R_USBSEL;			// Set the USB CLock MUX to RC48
-		RCC->AHB1ENR |= RCC_AHB1ENR_USB1OTGHSEN;		// USB2OTG (OTG_HS1) Peripheral Clocks Enable
 		PWR->CR3 |= PWR_CR3_USB33DEN;					// Enable VDD33USB supply level detector
 
-		GpioPin::Init(GPIOA, 9, GpioPin::Type::Input, 10);					// PA9: USB_OTG_HS_VBUS
+		GpioPin::Init(GPIOA, 9, GpioPin::Type::Input);						// PA9: USB_OTG_HS_VBUS
 		GpioPin::Init(GPIOA, 11, GpioPin::Type::AlternateFunction, 10);		// PA11: USB_OTG_HS_DM
 		GpioPin::Init(GPIOA, 12, GpioPin::Type::AlternateFunction, 10);		// PA11: USB_OTG_HS_DP
+
+		RCC->AHB1ENR |= RCC_AHB1ENR_USB1OTGHSEN;		// USB2OTG (OTG_HS1) Peripheral Clocks Enable
 
 		NVIC_SetPriority(OTG_HS_IRQn, 2);
 		NVIC_EnableIRQ(OTG_HS_IRQn);
@@ -389,6 +387,7 @@ void USB::Init(bool softReset)
 
 	USB_OTG_HS->GCCFG |= USB_OTG_GCCFG_PWRDWN;			// Activate the transceiver in transmission/reception. When reset, the transceiver is kept in power-down. 0 = USB FS transceiver disabled; 1 = USB FS transceiver enabled
 	USB_OTG_HS->GUSBCFG |= USB_OTG_GUSBCFG_FDMOD;		// Force USB device mode
+	while (USB_OTG_HS->GINTSTS & USB_OTG_GINTSTS_CMOD);	// CMOD = 0 is device mode
 
 	// Clear all transmit FIFO address and data lengths - these will be set to correct values below for endpoints 0,1 and 2
 	for (uint8_t i = 0; i < 15; ++i) {
@@ -396,6 +395,7 @@ void USB::Init(bool softReset)
 	}
 
 	USB_OTG_HS->GCCFG |= USB_OTG_GCCFG_VBDEN; 			// Enable HW VBUS sensing
+	USBx_PCGCCTL = 0U;									// Restart the Phy Clock
 
 	USBx_DEVICE->DCFG |= USB_OTG_DCFG_DSPD;				// 11: Full speed using internal FS PHY
 
@@ -405,6 +405,11 @@ void USB::Init(bool softReset)
 
 	USB_OTG_HS->GRSTCTL = USB_OTG_GRSTCTL_RXFFLSH;		// Flush the RX buffers
 	while ((USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_RXFFLSH) == USB_OTG_GRSTCTL_RXFFLSH);
+
+	// Clear all pending Device Interrupts
+	USBx_DEVICE->DIEPMSK = 0U;
+	USBx_DEVICE->DOEPMSK = 0U;
+	USBx_DEVICE->DAINTMSK = 0U;
 
 	USB_OTG_HS->GINTSTS = 0xBFFFFFFFU;					// Clear pending interrupts (except SRQINT Session request/new session detected)
 
@@ -442,8 +447,13 @@ void USB::Init(bool softReset)
 	USB_OTG_HS->DIEPTXF[2] = (64 << USB_OTG_DIEPTXF_INEPTXFD_Pos) |		// IN endpoint 3 Tx FIFO depth
 			(320 << USB_OTG_DIEPTXF_INEPTXSA_Pos);  					// IN endpoint 3 FIFO transmit RAM start address
 
-    USBx_DEVICE->DCTL &= ~USB_OTG_DCTL_SDIS;							// Activate USB
-    USB_OTG_HS->GAHBCFG |= USB_OTG_GAHBCFG_GINT;						// Activate USB Interrupts
+	// In case phy is stopped, ensure to ungate and restore the phy CLK
+	USBx_PCGCCTL &= ~(USB_OTG_PCGCCTL_STOPCLK | USB_OTG_PCGCCTL_GATECLK);
+	USBx_DEVICE->DCTL |= USB_OTG_DCTL_SDIS;
+
+	USB_OTG_HS->GAHBCFG |= USB_OTG_GAHBCFG_GINT;						// Activate USB Interrupts
+	USBx_DEVICE->DCTL &= ~USB_OTG_DCTL_SDIS;							// Activate USB
+
 
 }
 
@@ -1390,8 +1400,5 @@ Event,Interrupt,Desc,Int Data,Desc,Endpoint,mRequest,Request,Value,Index,Length,
 */
 
 #endif
-
-
-#pragma GCC pop_options
 
 
