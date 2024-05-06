@@ -15,14 +15,14 @@ void Filter::Init()
 void Filter::Update(bool reset)
 {
 	if (reset || std::abs(cutoff - currentCutoff) > 0.001) {
-		debugFilter.SetHigh();
+		//debugFilter.SetHigh();
 
 		// round cutoff to 3dp
 		float omega = std::round(cutoff * 1000.0f) / 1000.0f;
 		InitFIRFilter(omega);
 		activeFilter = !activeFilter;
 
-		debugFilter.SetLow();
+		//debugFilter.SetLow();
 	}
 
 }

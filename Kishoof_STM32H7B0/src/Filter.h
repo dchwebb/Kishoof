@@ -43,7 +43,7 @@ private:
 	float Bessel(float x);
 	void SwitchFilter();
 
-	GpioPin debugFilter{GPIOE, 3, GpioPin::Type::Output};		// PE3: Debug
+	//GpioPin debugFilter{GPIOE, 3, GpioPin::Type::Output};		// PE3: Debug
 };
 
 

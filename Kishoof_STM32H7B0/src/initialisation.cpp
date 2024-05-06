@@ -135,7 +135,7 @@ void InitSysTick()
 void InitDisplaySPI()
 {
 	// SPI123 configured to use PLL2P 61.44 MHz (for I2S)
-	// MaAximum frequency should be 100MHz - see GC9A01 manual p. 189
+	// Maximum frequency should be 100MHz - see GC9A01 manual p. 189
 	RCC->APB1LENR |= RCC_APB1LENR_SPI3EN;
 
 	GpioPin::Init(GPIOC, 10, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::VeryHigh);		// PC10: SPI3_SCK AF6
@@ -147,7 +147,7 @@ void InitDisplaySPI()
 	SPI3->CFG2 |= SPI_CFG2_SSM;						// Software slave management: When SSM bit is set, NSS pin input is replaced with the value from the SSI bit
 	SPI3->CR1 |= SPI_CR1_SSI;						// Internal slave select
 	SPI3->CFG2 |= SPI_CFG2_SSOM;					// SS output management in master mode
-	SPI3->CFG1 |= SPI_CFG1_MBR_1;					// Master Baud rate p2238: 010: ck/8; 011: ck/16; 100: ck/32; 101: ck/64
+	SPI3->CFG1 |= SPI_CFG1_MBR_0;					// Master Baud rate p2138: 001: ck/4; 010: ck/8; 011: ck/16; 100: ck/32; 101: ck/64
 	SPI3->CFG2 |= SPI_CFG2_MASTER;					// Master selection
 	SPI3->CR1 |= SPI_CR1_SPE;						// Enable SPI
 
@@ -545,7 +545,7 @@ void InitEncoders()
 	// Encoder: button on PE4, up/down on PC6 and PC7
 	GpioPin::Init(GPIOE, 4, GpioPin::Type::InputPullup);				// PE4: Button
 	GpioPin::Init(GPIOC, 6, GpioPin::Type::AlternateFunction, 3);		// PC6: TIM8_CH1 AF3
-	GpioPin::Init(GPIOC, 7, GpioPin::Type::AlternateFunction, 3);		// PC6: TIM8_CH2 AF3
+	GpioPin::Init(GPIOC, 7, GpioPin::Type::AlternateFunction, 3);		// PC7: TIM8_CH2 AF3
 
 	RCC->APB4ENR |= RCC_APB4ENR_SYSCFGEN;			// Enable system configuration clock: used to manage external interrupt line connection to GPIOs
 	// Encoder using timer functionality - PC6 and PC7
