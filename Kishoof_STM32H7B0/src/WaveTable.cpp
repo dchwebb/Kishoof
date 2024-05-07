@@ -13,7 +13,6 @@ WaveTable wavetable;
 // Create sine look up table as constexpr so will be stored in flash (create one extra entry to simplify interpolation)
 constexpr std::array<float, WaveTable::sinLUTSize + 1> sineLUT = wavetable.CreateSinLUT();
 
-
 void WaveTable::CalcSample()
 {
 	debugMain.SetHigh();		// Debug

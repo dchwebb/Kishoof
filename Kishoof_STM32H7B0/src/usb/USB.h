@@ -98,7 +98,7 @@ private:
 
 	// USB standard device descriptor
 	static constexpr uint16_t VendorID = 1155;	// STMicroelectronics
-	static constexpr uint16_t ProductId = 65438;
+	static constexpr uint16_t ProductId = 65442;
 
 	const uint8_t deviceDescr[0x12] = {
 			0x12,								// bLength

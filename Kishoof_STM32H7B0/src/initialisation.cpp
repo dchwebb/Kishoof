@@ -105,14 +105,15 @@ void InitCache()
 {
 	// Use the Memory Protection Unit (MPU) to set up a region of memory with data caching disabled for use with DMA buffers
 	MPU->RNR = 0;									// Memory region number
-	MPU->RBAR = reinterpret_cast<uint32_t>(&adc);	// Store the address of the ADC_array into the region base address register
+	extern uint32_t _dma_addr;						// Get the start of the dma buffer from the linker
+	MPU->RBAR = reinterpret_cast<uint32_t>(&_dma_addr);	// Store the address of the ADC_array into the region base address register
 
 	MPU->RASR = (0b11  << MPU_RASR_AP_Pos)   |		// All access permitted
 				(0b001 << MPU_RASR_TEX_Pos)  |		// Type Extension field: See truth table on p228 of Cortex M7 programming manual
 				(1     << MPU_RASR_S_Pos)    |		// Shareable: provides data synchronization between bus masters. Eg a processor with a DMA controller
 				(0     << MPU_RASR_C_Pos)    |		// Cacheable
 				(0     << MPU_RASR_B_Pos)    |		// Bufferable (ignored for non-cacheable configuration)
-				(17    << MPU_RASR_SIZE_Pos) |		// 256KB - D2 is actually 288K (size is log 2(mem size) - 1 ie 2^18 = 256k)
+				(17    << MPU_RASR_SIZE_Pos) |		// 256KB - (size is log 2(mem size) - 1 ie 2^18 = 256k)
 				(1     << MPU_RASR_ENABLE_Pos);		// Enable MPU region
 
 
@@ -138,8 +139,8 @@ void InitDisplaySPI()
 	// Maximum frequency should be 100MHz - see GC9A01 manual p. 189
 	RCC->APB1LENR |= RCC_APB1LENR_SPI3EN;
 
-	GpioPin::Init(GPIOC, 10, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::VeryHigh);		// PC10: SPI3_SCK AF6
-	GpioPin::Init(GPIOC, 12, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::VeryHigh);		// PC12: SPI3_MOSI AF6
+	GpioPin::Init(GPIOC, 10, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::High);		// PC10: SPI3_SCK AF6
+	GpioPin::Init(GPIOC, 12, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::High);		// PC12: SPI3_MOSI AF6
 	//GpioPin::Init(GPIOA, 15, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::High);			// PA15: SPI3_SS AF6
 
 	// Configure SPI

@@ -123,6 +123,14 @@ SECTIONS
     PROVIDE_HIDDEN (__fini_array_end = .);
   } >FLASH
 
+  _dma_addr = LOADADDR(.dma_buffer);
+
+  /* DW RAM Area for non-cached DMA buffers (ADC) */
+  .dma_buffer (NOLOAD) :
+  {
+    *(.dma_buffer)
+  } >RAM
+
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 
@@ -165,12 +173,6 @@ SECTIONS
     . = . + _Min_Heap_Size;
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
-  } >RAM
-
-  /* DW RAM Area for non-cached DMA buffers (ADC) */
-  .dma_buffer (NOLOAD) :
-  {
-    *(.dma_buffer)
   } >RAM
 
   /* Remove information from the standard libraries */
