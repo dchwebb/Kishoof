@@ -2,8 +2,9 @@
 #include "CDCHandler.h"
 #include "Filter.h"
 #include "WaveTable.h"
+#include "ExtFlash.h"
 #include <stdio.h>
-
+#include <charconv>
 
 // Check if a command has been received from USB, parse and action as required
 void CDCHandler::ProcessCommand()
@@ -41,6 +42,94 @@ void CDCHandler::ProcessCommand()
 		usb->SendString("Press link button to dump output\r\n");
 #endif
 
+	} else if (cmd.compare("octo") == 0) {						// Switch Flash to octal mode
+		extFlash.SetOctoMode();
+		printf("Changed to octal mode\r\n");
+
+	} else if (cmd.compare("resetflash") == 0) {				// Reset Flash chip and reset to SPI mode
+		extFlash.Reset();
+		printf("Flash reset\r\n");
+
+	} else if (cmd.compare("ido") == 0) {						// External RAM ID (force octal mode)
+		uint32_t id = extFlash.GetID(true);
+		printf("Flash ID: %#010lx\r\n", id);
+
+	} else if (cmd.compare("mmap") == 0) {						// Memory mapped
+		extFlash.MemoryMapped();
+		printf("Memory Mapped mode\r\n");
+
+	} else if (cmd.compare("flashid") == 0) {					// External RAM ID
+		uint32_t id = extFlash.GetID();
+		printf("Flash ID: %#010lx\r\n", id);
+
+	} else if (cmd.compare("sreg") == 0) {						// Flash Status Register
+		uint32_t status = extFlash.ReadStatusReg();
+		printf("Status Register: %#010lx \r\n", status);
+
+	} else if (cmd.compare(0, 5, "mreg:") == 0) {				// Flash Register
+		uint32_t addr;
+		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);
+		if (res.ec == std::errc()) {
+			uint32_t id = extFlash.ReadReg(addr);
+			printf("Flash Register: %#010lx Data: %#010lx\r\n", addr, id);
+		} else {
+			usb->SendString("Invalid register\r\n");
+		}
+
+	} else if (cmd.compare(0, 7, "cfgreg:") == 0) {				// Flash Cfg2 Register
+		uint32_t addr;
+		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);
+		if (res.ec == std::errc()) {
+			uint32_t id = extFlash.ReadCfgReg(addr);
+			printf("Flash Register: %#010lx Data: %#010lx\r\n", addr, id);
+		} else {
+			usb->SendString("Invalid register\r\n");
+		}
+
+	} else if (cmd.compare(0, 5, "rmem:") == 0) {				// Read Memory
+		uint32_t addr;
+		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);
+		if (res.ec == std::errc()) {
+			uint32_t val = extFlash.Read(addr);
+			printf("Flash Data Address: %#010lx Data: %#010lx\r\n", addr, val);
+		} else {
+			usb->SendString("Invalid address\r\n");
+		}
+
+	} else if (cmd.compare(0, 5, "wmem:") == 0) {				// Write Memory Page
+		uint32_t addr;
+		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);
+		if (res.ec == std::errc()) {			// no error
+			// Create test buffer
+			uint32_t testBuffer[64];
+			for (uint32_t i = 0; i < 64; ++i) {
+				testBuffer[i] = i;
+			}
+			extFlash.WriteData(addr, testBuffer, 64);
+			printf("Write Address: %#010lx\r\n", addr);
+		} else {
+			usb->SendString("Invalid address\r\n");
+		}
+
+	} else if (cmd.compare(0, 4, "mem:") == 0) {				// Read Memory
+		uint32_t addr;
+		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);
+		if (res.ec == std::errc()) {
+			uint32_t val = *(uint32_t*)(addr);
+			printf("Memory Address: %#010lx Data: %#010lx\r\n", addr, val);
+		} else {
+			usb->SendString("Invalid address\r\n");
+		}
+
+	} else if (cmd.compare(0, 6, "erase:") == 0) {				// Erase sector
+		uint32_t addr;
+		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);
+		if (res.ec == std::errc()) {
+			extFlash.BlockErase(addr);
+			printf("Flash Sector Erase Address: %#010lx\r\n", addr);
+		} else {
+			usb->SendString("Invalid address\r\n");
+		}
 
 	} else if (cmd.compare("noise") == 0) {
 		wavetable.wavetableType = WaveTable::TestData::noise;

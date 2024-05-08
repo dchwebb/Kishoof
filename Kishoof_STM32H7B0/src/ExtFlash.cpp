@@ -24,9 +24,9 @@ void ExtFlash::Init()
 	// In DTR mode, it is recommended to set DHQC of OCTOSPI_TCR, to shift the outputs by a quarter of cycle and avoid holding issues on the memory side.
 	OCTOSPI1->TCR |= OCTOSPI_TCR_DHQC;						// Delay hold quarter cycle
 	Reset();
-	SetOctoMode();
-	MemoryMapped();
-	fatTools.InitFatFS();									// Initialise FatFS
+//	SetOctoMode();
+//	MemoryMapped();
+//	fatTools.InitFatFS();									// Initialise FatFS
 
 }
 
@@ -123,9 +123,9 @@ uint32_t ExtFlash::GetID(bool forceOctalMode)
 	MemMappedOff();
 	OCTOSPI1->DLR = 2;										// Return 3 bytes
 	OCTOSPI1->CR |= OCTOSPI_CR_FMODE_0;						// 00: Indirect write mode; *01: Indirect read mode; 10: Automatic polling mode; 11: Memory-mapped mode
+	OCTOSPI1->TCR &= ~OCTOSPI_TCR_DCYC_Msk;					// Clear number of dummy cycles
 
 	if (forceOctalMode || octalMode) {
-		OCTOSPI1->TCR &= ~OCTOSPI_TCR_DCYC_Msk;					// Clear number of dummy cycles
 		OCTOSPI1->TCR |= (4 << OCTOSPI_TCR_DCYC_Pos);		// Set number of dummy cycles
 		OCTOSPI1->CCR = octoCCR & ~OCTOSPI_CCR_DDTR;
 		OCTOSPI1->IR = getID;								// Set instruction to write enable

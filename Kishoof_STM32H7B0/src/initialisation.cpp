@@ -20,7 +20,7 @@
 #define PLL_M2 5
 #define PLL_N2 192
 #define PLL_P2 5
-#define PLL_R2 2
+#define PLL_R2 3
 
 
 void InitClocks()
@@ -98,6 +98,7 @@ void InitHardware()
 	InitI2STimer();
 	InitDisplaySPI();
 	InitEncoders();
+	InitOctoSPI();
 }
 
 
