@@ -7,7 +7,7 @@ static constexpr bool dtr = false;			// Double data rate
 
 static constexpr uint32_t dummyCycles = 6;	// Configured according to device speed
 
-static constexpr uint32_t dtrCCR = dtr ? (OCTOSPI_CCR_ADDTR | OCTOSPI_CCR_IDTR | OCTOSPI_CCR_DDTR | OCTOSPI_CCR_DQSE) : OCTOSPI_CCR_DQSE;
+static constexpr uint32_t dtrCCR = dtr ? (OCTOSPI_CCR_ADDTR | OCTOSPI_CCR_IDTR | OCTOSPI_CCR_DDTR | OCTOSPI_CCR_DQSE) : 0;		//OCTOSPI_CCR_DQSE
 
 static constexpr uint32_t octoCCR =
 		OCTOSPI_CCR_ADMODE_2 |				// Address: 100: Eight lines
@@ -24,9 +24,10 @@ void ExtFlash::Init()
 	// In DTR mode, it is recommended to set DHQC of OCTOSPI_TCR, to shift the outputs by a quarter of cycle and avoid holding issues on the memory side.
 	OCTOSPI1->TCR |= OCTOSPI_TCR_DHQC;						// Delay hold quarter cycle
 	Reset();
-//	SetOctoMode();
-//	MemoryMapped();
-//	fatTools.InitFatFS();									// Initialise FatFS
+	Reset();
+	SetOctoMode();
+	MemoryMapped();
+	fatTools.InitFatFS();									// Initialise FatFS
 
 }
 
@@ -363,6 +364,7 @@ void ExtFlash::MemMappedOff()
 	if (memMapMode) {
 		OCTOSPI1->CR &= ~OCTOSPI_CR_EN;						// Disable OCTOSPI
 		while (OCTOSPI1->SR & OCTOSPI_SR_BUSY) {};
+		OCTOSPI1->TCR &= ~OCTOSPI_TCR_DCYC_Msk;				// Clear number of dummy cycles
 		OCTOSPI1->CR &= ~OCTOSPI_CR_FMODE;
 		while (OCTOSPI1->SR & OCTOSPI_SR_BUSY) {};
 		memMapMode = false;
