@@ -111,15 +111,16 @@ void CDCHandler::ProcessCommand()
 			usb->SendString("Invalid address\r\n");
 		}
 
-	} else if (cmd.compare(0, 4, "mem:") == 0) {				// Read Memory
-		uint32_t addr;
-		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);
-		if (res.ec == std::errc()) {
-			uint32_t val = *(uint32_t*)(addr);
-			printf("Memory Address: %#010lx Data: %#010lx\r\n", addr, val);
-		} else {
-			usb->SendString("Invalid address\r\n");
+	} else if (cmd.compare(0, 4, "mem:") == 0) {		// Flash: print 256 words of memory mapped data
+		const int32_t address = ParseInt(cmd, ':', 0, 0xFFFFFF);
+		if (address >= 0) {
+			const uint32_t* p = (uint32_t*)(0x90000000 + address);
+
+			for (uint32_t a = 0; a < 256; a += 4) {
+				printf("%6ld: %#010lx %#010lx %#010lx %#010lx\r\n", (a * 4) + address, p[a], p[a + 1], p[a + 2], p[a + 3]);
+			}
 		}
+
 
 	} else if (cmd.compare(0, 6, "erase:") == 0) {				// Erase sector
 		uint32_t addr;

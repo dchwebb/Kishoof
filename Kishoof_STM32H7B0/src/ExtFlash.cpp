@@ -24,8 +24,12 @@ void ExtFlash::Init()
 	// In DTR mode, it is recommended to set DHQC of OCTOSPI_TCR, to shift the outputs by a quarter of cycle and avoid holding issues on the memory side.
 	OCTOSPI1->TCR |= OCTOSPI_TCR_DHQC;						// Delay hold quarter cycle
 	Reset();
-	Reset();
 	SetOctoMode();
+	if (GetID() != 0x003a85c2 || ReadCfgReg(0x300) != 0b111) {
+		Reset();
+		DelayMS(2);		// FIXME - use better timing
+		SetOctoMode();
+	}
 	MemoryMapped();
 	fatTools.InitFatFS();									// Initialise FatFS
 
