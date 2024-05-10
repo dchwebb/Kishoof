@@ -106,6 +106,7 @@ void ExtFlash::Reset()
 void ExtFlash::WriteEnable()
 {
 	MemMappedOff();
+	CheckBusy();
 	OCTOSPI1->TCR &= ~OCTOSPI_TCR_DCYC_Msk;					// Dummy cycles
 	OCTOSPI1->CR |= OCTOSPI_CR_EN;							// Enable QSPI
 	OCTOSPI1->CR &= ~OCTOSPI_CR_FMODE;						// *00: Indirect write mode; 01: Indirect read mode; 10: Automatic polling mode; 11: Memory-mapped mode
@@ -293,23 +294,23 @@ bool ExtFlash::WriteData(uint32_t address, uint32_t* writeBuff, uint32_t words)
 		}
 
 		OCTOSPI1->DLR = writeSize - 1;						// number of bytes - 1 to transmit
-		OCTOSPI1->CR &= ~OCTOSPI_CR_FMODE;						// *00: Indirect write mode; 01: Indirect read mode; 10: Automatic polling mode; 11: Memory-mapped mode
-		OCTOSPI1->TCR &= ~OCTOSPI_TCR_DCYC_Msk;					// Dummy cycles
+		OCTOSPI1->CR &= ~OCTOSPI_CR_FMODE;					// *00: Indirect write mode; 01: Indirect read mode; 10: Automatic polling mode; 11: Memory-mapped mode
+		OCTOSPI1->TCR &= ~OCTOSPI_TCR_DCYC_Msk;				// Dummy cycles
 		OCTOSPI1->CCR = octoCCR;
 		OCTOSPI1->IR = writePage;
-		OCTOSPI1->CR |= OCTOSPI_CR_EN;							// Enable OCTOSPI
-		OCTOSPI1->AR = address;									// Set address register
+		OCTOSPI1->CR |= OCTOSPI_CR_EN;						// Enable OCTOSPI
+		OCTOSPI1->AR = address;								// Set address register
 
 		for (uint32_t i = 0; i < 64; ++i) {
-			while ((OCTOSPI1->SR & OCTOSPI_SR_FTF) == 0) {};	// Wait until there is space in the FIFO
-			OCTOSPI1->DR = *writeBuff++;								// Set data register
+			while ((OCTOSPI1->SR & OCTOSPI_SR_FTF) == 0) {};// Wait until there is space in the FIFO
+			OCTOSPI1->DR = *writeBuff++;					// Set data register
 		}
 
 		remainingWords -= (writeSize / 4);
 		address += writeSize;
 
 		while (OCTOSPI1->SR & OCTOSPI_SR_BUSY) {};
-		OCTOSPI1->CR &= ~OCTOSPI_CR_EN;							// Disable OCTOSPI
+		OCTOSPI1->CR &= ~OCTOSPI_CR_EN;						// Disable OCTOSPI
 	} while (remainingWords > 0);
 
 	SCB_InvalidateDCache_by_Addr(memAddr, words * 4);		// Ensure cache is refreshed after write or erase
@@ -349,7 +350,7 @@ void ExtFlash::MemoryMapped()
 	if (!memMapMode) {
 		//SCB_InvalidateDCache_by_Addr(flashAddress, 10000);// Ensure cache is refreshed after write or erase
 		while (OCTOSPI1->SR & OCTOSPI_SR_BUSY) {};
-		//CheckBusy();										// Check chip is not still writing data
+		CheckBusy();										// Check chip is not still writing data
 
 		OCTOSPI1->CR |= OCTOSPI_CR_EN;						// Enable QSPI
 		OCTOSPI1->TCR |= (dummyCycles << OCTOSPI_TCR_DCYC_Pos);	// Set number of dummy cycles
@@ -374,4 +375,30 @@ void ExtFlash::MemMappedOff()
 		memMapMode = false;
 	}
 }
+
+
+void ExtFlash::CheckBusy()
+{
+	// Use Automatic Polling mode to wait until Flash Busy flag is cleared
+	OCTOSPI1->CR &= ~OCTOSPI_CR_EN;							// Disable
+	OCTOSPI1->DLR = 1;										// Return 2 bytes
+	OCTOSPI1->PSMKR = 0x01;									// Mask on bit 1 (Busy)
+	OCTOSPI1->PSMAR = 0b00000000;							// Match Busy = 0
+	OCTOSPI1->PIR = 0x10;									// Polling interval in clock cycles
+	OCTOSPI1->CR |= OCTOSPI_CR_APMS;						// Set the 'auto-stop' bit to end transaction after a match.
+	OCTOSPI1->CR = (OCTOSPI1->CR & ~OCTOSPI_CR_FMODE) |
+					OCTOSPI_CR_FMODE_1;						// 10: Automatic polling mode
+
+	OCTOSPI1->TCR |= (4 << OCTOSPI_TCR_DCYC_Pos);			// Set number of dummy cycles
+	OCTOSPI1->CCR = octoCCR;
+	OCTOSPI1->IR = readStatusReg;							// Set address register
+	OCTOSPI1->CR |= OCTOSPI_CR_EN;							// Enable OCTOSPI
+	OCTOSPI1->AR = 0;										// Set address register
+
+	while (OCTOSPI1->SR & OCTOSPI_SR_BUSY) {};
+	OCTOSPI1->FCR |= OCTOSPI_FCR_CSMF;						// Acknowledge status match flag
+	OCTOSPI1->CR &= ~OCTOSPI_CR_EN;
+}
+
+
 

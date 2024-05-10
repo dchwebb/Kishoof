@@ -5,18 +5,18 @@
 #include "ff.h"
 #include "ExtFlash.h"
 
-/* FAT16 Structure on 128 MBit Flash device:
+/* FAT16 Structure on 512 MBit Flash device:
 
 Sector = 512 bytes
 Cluster = 4 * 512 bytes = 2048 bytes
 Block = 4096 bytes (minimum erase size)
 
-16 MBytes on each Flash = 31,250 Sectors (7812.5 Clusters - data area is 7802 clusters after 10 clusters used for headers)
+64 MBytes = 125,000 Sectors (31250 Clusters - data area is 7802 clusters after 10 clusters used for headers)
 
 Blocks    Bytes			Description
 ------------------------------------
 0           0 -   511	Boot Sector (AKA Reserved): 1 sector
-0-3       512 - 16383	FAT (holds cluster linked list): 31 sectors - 7812 entries each 16 bit
+0-15      512 - 16383	FAT (holds cluster linked list): 123 sectors - 31250 entries each 16 bit
 4       16384 - 20479	Root Directory: 8 sectors - 128 root directory entries at 32 bytes each (32 * 128 = 4096)
 5-      20480 - 		Data section: 7803 clusters = 31,212 sectors
 
@@ -24,30 +24,13 @@ Cluster 2: 20480, Cluster 3: 22528, Cluster 4: 24576, Cluster 5: 26624, Cluster 
 */
 
 
-/* FAT16 Structure on 2*128 MBit Flash device:
-
-Sector = 512 bytes
-Cluster = 4 * 512 bytes = 2048 bytes
-Block = 4096 bytes (minimum erase size)
-
-32 MBytes Flash = 62,500 Sectors (15,625 Clusters - data area is 15,607 clusters after 18 clusters used for headers)
-
-Blocks    Bytes			Description
-------------------------------------
-0           0 -   511	Boot Sector (AKA Reserved): 1 sector
-0-3       512 - 32767	FAT (holds cluster linked list): 63 sectors - 15,625 entries each 16 bit
-4       32768 - 36863	Root Directory: 8 sectors - 128 root directory entries at 32 bytes each (32 * 128 = 4096)
-5-      36864 - 		Data section: 15,607 clusters = 62,428 sectors
-
-Cluster 2: 36864, Cluster 3: 38,912, Cluster 4: 40,960, Cluster 5: 43,008, Cluster 6: 45,056
-*/
 static constexpr uint32_t fatSectorSize = 512;										// Sector size used by FAT
-static constexpr uint32_t fatSectorCount = 31250;									// 31250 sectors of 512 bytes = 16 MBytes
+static constexpr uint32_t fatSectorCount = 125000;									// 125000 sectors of 512 bytes = 64 MBytes
 static constexpr uint32_t fatClusterSize = 2048;									// Cluster size used by FAT (ie block size in data section)
 static constexpr uint32_t fatMaxCluster = (fatSectorSize * fatSectorCount) / fatClusterSize;		// Store largest cluster number
 static constexpr uint32_t fatEraseSectors = 8;										// Number of sectors in an erase block (4096 bytes per device)
 //static constexpr uint32_t fatHeaderSectors = 72;									// Sectors in header [1 Boot sector; 63 FAT; 8 Root Directory]
-static constexpr uint32_t fatCacheSectors = 96;										// 72 in Header + extra for testing NB - must be divisible by 16 (fatEraseSectors)
+static constexpr uint32_t fatCacheSectors = 255;										// 72 in Header + extra for testing NB - must be divisible by 16 (fatEraseSectors)
 
 extern uint8_t headerCacheDebug[fatSectorSize * fatCacheSectors];
 

@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <charconv>
 
+uint32_t flashBuff[8192];
+
 // Check if a command has been received from USB, parse and action as required
 void CDCHandler::ProcessCommand()
 {
@@ -62,6 +64,12 @@ void CDCHandler::ProcessCommand()
 		uint32_t id = extFlash.GetID();
 		printf("Flash ID: %#010lx\r\n", id);
 
+	} else if (cmd.compare("chkbusy") == 0) {					// Check Flash Busy
+		extFlash.CheckBusy();
+
+	} else if (cmd.compare("wren") == 0) {					// Check Flash Busy
+		extFlash.WriteEnable();
+
 	} else if (cmd.compare("sreg") == 0) {						// Flash Status Register
 		uint32_t status = extFlash.ReadStatusReg();
 		printf("Status Register: %#010lx \r\n", status);
@@ -110,6 +118,23 @@ void CDCHandler::ProcessCommand()
 		} else {
 			usb->SendString("Invalid address\r\n");
 		}
+
+	} else if (cmd.compare(0, 5, "write") == 0) {				// Write test pattern to flash writeA:W [A = address; W = num words]
+		const int32_t address = ParseInt(cmd, 'e', 0, 0xFFFFFF);
+		if (address >= 0) {
+			const uint32_t words = ParseInt(cmd, ':');
+			printf("Writing %ld words to %ld ...\r\n", words, address);
+
+			for (uint32_t a = 0; a < words; ++a) {
+				flashBuff[a] = a + 1;
+			}
+			extFlash.WriteData(address, flashBuff, words);
+
+			extFlash.MemoryMapped();
+			printf("Finished\r\n");
+
+		}
+
 
 	} else if (cmd.compare(0, 4, "mem:") == 0) {		// Flash: print 256 words of memory mapped data
 		const int32_t address = ParseInt(cmd, ':', 0, 0xFFFFFF);
@@ -211,7 +236,7 @@ void CDCHandler::ClassSetupData(usbRequest& req, const uint8_t* data)
 	}
 }
 
-int32_t CDCHandler::ParseInt(const std::string_view cmd, const char precedingChar, const int32_t low = 0, const int32_t high = 0) {
+int32_t CDCHandler::ParseInt(const std::string_view cmd, const char precedingChar, const int32_t low, const int32_t high) {
 	int32_t val = -1;
 	const int8_t pos = cmd.find(precedingChar);		// locate position of character preceding
 	if (pos >= 0 && std::strspn(&cmd[pos + 1], "0123456789-") > 0) {

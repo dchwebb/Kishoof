@@ -8,7 +8,7 @@
 // I2S 				PLL2 P 				61.44 MHz
 // SPI3 Display		PLL2 P
 // ADC		 		Peripheral Clock 	8 MHz
-// OCTOSPI			PPL2 R				102.4 MHz
+// OCTOSPI			PPL2 R				153.6 MHz
 
 // Main clock 8MHz (HSE) / 2 (M) * 140 (N) / 2 (P) = 280MHz
 #define PLL_M1 2
@@ -20,7 +20,7 @@
 #define PLL_M2 5
 #define PLL_N2 192
 #define PLL_P2 5
-#define PLL_R2 3
+#define PLL_R2 2
 
 
 void InitClocks()
@@ -589,7 +589,7 @@ void InitOctoSPI()
 	OCTOSPI1->DCR1 |= (3 << OCTOSPI_DCR1_CSHT_Pos);			// CSHT + 1: min no CLK cycles where NCS must stay high between commands (Min 10ns for reads 40ns for writes)
 	OCTOSPI1->DCR1 &= ~OCTOSPI_DCR1_CKMODE;					// Clock mode 0: CLK is low when NCS high
 
-	OCTOSPI1->DCR2 |= (9 << OCTOSPI_DCR2_PRESCALER_Pos);	// Set prescaler to n + 1 => 102.4 MHz / 1 = 102.4 MHz
+	OCTOSPI1->DCR2 |= (5 << OCTOSPI_DCR2_PRESCALER_Pos);	// Set prescaler to n + 1 => 153.6 MHz / (n + 1) - tested to 76.8MHz
 
 //	OCTOSPI1->DCR3 |= (3 << OCTOSPI_DCR3_CSBOUND_Pos);		// Set Chip select boundary
 //	OCTOSPI1->DCR4 = 250; 									// Refresh Time: The chip select should be released every 4us

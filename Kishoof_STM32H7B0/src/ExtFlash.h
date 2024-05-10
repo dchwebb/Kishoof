@@ -6,6 +6,7 @@ static uint8_t* const flashAddress = reinterpret_cast<uint8_t*>(0x90000000);			/
 
 
 class ExtFlash {
+	friend class CDCHandler;
 public:
 	// Octal mode commands - SPI mode are first 8 bits of octal command
 	enum ospiRegister : uint16_t {writeEnable = 0x06F9, getID = 0x9F60, octaRead = 0xEC13, octaReadDTR = 0xEE11, writePage = 0x12ED,
@@ -31,6 +32,7 @@ private:
 	void MemMappedOff();
 	void WriteEnable();
 	void WriteCfg2(uint32_t address, uint32_t data);
+	void CheckBusy();
 	bool memMapMode = false;
 	bool octalMode = true;
 };

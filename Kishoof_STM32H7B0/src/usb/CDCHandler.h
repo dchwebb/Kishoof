@@ -19,7 +19,7 @@ public:
 	void ClassSetup(usbRequest& req) override;
 	void ClassSetupData(usbRequest& req, const uint8_t* data) override;
 	uint32_t GetInterfaceDescriptor(const uint8_t** buffer) override;
-	int32_t ParseInt(const std::string_view cmd, const char precedingChar, const int32_t low, const int32_t high);
+	int32_t ParseInt(const std::string_view cmd, const char precedingChar, const int32_t low = 0, const int32_t high = 0);
 
 	void ProcessCommand();			// Processes command received during interrupt
 
