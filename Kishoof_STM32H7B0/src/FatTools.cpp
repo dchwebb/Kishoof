@@ -125,10 +125,9 @@ void FatTools::CheckCache()
 		}
 
 		if (sampleChanged || writeCacheDirty) {
-// FIXME
-//			usb.PauseEndpoint(usb.msc);				// Sends NAKs from the msc endpoint whilst the Flash device is unavailable
+			usb.PauseEndpoint(usb.msc);				// Sends NAKs from the msc endpoint whilst the Flash device is unavailable
 			FlushCache();
-//			usb.ResumeEndpoint(usb.msc);
+			usb.ResumeEndpoint(usb.msc);
 		}
 		cacheUpdated = 0;
 
@@ -194,7 +193,7 @@ const uint8_t* FatTools::GetSectorAddr(const uint32_t sector, const uint8_t* buf
 		if (buffer == nullptr) {
 			return sectorAddress;
 		} else {
-			MDMATransfer(sectorAddress, buffer, bufferSize);
+			MDMATransfer(MDMA_Channel1, sectorAddress, buffer, bufferSize);
 			return nullptr;
 		}
 	}

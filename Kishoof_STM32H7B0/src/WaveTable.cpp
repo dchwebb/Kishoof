@@ -319,6 +319,7 @@ void WaveTable::Draw()
 }
 */
 
+uint32_t blankData;			// Used to transfer zeros into frame buffer by MDMA
 
 void WaveTable::Draw()
 {
@@ -354,9 +355,9 @@ void WaveTable::Draw()
 	}
 	activeDrawBuffer = !activeDrawBuffer;
 
-	// Trigger MDMA frame buffer blanking - FIXME
-	extern uint32_t blankData;
-	MDMATransfer((const uint8_t*)&blankData, (const uint8_t*)lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 2);
+	// Trigger MDMA frame buffer blanking
+	blankData = 0;
+	MDMATransfer(MDMA_Channel0, (const uint8_t*)&blankData, (const uint8_t*)lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 2);
 	bufferClear = false;
 
 

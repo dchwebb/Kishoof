@@ -494,10 +494,6 @@ void DelayMS(uint32_t ms)
 }
 
 
-//uint32_t __attribute__((section (".ram_d1_data"))) blankData;
-uint32_t blankData;
-
-
 void InitMDMA()
 {
 	// Initialises MDMA to background transfers of data to draw buffers for off-cpu blanking
@@ -508,9 +504,7 @@ void InitMDMA()
 	MDMA_Channel0->CTCR |= MDMA_CTCR_DSIZE_1;		// Destination data size - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
 	MDMA_Channel0->CTCR |= MDMA_CTCR_SSIZE_1;		// Source data size - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
 	MDMA_Channel0->CTCR |= MDMA_CTCR_DINC_1;		// 10: Destination address pointer is incremented after each data transfer
-	//MDMA_Channel0->CTCR |= MDMA_CTCR_SINC_1;		// 10: Source address pointer is incremented after each data transfer
 	MDMA_Channel0->CTCR |= MDMA_CTCR_DINCOS_1;		// Destination increment - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
-	//MDMA_Channel0->CTCR |= MDMA_CTCR_SINCOS_1;		// Source increment - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
 	MDMA_Channel0->CTCR |= MDMA_CTCR_BWM;			// Bufferable Write Mode
 	MDMA_Channel0->CTCR |= MDMA_CTCR_SWRM;			// Software Request Mode
 	MDMA_Channel0->CTCR |= MDMA_CTCR_TRGM;			// 01: Each MDMA request triggers a block transfer
@@ -519,26 +513,43 @@ void InitMDMA()
 	MDMA_Channel0->CTBR &= ~MDMA_CTBR_SBUS;			// Source: 0* System/AXI bus; 1 AHB bus/TCM
 	MDMA_Channel0->CTBR &= ~MDMA_CTBR_DBUS;			// Destination: 0* System/AXI bus; 1 AHB bus/TCM
 
-	blankData = 0;
-//	MDMA_Channel0->CSAR = (uint32_t)&blankData;		// Configure the source address
-
 	MDMA_Channel0->CCR |= MDMA_CCR_BTIE;			// Enable Block Transfer complete interrupt
+
+	// Channel 1:  Uses MDMA to background transfers of data from octoSPI Flash to RAM
+	MDMA_Channel1->CCR &= ~MDMA_CCR_EN;
+	MDMA_Channel1->CCR |= MDMA_CCR_PL_0;			// Priority: 00 = low; 01 = Medium; 10 = High; 11 = Very High
+
+	MDMA_Channel1->CTCR |= MDMA_CTCR_DSIZE_1;		// Destination data size - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
+	MDMA_Channel1->CTCR |= MDMA_CTCR_SSIZE_1;		// Source data size - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
+	MDMA_Channel1->CTCR |= MDMA_CTCR_DINC_1;		// 10: Destination address pointer is incremented after each data transfer
+	MDMA_Channel1->CTCR |= MDMA_CTCR_SINC_1;		// 10: Source address pointer is incremented after each data transfer
+	MDMA_Channel1->CTCR |= MDMA_CTCR_DINCOS_1;		// Destination increment - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
+	MDMA_Channel1->CTCR |= MDMA_CTCR_SINCOS_1;		// Source increment - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
+	MDMA_Channel1->CTCR |= MDMA_CTCR_BWM;			// Bufferable Write Mode
+	MDMA_Channel1->CTCR |= MDMA_CTCR_SWRM;			// Software Request Mode
+	MDMA_Channel1->CTCR |= MDMA_CTCR_TRGM;			// 01: Each MDMA request triggers a block transfer
+
+	MDMA_Channel1->CTBR &= ~MDMA_CTBR_SBUS;			// Source: 0* System/AXI bus; 1 AHB bus/TCM
+	MDMA_Channel1->CTBR &= ~MDMA_CTBR_DBUS;			// Destination: 0* System/AXI bus; 1 AHB bus/TCM
+
+	MDMA_Channel1->CCR |= MDMA_CCR_BTIE;			// Enable Block Transfer complete interrupt
+
 
 	NVIC_SetPriority(MDMA_IRQn, 0x3);				// Lower is higher priority
 	NVIC_EnableIRQ(MDMA_IRQn);
 }
 
 
-void MDMATransfer(const uint8_t* srcAddr, const uint8_t* destAddr, const uint32_t bytes)
+void MDMATransfer(MDMA_Channel_TypeDef* channel, const uint8_t* srcAddr, const uint8_t* destAddr, const uint32_t bytes)
 {
-	MDMA_Channel0->CTCR |= ((bytes - 1) << MDMA_CTCR_TLEN_Pos);	// Transfer length in bytes - 1
-	MDMA_Channel0->CBNDTR |= (bytes << MDMA_CBNDTR_BNDT_Pos);	// Number of bytes in a block
+	channel->CTCR |= ((bytes - 1) << MDMA_CTCR_TLEN_Pos);	// Transfer length in bytes - 1
+	channel->CBNDTR |= (bytes << MDMA_CBNDTR_BNDT_Pos);	// Number of bytes in a block
 
-	MDMA_Channel0->CSAR = (uint32_t)srcAddr;		// Configure the source address
-	MDMA_Channel0->CDAR = (uint32_t)destAddr;		// Configure the destination address
+	channel->CSAR = (uint32_t)srcAddr;				// Configure the source address
+	channel->CDAR = (uint32_t)destAddr;				// Configure the destination address
 
-	MDMA_Channel0->CCR |= MDMA_CCR_EN;				// Enable DMA
-	MDMA_Channel0->CCR |= MDMA_CCR_SWRQ;			// Software Activate the request (fires interrupt when complete)
+	channel->CCR |= MDMA_CCR_EN;					// Enable DMA
+	channel->CCR |= MDMA_CCR_SWRQ;					// Software Activate the request (fires interrupt when complete)
 }
 
 

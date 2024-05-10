@@ -59,6 +59,11 @@ void CDCHandler::ProcessCommand()
 		usb->SendString("Press link button to dump output\r\n");
 #endif
 
+	} else if (cmd.compare("mdma") == 0) {
+		const uint8_t* srcAddr = (uint8_t*)(0x90000000);
+		MDMATransfer(MDMA_Channel1, srcAddr, (uint8_t*)flashBuff, 4096);
+
+
 	} else if (cmd.compare("noise") == 0) {
 		wavetable.wavetableType = WaveTable::TestData::noise;
 		wavetable.Init();
@@ -80,6 +85,14 @@ void CDCHandler::ProcessCommand()
 		} else {
 			usb->SendString("Invalid address\r\n");
 		}
+
+
+
+	} else if (cmd.compare("eraseflash") == 0) {				// Erase all flash memory
+		printf("Erasing flash. Please wait ...\r\n");
+		extFlash.FullErase();
+		printf("Flash erased\r\n");
+
 
 	} else if (cmd.compare("format") == 0) {					// Format Flash storage with FAT
 		printf("Formatting flash:\r\n");
@@ -262,6 +275,11 @@ void CDCHandler::ProcessCommand()
 		}
 		printf("Found %lu different bytes\r\n", count);
 
+
+	} else if (cmd.compare("flushcache") == 0) {				// Flush FAT cache to Flash
+		const uint8_t sectors = fatTools.FlushCache();
+		printf("%i blocks flushed\r\n", sectors);
+		extFlash.MemoryMapped();
 
 
 	} else if (cmd.compare(0, 5, "write") == 0) {				// Write test pattern to flash writeA:W [A = address; W = num words]

@@ -3,6 +3,7 @@
 #include "initialisation.h"
 #include "USBHandler.h"
 #include "CDCHandler.h"
+#include "MSCHandler.h"
 #include <functional>
 #include <cstring>
 
@@ -32,8 +33,8 @@
 class USB {
 	friend class USBHandler;
 public:
-	enum Interface {NoInterface = -1, CDCCmdInterface = 0, CDCDataInterface = 1, MSCInterface = 99, interfaceCount = 2};	// FIXME
-	enum EndPoint {CDC_In = 0x81, CDC_Out = 0x1, CDC_Cmd = 0x82, MSC_In = 0x83, MSC_Out = 0x3};
+	enum Interface {NoInterface = -1, MSCInterface = 0, CDCCmdInterface = 1, CDCDataInterface = 2, interfaceCount = 3};
+	enum EndPoint {MSC_In = 0x81, MSC_Out = 0x1, CDC_In = 0x82, CDC_Out = 0x2, CDC_Cmd = 0x83};
 	enum EndPointType {Control = 0, Isochronous = 1, Bulk = 2, Interrupt = 3};
 	enum class DeviceState {Default, Addressed, Configured, Suspended};
 	enum RequestRecipient {RequestRecipientDevice = 0x0, RequestRecipientInterface = 0x1, RequestRecipientEndpoint = 0x2};
@@ -58,6 +59,7 @@ public:
 
 	EP0Handler  ep0  = EP0Handler(this, 0, 0, NoInterface);
 	CDCHandler  cdc  = CDCHandler(this,  USB::CDC_In,  USB::CDC_Out,  CDCCmdInterface);
+	MSCHandler  msc  = MSCHandler(this,  USB::MSC_In,  USB::MSC_Out,  MSCInterface);
 	bool classPendingData = false;			// Set when class setup command received and data pending
 	DeviceState devState;
 
@@ -88,7 +90,7 @@ private:
 	void SerialToUnicode();
 
 	std::array<USBHandler*, interfaceCount>classesByInterface;		// Lookup tables to get appropriate class handlers (set in handler constructor)
-	std::array<USBHandler*, 2>classByEP;
+	std::array<USBHandler*, 3>classByEP;
 	EP0State ep0State;
 	bool transmitting;
 	usbRequest req;

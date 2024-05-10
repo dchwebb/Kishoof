@@ -344,6 +344,35 @@ void ExtFlash::BlockErase(const uint32_t address)
 }
 
 
+void ExtFlash::FullErase()
+{
+	WriteEnable();
+
+	OCTOSPI1->TCR &= ~OCTOSPI_TCR_DCYC_Msk;					// Dummy cycles
+	OCTOSPI1->CR |= OCTOSPI_CR_EN;							// Enable QSPI
+	OCTOSPI1->CR &= ~OCTOSPI_CR_FMODE;						// *00: Indirect write mode; 01: Indirect read mode; 10: Automatic polling mode; 11: Memory-mapped mode
+	if (octalMode) {
+		OCTOSPI1->CCR = OCTOSPI_CCR_ISIZE_0 |				// Instruction size 16 bits
+						OCTOSPI_CCR_IMODE_2 |				// 100: Eight lines
+						dtrCCR;
+		OCTOSPI1->IR = chipErase;
+	} else {
+		OCTOSPI1->CCR = OCTOSPI_CCR_IMODE_0;				// 000: None; *001: One line; 010: Two lines; 011: Four lines; 100: Eight lines
+		OCTOSPI1->IR = (chipErase >> 8);					// Convert instruction to SPI mode
+	}
+
+	uint32_t tick = SysTickVal;
+	while (OCTOSPI1->SR & OCTOSPI_SR_BUSY) {
+		if (tick + 1000 > SysTickVal) {
+			printf(".");
+			tick = SysTickVal;
+		}
+	}
+	OCTOSPI1->CR &= ~OCTOSPI_CR_EN;							// Disable QSPI
+	MemoryMapped();
+}
+
+
 void ExtFlash::MemoryMapped()
 {
 	// Activate memory mapped mode: 0x90000000

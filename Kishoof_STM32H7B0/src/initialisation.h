@@ -60,6 +60,6 @@ void StartDebugTimer();
 float StopDebugTimer();
 void DelayMS(uint32_t ms);
 void InitMDMA();
-void MDMATransfer(const uint8_t* srcAddr, const uint8_t* destAddr, uint32_t bytes);
+void MDMATransfer(MDMA_Channel_TypeDef* channel, const uint8_t* srcAddr, const uint8_t* destAddr, const uint32_t bytes);
 void InitEncoders();
 void InitOctoSPI();

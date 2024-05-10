@@ -53,7 +53,7 @@ int main(void) {
 			//StartDebugTimer();
 //			wavetable.Draw();
 			//filterInterval = StopDebugTimer();
-
+			fatTools.CheckCache();		// Check if any outstanding cache changes need to be written to Flash
 		}
 
 #if (USB_DEBUG)
