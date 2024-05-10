@@ -31,7 +31,22 @@ void CDCHandler::ProcessCommand()
 				"sine        -  Use sine wavetable\r\n"
 				"wav         -  Use wav file wavetable\r\n"
 				"\r\n"
+				"Flash Tools:\r\n"
+				"------------\r\n"
+				"sreg        -  Print flash status register\r\n"
+				"flashid     -  Print flash manufacturer and device IDs\r\n"
+				"mem:A       -  Print 1024 bytes of flash (A = decimal address)\r\n"
+				"printcluster:A Print 2048 bytes of cluster address A (>=2)\r\n"
+				"clusterchain   List chain of FAT clusters\r\n"
+				"cacheinfo   -  Summary of unwritten changes in header cache\r\n"
+				"cachechanges   Show all bytes changed in header cache\r\n"
+				"flushcache  -  Flush any changed data in cache to flash\r\n"
+				"eraseflash  -  Erase all sample storage flash data\r\n"
+				"format      -  Format sample storage flash\r\n"
+				"eraseblock:A   Erase block of memory (4096 bytes)\r\n"
+
 #if (USB_DEBUG)
+				"\r\n"
 				"usbdebug    -  Start USB debugging\r\n"
 				"\r\n"
 #endif
@@ -44,6 +59,33 @@ void CDCHandler::ProcessCommand()
 		usb->SendString("Press link button to dump output\r\n");
 #endif
 
+	} else if (cmd.compare("noise") == 0) {
+		wavetable.wavetableType = WaveTable::TestData::noise;
+		wavetable.Init();
+
+	} else if (cmd.compare("sine") == 0) {
+			wavetable.wavetableType = WaveTable::TestData::twintone;
+			wavetable.Init();
+
+	} else if (cmd.compare("wav") == 0) {
+			wavetable.wavetableType = WaveTable::TestData::wavetable;
+			wavetable.Init();
+
+	} else if (cmd.compare(0, 11, "eraseblock:") == 0) {				// Erase sector
+		uint32_t addr;
+		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);
+		if (res.ec == std::errc()) {
+			extFlash.BlockErase(addr);
+			printf("Flash Sector Erase Address: %#010lx\r\n", addr);
+		} else {
+			usb->SendString("Invalid address\r\n");
+		}
+
+	} else if (cmd.compare("format") == 0) {					// Format Flash storage with FAT
+		printf("Formatting flash:\r\n");
+		fatTools.Format();
+		extFlash.MemoryMapped();
+
 	} else if (cmd.compare("octo") == 0) {						// Switch Flash to octal mode
 		extFlash.SetOctoMode();
 		printf("Changed to octal mode\r\n");
@@ -51,10 +93,6 @@ void CDCHandler::ProcessCommand()
 	} else if (cmd.compare("resetflash") == 0) {				// Reset Flash chip and reset to SPI mode
 		extFlash.Reset();
 		printf("Flash reset\r\n");
-
-	} else if (cmd.compare("ido") == 0) {						// External RAM ID (force octal mode)
-		uint32_t id = extFlash.GetID(true);
-		printf("Flash ID: %#010lx\r\n", id);
 
 	} else if (cmd.compare("mmap") == 0) {						// Memory mapped
 		extFlash.MemoryMapped();
@@ -67,7 +105,7 @@ void CDCHandler::ProcessCommand()
 	} else if (cmd.compare("chkbusy") == 0) {					// Check Flash Busy
 		extFlash.CheckBusy();
 
-	} else if (cmd.compare("wren") == 0) {					// Check Flash Busy
+	} else if (cmd.compare("wren") == 0) {						// Write Enable
 		extFlash.WriteEnable();
 
 	} else if (cmd.compare("sreg") == 0) {						// Flash Status Register
@@ -119,6 +157,113 @@ void CDCHandler::ProcessCommand()
 			usb->SendString("Invalid address\r\n");
 		}
 
+
+	//--------------------------------------------------------------------------------------------------
+	// All flash commands that rely on memory mapped data to follow this guard
+	} else if (extFlash.flashCorrupt) {
+		printf("** Flash Corrupt **\r\n");
+
+
+
+
+
+	} else if (cmd.compare("dir") == 0) {						// Get basic FAT directory list
+		if (fatTools.noFileSystem) {
+			printf("** No file System **\r\n");
+		} else {
+			char workBuff[256];
+			strcpy(workBuff, "/");
+
+			fatTools.InvalidateFatFSCache();					// Ensure that the FAT FS cache is updated
+			fatTools.PrintFiles(workBuff);
+		}
+
+	} else if (cmd.compare("dirdetails") == 0) {				// Get detailed FAT directory info
+		fatTools.PrintDirInfo();
+
+
+	} else if (cmd.compare("clusterchain") == 0) {			// Print used clusters with links from FAT area
+		printf("Cluster | Link\r\n");
+		uint32_t cluster = 0;
+		while (fatTools.clusterChain[cluster]) {
+			printf("%7lu   0x%04x\r\n", cluster, fatTools.clusterChain[cluster]);
+			++cluster;
+		}
+
+
+	} else if (cmd.compare("cacheinfo") == 0) {				// Basic counts of differences between cache and Flash
+		for (uint32_t blk = 0; blk < (fatCacheSectors / fatEraseSectors); ++blk) {
+
+			// Check if block is actually dirty or clean
+			uint32_t dirtyBytes = 0, firstDirtyByte = 0, lastDirtyByte = 0;
+			for (uint32_t byte = 0; byte < (fatEraseSectors * fatSectorSize); ++byte) {
+				uint32_t offset = (blk * fatEraseSectors * fatSectorSize) + byte;
+				if (fatTools.headerCache[offset] != flashAddress[offset]) {
+					++dirtyBytes;
+					if (firstDirtyByte == 0) {
+						firstDirtyByte = offset;
+					}
+					lastDirtyByte = offset;
+				}
+			}
+
+			const bool blockDirty = (fatTools.dirtyCacheBlocks & (1 << blk));
+			printf("Block %2lu: %s  Dirty bytes: %lu from %lu to %lu\r\n",
+					blk, (blockDirty ? "dirty" : "     "), dirtyBytes, firstDirtyByte, lastDirtyByte);
+		}
+
+		// the write cache holds any blocks currently being written to to avoid multiple block erasing when writing large data
+		if (fatTools.writeCacheDirty) {
+			uint32_t dirtyBytes = 0, firstDirtyByte = 0, lastDirtyByte = 0;
+			for (uint32_t byte = 0; byte < (fatEraseSectors * fatSectorSize); ++byte) {
+				uint32_t offset = (fatTools.writeBlock * fatEraseSectors * fatSectorSize) + byte;
+				if (fatTools.writeBlockCache[byte] != flashAddress[offset]) {
+					++dirtyBytes;
+					if (firstDirtyByte == 0) {
+						firstDirtyByte = offset;
+					}
+					lastDirtyByte = offset;
+				}
+			}
+
+			printf("Block %2lu: %s  Dirty bytes: %lu from %lu to %lu\r\n",
+					fatTools.writeBlock, (fatTools.writeCacheDirty ? "dirty" : "     "), dirtyBytes, firstDirtyByte, lastDirtyByte);
+
+		}
+
+
+	} else if (cmd.compare("cachechanges") == 0) {			// List bytes that are different in cache to Flash
+		uint32_t count = 0;
+		uint8_t oldCache = 0, oldFlash = 0;
+		bool skipDuplicates = false;
+
+		for (uint32_t i = 0; i < (fatCacheSectors * fatSectorSize); ++i) {
+
+			if (flashAddress[i] != fatTools.headerCache[i]) {					// Data has changed
+				if (oldCache == fatTools.headerCache[i] && oldFlash == flashAddress[i] && i > 0) {
+					if (!skipDuplicates) {
+						printf("...\r\n");						// Print continuation mark
+						skipDuplicates = true;
+					}
+				} else {
+					printf("%5lu c: 0x%02x f: 0x%02x\r\n", i, fatTools.headerCache[i], flashAddress[i]);
+				}
+
+				oldCache = fatTools.headerCache[i];
+				oldFlash = flashAddress[i];
+				++count;
+			} else {
+				if (skipDuplicates) {
+					printf("%5lu c: 0x%02x f: 0x%02x\r\n", i - 1, oldCache, oldFlash);
+					skipDuplicates = false;
+				}
+			}
+
+		}
+		printf("Found %lu different bytes\r\n", count);
+
+
+
 	} else if (cmd.compare(0, 5, "write") == 0) {				// Write test pattern to flash writeA:W [A = address; W = num words]
 		const int32_t address = ParseInt(cmd, 'e', 0, 0xFFFFFF);
 		if (address >= 0) {
@@ -136,7 +281,7 @@ void CDCHandler::ProcessCommand()
 		}
 
 
-	} else if (cmd.compare(0, 4, "mem:") == 0) {		// Flash: print 256 words of memory mapped data
+	} else if (cmd.compare(0, 4, "mem:") == 0) {					// Flash: print 1024 words of memory mapped data
 		const int32_t address = ParseInt(cmd, ':', 0, 0xFFFFFF);
 		if (address >= 0) {
 			const uint32_t* p = (uint32_t*)(0x90000000 + address);
@@ -146,28 +291,17 @@ void CDCHandler::ProcessCommand()
 			}
 		}
 
+	} else if (cmd.compare(0, 13, "printcluster:") == 0) {			// Flash: print 2048 words memory mapped data
+		const int32_t cluster = ParseInt(cmd, ':', 2, 0xFFFFFF);
+		if (cluster >= 2) {
+			printf("Cluster %ld:\r\n", cluster);
 
-	} else if (cmd.compare(0, 6, "erase:") == 0) {				// Erase sector
-		uint32_t addr;
-		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);
-		if (res.ec == std::errc()) {
-			extFlash.BlockErase(addr);
-			printf("Flash Sector Erase Address: %#010lx\r\n", addr);
-		} else {
-			usb->SendString("Invalid address\r\n");
+			const uint32_t* p = (uint32_t*)(fatTools.GetClusterAddr(cluster));
+
+			for (uint32_t a = 0; a < 512; a += 4) {
+				printf("0x%08lx: %#010lx %#010lx %#010lx %#010lx\r\n", (a * 4) + (uint32_t)p, p[a], p[a + 1], p[a + 2], p[a + 3]);
+			}
 		}
-
-	} else if (cmd.compare("noise") == 0) {
-		wavetable.wavetableType = WaveTable::TestData::noise;
-		wavetable.Init();
-
-	} else if (cmd.compare("sine") == 0) {
-			wavetable.wavetableType = WaveTable::TestData::twintone;
-			wavetable.Init();
-
-	} else if (cmd.compare("wav") == 0) {
-			wavetable.wavetableType = WaveTable::TestData::wavetable;
-			wavetable.Init();
 
 	} else {
 		printf("Unrecognised command: %s\r\nType 'help' for supported commands\r\n", cmd.data());
