@@ -29,7 +29,7 @@ bool FatTools::InitFatFS()
 	// Store pointer to start of root directoy
 	rootDirectory = (FATFileInfo*)(headerCache + fatFs.dirbase * fatSectorSize);
 
-	wavetable.UpdateWavetableList();				// Updated list of samples on flash
+	wavetable.UpdateWavetableList();						// Updated list of samples on flash
 
 	return true;
 }
@@ -119,16 +119,16 @@ void FatTools::CheckCache()
 	if ((dirtyCacheBlocks || writeCacheDirty) && cacheUpdated > 0 && ((int32_t)SysTickVal - (int32_t)cacheUpdated) > 100)	{
 
 		// Update the sample list to check if any meaningful data has changed (ignores Windows disk spam, assuming this occurs in the header cache)
-		bool sampleChanged = false;
+		[[maybe_unused]] bool sampleChanged = false;			// FIXME - need to better identify spurious Windows writes
 		if (dirtyCacheBlocks) {
 			sampleChanged = wavetable.UpdateWavetableList();
 		}
 
-		if (sampleChanged || writeCacheDirty) {
+		//if (sampleChanged || writeCacheDirty) {
 			usb.PauseEndpoint(usb.msc);				// Sends NAKs from the msc endpoint whilst the Flash device is unavailable
 			FlushCache();
 			usb.ResumeEndpoint(usb.msc);
-		}
+		//}
 		cacheUpdated = 0;
 
 		busy = false;								// Current batch of writes has completed - release sample memory

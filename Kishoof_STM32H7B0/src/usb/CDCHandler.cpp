@@ -76,6 +76,28 @@ void CDCHandler::ProcessCommand()
 			wavetable.wavetableType = WaveTable::TestData::wavetable;
 			wavetable.Init();
 
+	} else if (cmd.compare("wavetables") == 0) {				// Prints wavetable list
+		uint32_t pos = 0;
+
+		printf("Num Name          Bytes    Rate Bits Channels Valid Address    Frames\r\n");
+
+		while (wavetable.wavList[pos].name[0] != 0) {
+			printf("%3lu %.11s %7lu %7lu %3u%1s %8u %s     0x%08x %.1f\r\n",
+					pos,
+					wavetable.wavList[pos].name,
+					wavetable.wavList[pos].size,
+					wavetable.wavList[pos].sampleRate,
+					wavetable.wavList[pos].byteDepth * 8,
+					wavetable.wavList[pos].dataFormat == 3 ? "f" : " ",		// floating point format
+					wavetable.wavList[pos].channels,
+					wavetable.wavList[pos].valid ? "Y" : " ",
+					(unsigned int)wavetable.wavList[pos].startAddr,
+					(float)wavetable.wavList[pos].sampleCount / 2048.0f
+					);
+			++pos;
+		}
+		printf("\r\n");
+
 	} else if (cmd.compare(0, 11, "eraseblock:") == 0) {				// Erase sector
 		uint32_t addr;
 		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);

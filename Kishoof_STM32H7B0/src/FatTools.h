@@ -29,8 +29,7 @@ static constexpr uint32_t fatSectorCount = 125000;									// 125000 sectors of 
 static constexpr uint32_t fatClusterSize = 4096;									// Cluster size used by FAT (ie block size in data section)
 static constexpr uint32_t fatMaxCluster = (fatSectorSize * fatSectorCount) / fatClusterSize;		// Store largest cluster number
 static constexpr uint32_t fatEraseSectors = 8;										// Number of sectors in an erase block (4096 bytes per device)
-//static constexpr uint32_t fatHeaderSectors = 72;									// Sectors in header [1 Boot sector; 63 FAT; 8 Root Directory]
-static constexpr uint32_t fatCacheSectors = 128;										// 72 in Header + extra for testing NB - must be divisible by 16 (fatEraseSectors)
+static constexpr uint32_t fatCacheSectors = 128;									// 72 in Header + extra for testing NB - must be divisible by 16 (fatEraseSectors)
 
 extern uint8_t headerCacheDebug[fatSectorSize * fatCacheSectors];
 

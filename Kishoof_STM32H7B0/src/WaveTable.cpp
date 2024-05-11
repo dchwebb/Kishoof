@@ -365,6 +365,58 @@ void WaveTable::Draw()
 
 }
 
+bool WaveTable::GetWavInfo(Wav* wav)
+{
+	// populate the sample object with sample rate, number of channels etc
+	// Parsing the .wav format is a pain because the header is split into a variable number of chunks and sections are not word aligned
+
+	const uint8_t* wavHeader = fatTools.GetClusterAddr(wav->cluster, true);
+
+	// Check validity
+	if (*(uint32_t*)wavHeader != 0x46464952) {					// wav file should start with letters 'RIFF'
+		return false;
+	}
+
+	// Jump through chunks looking for 'fmt' chunk
+	uint32_t pos = 12;											// First chunk ID at 12 byte (4 word) offset
+	while (*(uint32_t*)&(wavHeader[pos]) != 0x20746D66) {		// Look for string 'fmt '
+		pos += (8 + *(uint32_t*)&(wavHeader[pos + 4]));			// Each chunk title is followed by the size of that chunk which can be used to locate the next one
+		if  (pos > 1000) {
+			return false;
+		}
+	}
+
+	wav->dataFormat = *(uint16_t*)&(wavHeader[pos + 8]);
+	wav->sampleRate = *(uint32_t*)&(wavHeader[pos + 12]);
+	wav->channels   = *(uint16_t*)&(wavHeader[pos + 10]);
+	wav->byteDepth  = *(uint16_t*)&(wavHeader[pos + 22]) / 8;
+
+	// Navigate forward to find the start of the data area
+	while (*(uint32_t*)&(wavHeader[pos]) != 0x61746164) {		// Look for string 'data'
+		pos += (8 + *(uint32_t*)&(wavHeader[pos + 4]));
+		if (pos > 1200) {
+			return false;
+		}
+	}
+
+	wav->dataSize = *(uint32_t*)&(wavHeader[pos + 4]);		// Num Samples * Num Channels * Bits per Sample / 8
+	wav->sampleCount = wav->dataSize / (wav->channels * wav->byteDepth);
+	wav->startAddr = &(wavHeader[pos + 8]);
+
+	// Follow cluster chain and store last cluster if not contiguous to tell playback engine when to do a fresh address lookup
+	uint32_t cluster = wav->cluster;
+	wav->lastCluster = 0xFFFFFFFF;
+
+	while (fatTools.clusterChain[cluster] != 0xFFFF) {
+		if (fatTools.clusterChain[cluster] != cluster + 1 && wav->lastCluster == 0xFFFFFFFF) {		// Store cluster at first discontinuity of chain
+			wav->lastCluster = cluster;
+		}
+		cluster = fatTools.clusterChain[cluster];
+	}
+	wav->endAddr = fatTools.GetClusterAddr(cluster);
+	return true;
+}
+
 
 bool WaveTable::UpdateWavetableList()
 {
@@ -391,7 +443,7 @@ bool WaveTable::UpdateWavetableList()
 
 		// Valid sample: not LFN, not deleted, not directory, extension = WAV
 		} else if (dirEntry->name[0] != FATFileInfo::fileDeleted && (dirEntry->attr & AM_DIR) == 0 && strncmp(&(dirEntry->name[8]), "WAV", 3) == 0) {
-			Sample* sample = &(sampleList[pos++]);
+			Wav* sample = &(wavList[pos++]);
 
 			// Check if any fields have changed
 			if (sample->cluster != dirEntry->firstClusterLow || sample->size != dirEntry->fileSize ||
@@ -401,7 +453,7 @@ bool WaveTable::UpdateWavetableList()
 				sample->cluster = dirEntry->firstClusterLow;
 				sample->size = dirEntry->fileSize;
 
-				//sample->valid = GetSampleInfo(sample);
+				sample->valid = GetWavInfo(sample);
 			}
 		} else {
 			lfnPosition = 0;
@@ -410,7 +462,7 @@ bool WaveTable::UpdateWavetableList()
 	}
 
 	// Blank next sample (if exists) to show end of list
-	Sample* sample = &(sampleList[pos++]);
+	Wav* sample = &(wavList[pos++]);
 	sample->name[0] = 0;
 
 
