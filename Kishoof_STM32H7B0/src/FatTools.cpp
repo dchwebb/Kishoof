@@ -275,6 +275,26 @@ void FatTools::PrintDirInfo(const uint32_t cluster)
 }
 
 
+void FatTools::PrintFatInfo()
+{
+	printf("Sector size: %lu\r\n"
+			"Cluster size %d sectors, %lu bytes\r\n"
+			"FAT size %lu sectors, %lu bytes\r\n"
+			"Root directory entries: %d\r\n"
+			"FAT offset: %lu\r\n"
+			"Root directory offset: %lu\r\n"
+			"Data section offset: %lu\r\n",
+			fatSectorSize,
+			fatFs.csize,
+			fatSectorSize * fatFs.csize,
+			fatFs.fsize,
+			fatSectorSize * fatFs.fsize,
+			fatFs.n_rootdir,
+			fatSectorSize * fatFs.fatbase,
+			fatSectorSize * fatFs.dirbase,
+			fatSectorSize * fatFs.database);
+}
+
 std::string FatTools::FileDate(const uint16_t date)
 {
 	// Bits 0–4: Day of month, valid value range 1-31 inclusive.

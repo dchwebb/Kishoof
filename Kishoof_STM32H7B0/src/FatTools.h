@@ -8,7 +8,7 @@
 /* FAT16 Structure on 512 MBit Flash device:
 
 Sector = 512 bytes
-Cluster = 4 * 512 bytes = 2048 bytes
+Cluster = 8 * 512 bytes = 4096 bytes
 Block = 4096 bytes (minimum erase size)
 
 64 MBytes = 125,000 Sectors (31250 Clusters - data area is 7802 clusters after 10 clusters used for headers)
@@ -16,9 +16,9 @@ Block = 4096 bytes (minimum erase size)
 Blocks    Bytes			Description
 ------------------------------------
 0           0 -   511	Boot Sector (AKA Reserved): 1 sector
-0-15      512 - 16383	FAT (holds cluster linked list): 123 sectors - 31250 entries each 16 bit
-4       16384 - 20479	Root Directory: 8 sectors - 128 root directory entries at 32 bytes each (32 * 128 = 4096)
-5-      20480 - 		Data section: 7803 clusters = 31,212 sectors
+0-7       512 - 32767	FAT (holds cluster linked list): 123 sectors - 31250 entries each 16 bit
+8       32768 - 36863	Root Directory: 8 sectors - 128 root directory entries at 32 bytes each (32 * 128 = 4096)
+5-      36864 - 		Data section: 7803 clusters = 31,212 sectors
 
 Cluster 2: 20480, Cluster 3: 22528, Cluster 4: 24576, Cluster 5: 26624, Cluster 6: 28672
 */
@@ -26,11 +26,11 @@ Cluster 2: 20480, Cluster 3: 22528, Cluster 4: 24576, Cluster 5: 26624, Cluster 
 
 static constexpr uint32_t fatSectorSize = 512;										// Sector size used by FAT
 static constexpr uint32_t fatSectorCount = 125000;									// 125000 sectors of 512 bytes = 64 MBytes
-static constexpr uint32_t fatClusterSize = 2048;									// Cluster size used by FAT (ie block size in data section)
+static constexpr uint32_t fatClusterSize = 4096;									// Cluster size used by FAT (ie block size in data section)
 static constexpr uint32_t fatMaxCluster = (fatSectorSize * fatSectorCount) / fatClusterSize;		// Store largest cluster number
 static constexpr uint32_t fatEraseSectors = 8;										// Number of sectors in an erase block (4096 bytes per device)
 //static constexpr uint32_t fatHeaderSectors = 72;									// Sectors in header [1 Boot sector; 63 FAT; 8 Root Directory]
-static constexpr uint32_t fatCacheSectors = 255;										// 72 in Header + extra for testing NB - must be divisible by 16 (fatEraseSectors)
+static constexpr uint32_t fatCacheSectors = 128;										// 72 in Header + extra for testing NB - must be divisible by 16 (fatEraseSectors)
 
 extern uint8_t headerCacheDebug[fatSectorSize * fatCacheSectors];
 
@@ -83,6 +83,7 @@ public:
 	const uint8_t* GetClusterAddr(const uint32_t cluster, const bool ignoreCache = false);
 	void Write(const uint8_t* readBuff, const uint32_t writeSector, const uint32_t sectorCount);
 	void PrintDirInfo(uint32_t cluster = 0);
+	void PrintFatInfo();
 	void PrintFiles(char* path);
 	void CheckCache();
 	uint8_t FlushCache();
@@ -95,8 +96,7 @@ private:
 	// Create cache for header part of FAT [Header consists of 1 sector boot sector; 31 sectors FAT; 8 sectors Root Directory + extra]
 	uint32_t cacheUpdated = 0;			// Store the systick time the cache was last updated so separate timer can periodically clean up cache
 	uint8_t headerCache[fatSectorSize * fatCacheSectors];	// Cache for storing the header section of the Flash FAT drive
-	//uint8_t* headerCache = (uint8_t*)&headerCacheDebug;
-	uint32_t dirtyCacheBlocks = 0;		// Bit array containing dirty blocks in header cache
+	uint64_t dirtyCacheBlocks = 0;		// Bit array containing dirty blocks in header cache
 
 	// Initialise Write Cache - this is used to cache write data into blocks for safe erasing when overwriting existing data
 	uint8_t writeBlockCache[fatSectorSize * fatEraseSectors];

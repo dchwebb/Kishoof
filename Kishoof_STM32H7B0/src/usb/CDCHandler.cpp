@@ -177,8 +177,8 @@ void CDCHandler::ProcessCommand()
 		printf("** Flash Corrupt **\r\n");
 
 
-
-
+	} else if (cmd.compare("fatinfo") == 0) {						// Get basic FAT directory list
+		fatTools.PrintFatInfo();
 
 	} else if (cmd.compare("dir") == 0) {						// Get basic FAT directory list
 		if (fatTools.noFileSystem) {
@@ -308,6 +308,7 @@ void CDCHandler::ProcessCommand()
 				printf("%6ld: %#010lx %#010lx %#010lx %#010lx\r\n", (a * 4) + address, p[a], p[a + 1], p[a + 2], p[a + 3]);
 			}
 		}
+		printf("\r\n");
 
 	} else if (cmd.compare(0, 13, "printcluster:") == 0) {			// Flash: print 2048 words memory mapped data
 		const int32_t cluster = ParseInt(cmd, ':', 2, 0xFFFFFF);
