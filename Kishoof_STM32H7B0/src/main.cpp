@@ -41,7 +41,7 @@ int main(void) {
 	filter.Init();					// Initialise filter coefficients, windows etc
 	usb.Init(false);
 	wavetable.Init();
-//	InitI2S();						// Initialise I2S which will start main sample interrupts
+	InitI2S();						// Initialise I2S which will start main sample interrupts
 
 	while (1) {
 		filter.Update();			// Check if filter coefficients need to be updated
@@ -51,7 +51,7 @@ int main(void) {
 
 		if (!(SPI_DMA_Working)) {
 			//StartDebugTimer();
-//			wavetable.Draw();
+			wavetable.Draw();
 			//filterInterval = StopDebugTimer();
 			fatTools.CheckCache();		// Check if any outstanding cache changes need to be written to Flash
 		}

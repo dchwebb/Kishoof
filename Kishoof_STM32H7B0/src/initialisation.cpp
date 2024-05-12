@@ -600,7 +600,7 @@ void InitOctoSPI()
 	OCTOSPI1->DCR1 |= (3 << OCTOSPI_DCR1_CSHT_Pos);			// CSHT + 1: min no CLK cycles where NCS must stay high between commands (Min 10ns for reads 40ns for writes)
 	OCTOSPI1->DCR1 &= ~OCTOSPI_DCR1_CKMODE;					// Clock mode 0: CLK is low when NCS high
 
-	OCTOSPI1->DCR2 |= (5 << OCTOSPI_DCR2_PRESCALER_Pos);	// Set prescaler to n + 1 => 153.6 MHz / (n + 1) - tested to 76.8MHz
+	OCTOSPI1->DCR2 |= (1 << OCTOSPI_DCR2_PRESCALER_Pos);	// Set prescaler to n + 1 => 153.6 MHz / (n + 1) - tested to 76.8MHz
 
 //	OCTOSPI1->DCR3 |= (3 << OCTOSPI_DCR3_CSBOUND_Pos);		// Set Chip select boundary
 //	OCTOSPI1->DCR4 = 250; 									// Refresh Time: The chip select should be released every 4us

@@ -31,7 +31,7 @@ void WaveTable::CalcSample()
 	// Calculations: 11090 is difference in cv between two octaves; 50110 is cv at 1v and 130.81 is desired Hz at 1v
 	constexpr float pitchBase = (65.41f * (2048.0f / sampleRate)) / std::pow(2.0, -50120.0f / 11090.0f);
 	constexpr float cvMult = -1.0f / 11090.0f;
-	float newInc = pitchBase * std::pow(2.0f, (float)adc.Pitch_CV * cvMult);			// for cycle length matching sample rate (48k)
+	float newInc = pitchBase * std::pow(2.0f, (float)adc.WarpCV * cvMult);			// for cycle length matching sample rate (48k)
 	pitchInc = 0.99 * pitchInc + 0.01 * newInc;
 
 	filter.cutoff = 1.0f / pitchInc;				// Set filter for recalculation
@@ -75,19 +75,19 @@ void WaveTable::CalcSample()
 inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 {
 	// Get location of current wavetable frame in wavetable
-	const float wtPos = ((float)(wavFile.tableCount - 1) / 43000.0f) * (65536 - channel[chn].adcControl);
-	channel[chn].pos = std::clamp((float)(0.99f * channel[chn].pos + 0.01f * wtPos), 0.0f, (float)(wavFile.tableCount - 1));	// Smooth
+	const float wtPos = ((float)(activeWaveTable->tableCount - 1) / 43000.0f) * (65536 - channel[chn].adcControl);
+	channel[chn].pos = std::clamp((float)(0.99f * channel[chn].pos + 0.01f * wtPos), 0.0f, (float)(activeWaveTable->tableCount - 1));	// Smooth
 	const uint32_t sampleOffset = 2048 * std::floor(channel[chn].pos);			// get sample position of wavetable frame
 
 	// Interpolate between samples
 	const float ratio = readPos - (uint32_t)readPos;
-	outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset, ratio);
+	outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)activeWaveTable->startAddr + sampleOffset, ratio);
 
 	// Interpolate between wavetables if channel A
 	if (!stepped && chn == 0) {
 		const float wtRatio = channel[chn].pos - (uint32_t)channel[chn].pos;
 		if (wtRatio > 0.0001f) {
-			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, activeWaveTable + sampleOffset + 2048, ratio);
+			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)activeWaveTable->startAddr + sampleOffset + 2048, ratio);
 			outputSamples[0] = std::lerp(outputSamples[0], outputSample2, wtRatio);
 		}
 	}
@@ -186,13 +186,21 @@ inline void WaveTable::AdditiveWave()
 void WaveTable::Init()
 {
 	if (wavetableType == TestData::wavetable) {
+		// Locate valid wavetable
+		for (auto& wav : wavList) {
+			if (wav.valid) {
+				activeWaveTable = &wav;
+				return;
+			}
+		}
 
 		//memcpy((uint8_t*)0x24000000, (uint8_t*)0x08100000, 131208);		// Copy wavetable to ram
 
-		LoadWaveTable((uint32_t*)0x08100000);			// 4088.wav
+		//LoadWaveTable((uint32_t*)0x08100000);			// 4088.wav
 		//LoadWaveTable((uint32_t*)0x08130000);			// Basic Shapes.wav
-		activeWaveTable = (float*)wavFile.startAddr;
+		//activeWaveTable = (float*)wavFile.startAddr;
 	} else {
+		/*
 		// Populate wavFile info
 		wavFile.dataFormat = 3;
 		wavFile.channels   = 1;
@@ -225,7 +233,7 @@ void WaveTable::Init()
 			}
 		}
 
-
+*/
 	}
 }
 
@@ -239,7 +247,7 @@ float WaveTable::FastTanh(float x)
 	return a / b;
 }
 
-
+/*
 bool WaveTable::LoadWaveTable(uint32_t* startAddr)
 {
 	// populate the sample object with sample rate, number of channels etc
@@ -280,7 +288,7 @@ bool WaveTable::LoadWaveTable(uint32_t* startAddr)
 	wavFile.startAddr = (uint8_t*)&(wavHeader[pos + 8]);
 	wavFile.fileSize = pos + 8 + wavFile.dataSize;		// header size + data size
 	return true;
-}
+}*/
 
 /*
 void WaveTable::Draw()
@@ -402,6 +410,7 @@ bool WaveTable::GetWavInfo(Wav* wav)
 	wav->dataSize = *(uint32_t*)&(wavHeader[pos + 4]);		// Num Samples * Num Channels * Bits per Sample / 8
 	wav->sampleCount = wav->dataSize / (wav->channels * wav->byteDepth);
 	wav->startAddr = &(wavHeader[pos + 8]);
+	wav->tableCount = wav->sampleCount / 2048;
 
 	// Follow cluster chain and store last cluster if not contiguous to tell playback engine when to do a fresh address lookup
 	uint32_t cluster = wav->cluster;
@@ -443,17 +452,17 @@ bool WaveTable::UpdateWavetableList()
 
 		// Valid sample: not LFN, not deleted, not directory, extension = WAV
 		} else if (dirEntry->name[0] != FATFileInfo::fileDeleted && (dirEntry->attr & AM_DIR) == 0 && strncmp(&(dirEntry->name[8]), "WAV", 3) == 0) {
-			Wav* sample = &(wavList[pos++]);
+			Wav* wav = &(wavList[pos++]);
 
 			// Check if any fields have changed
-			if (sample->cluster != dirEntry->firstClusterLow || sample->size != dirEntry->fileSize ||
-					strncmp(sample->name, dirEntry->name, 11) != 0) {
+			if (wav->cluster != dirEntry->firstClusterLow || wav->size != dirEntry->fileSize ||
+					strncmp(wav->name, dirEntry->name, 11) != 0) {
 				changed = true;
-				strncpy(sample->name, dirEntry->name, 11);
-				sample->cluster = dirEntry->firstClusterLow;
-				sample->size = dirEntry->fileSize;
+				strncpy(wav->name, dirEntry->name, 11);
+				wav->cluster = dirEntry->firstClusterLow;
+				wav->size = dirEntry->fileSize;
 
-				sample->valid = GetWavInfo(sample);
+				wav->valid = GetWavInfo(wav);
 			}
 		} else {
 			lfnPosition = 0;

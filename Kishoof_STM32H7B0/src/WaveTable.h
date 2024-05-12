@@ -68,6 +68,7 @@ private:
 		uint8_t byteDepth;
 		uint16_t dataFormat;				// 1 = PCM; 3 = Float
 		uint8_t channels;					// 1 = mono, 2 = stereo
+		uint16_t tableCount;				// Number of 2048 sample wavetables in file
 		bool valid;							// false if header cannot be processed
 	} wavList[128];
 
@@ -78,12 +79,12 @@ private:
 	int32_t ParseInt(const std::string_view cmd, const std::string_view precedingChar, const int32_t low, const int32_t high);
 	bool GetWavInfo(Wav* sample);
 
-	enum class TestData {noise, twintone, testwaves, wavetable} wavetableType = TestData::testwaves;
+	enum class TestData {noise, twintone, testwaves, wavetable} wavetableType = TestData::wavetable;
 
 	char longFileName[100];
 	uint8_t lfnPosition = 0;
 
-	float* activeWaveTable;
+	Wav* activeWaveTable;
 	struct {
 		volatile uint16_t& adcControl;
 		float pos;		// Smoothed ADC value
@@ -105,8 +106,8 @@ private:
 	bool activeDrawBuffer = true;
 
 
-	GpioPin debugMain{GPIOD, 5, GpioPin::Type::Output};		// PD5: Debug
-	GpioPin debugDraw{GPIOD, 6, GpioPin::Type::Output};		// PD6: Debug
+	GpioPin debugMain{GPIOD, 6, GpioPin::Type::Output};		// PD5: Debug
+	GpioPin debugDraw{GPIOD, 5, GpioPin::Type::Output};		// PD6: Debug
 };
 
 extern WaveTable wavetable;
