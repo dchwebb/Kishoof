@@ -29,8 +29,9 @@ void WaveTable::CalcSample()
 	// Pitch calculations - Increase pitchBase to increase pitch; Reduce ABS(cvMult) to increase spread
 
 	// Calculations: 11090 is difference in cv between two octaves; 50110 is cv at 1v and 130.81 is desired Hz at 1v
-	constexpr float pitchBase = (65.41f * (2048.0f / sampleRate)) / std::pow(2.0, -50120.0f / 11090.0f);
-	constexpr float cvMult = -1.0f / 11090.0f;
+	//constexpr float pitchBase = (65.41f * (2048.0f / sampleRate)) / std::pow(2.0, -50120.0f / 11090.0f);
+	constexpr float pitchBase = (65.41f * (2048.0f / sampleRate)) / std::pow(2.0, -50050.0f / 11330.0f);
+	constexpr float cvMult = -1.0f / 11330.0f;
 	float newInc = pitchBase * std::pow(2.0f, (float)adc.WarpCV * cvMult);			// for cycle length matching sample rate (48k)
 	pitchInc = 0.99 * pitchInc + 0.01 * newInc;
 
@@ -75,19 +76,19 @@ void WaveTable::CalcSample()
 inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 {
 	// Get location of current wavetable frame in wavetable
-	const float wtPos = ((float)(activeWaveTable->tableCount - 1) / 43000.0f) * (65536 - channel[chn].adcControl);
-	channel[chn].pos = std::clamp((float)(0.99f * channel[chn].pos + 0.01f * wtPos), 0.0f, (float)(activeWaveTable->tableCount - 1));	// Smooth
+	const float wtPos = ((float)(wavList[activeWaveTable].tableCount - 1) / 43000.0f) * channel[chn].adcControl;
+	channel[chn].pos = std::clamp((float)(0.99f * channel[chn].pos + 0.01f * wtPos), 0.0f, (float)(wavList[activeWaveTable].tableCount - 1));	// Smooth
 	const uint32_t sampleOffset = 2048 * std::floor(channel[chn].pos);			// get sample position of wavetable frame
 
 	// Interpolate between samples
 	const float ratio = readPos - (uint32_t)readPos;
-	outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)activeWaveTable->startAddr + sampleOffset, ratio);
+	outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wavList[activeWaveTable].startAddr + sampleOffset, ratio);
 
 	// Interpolate between wavetables if channel A
 	if (!stepped && chn == 0) {
 		const float wtRatio = channel[chn].pos - (uint32_t)channel[chn].pos;
 		if (wtRatio > 0.0001f) {
-			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)activeWaveTable->startAddr + sampleOffset + 2048, ratio);
+			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wavList[activeWaveTable].startAddr + sampleOffset + 2048, ratio);
 			outputSamples[0] = std::lerp(outputSamples[0], outputSample2, wtRatio);
 		}
 	}
@@ -129,8 +130,6 @@ inline float WaveTable::CalcWarp()
 			adjReadPos = readPos + sinWarp * (32767 - adc.Warp_Amt_Pot) * bendAmt;
 		}
 
-//		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
-//		if (adjReadPos < 0) { adjReadPos += 2048; }
 	}
 	break;
 
@@ -183,22 +182,30 @@ inline void WaveTable::AdditiveWave()
 }
 
 
+void WaveTable::ChangeWaveTable(int32_t upDown)
+{
+	int32_t nextWavetable = (int32_t)activeWaveTable + upDown;
+	if (nextWavetable >= 0 && nextWavetable < (int32_t)maxWavetable) {
+		activeWaveTable = nextWavetable;
+		strncpy(waveTableName, wavList[activeWaveTable].name, 11);
+	}
+}
+
+
 void WaveTable::Init()
 {
 	if (wavetableType == TestData::wavetable) {
 		// Locate valid wavetable
+		uint32_t pos = 0;
 		for (auto& wav : wavList) {
 			if (wav.valid) {
-				activeWaveTable = &wav;
+				activeWaveTable = pos;
+				strncpy(waveTableName, wav.name, 11);
 				return;
 			}
+			++pos;
 		}
 
-		//memcpy((uint8_t*)0x24000000, (uint8_t*)0x08100000, 131208);		// Copy wavetable to ram
-
-		//LoadWaveTable((uint32_t*)0x08100000);			// 4088.wav
-		//LoadWaveTable((uint32_t*)0x08130000);			// Basic Shapes.wav
-		//activeWaveTable = (float*)wavFile.startAddr;
 	} else {
 		/*
 		// Populate wavFile info
@@ -238,140 +245,6 @@ void WaveTable::Init()
 }
 
 
-// Algorithm source: https://varietyofsound.wordpress.com/2011/02/14/efficient-tanh-computation-using-lamberts-continued-fraction/
-float WaveTable::FastTanh(float x)
-{
-	float x2 = x * x;
-	float a = x * (135135.0f + x2 * (17325.0f + x2 * (378.0f + x2)));
-	float b = 135135.0f + x2 * (62370.0f + x2 * (3150.0f + x2 * 28.0f));
-	return a / b;
-}
-
-/*
-bool WaveTable::LoadWaveTable(uint32_t* startAddr)
-{
-	// populate the sample object with sample rate, number of channels etc
-	// Parsing the .wav format is a pain because the header is split into a variable number of chunks and sections are not word aligned
-
-	const uint8_t* wavHeader = (uint8_t*)startAddr;
-
-	// Check validity
-	if (*(uint32_t*)wavHeader != 0x46464952) {					// wav file should start with letters 'RIFF'
-		return false;
-	}
-
-	// Jump through chunks looking for 'fmt' chunk
-	uint32_t pos = 12;											// First chunk ID at 12 byte (4 word) offset
-	while (*(uint32_t*)&(wavHeader[pos]) != 0x20746D66) {		// Look for string 'fmt '
-		pos += (8 + *(uint32_t*)&(wavHeader[pos + 4]));			// Each chunk title is followed by the size of that chunk which can be used to locate the next one
-		if  (pos > 1000) {
-			return false;
-		}
-	}
-
-	wavFile.dataFormat = *(uint16_t*)&(wavHeader[pos + 8]);
-	wavFile.sampleRate = *(uint32_t*)&(wavHeader[pos + 12]);
-	wavFile.channels   = *(uint16_t*)&(wavHeader[pos + 10]);
-	wavFile.byteDepth  = *(uint16_t*)&(wavHeader[pos + 22]) / 8;
-
-	// Navigate forward to find the start of the data area
-	while (*(uint32_t*)&(wavHeader[pos]) != 0x61746164) {		// Look for string 'data'
-		pos += (8 + *(uint32_t*)&(wavHeader[pos + 4]));
-		if (pos > 1200) {
-			return false;
-		}
-	}
-
-	wavFile.dataSize = *(uint32_t*)&(wavHeader[pos + 4]);		// Num Samples * Num Channels * Bits per Sample / 8
-	wavFile.sampleCount = wavFile.dataSize / (wavFile.channels * wavFile.byteDepth);
-	wavFile.tableCount = wavFile.sampleCount / 2048;
-	wavFile.startAddr = (uint8_t*)&(wavHeader[pos + 8]);
-	wavFile.fileSize = pos + 8 + wavFile.dataSize;		// header size + data size
-	return true;
-}*/
-
-/*
-void WaveTable::Draw()
-{
-	// Populate a frame buffer to display the wavetable values (half screen refresh)
-
-	if (!bufferClear) {		// Wait until the framebuffer has been cleared by the DMA blanking process
-		return;
-	}
-
-	debugDraw.SetHigh();			// Debug
-
-	const uint8_t startPos = activeDrawBuffer ? 0 : 120;
-	uint8_t oldHeight = drawData[activeDrawBuffer ? 0 : 119];
-	for (uint8_t i = 0; i < 120; ++i) {
-		// do while loop needed to draw vertical lines where adjacent samples are vertically spaced by more than a pixel
-		uint8_t currHeight = drawData[i + startPos];
-		do {
-			const uint32_t pos = currHeight * 120 + i;
-			lcd.drawBuffer[activeDrawBuffer][pos] = LCD_GREEN;
-			currHeight += currHeight > oldHeight ? -1 : 1;
-		} while (currHeight != oldHeight);
-
-		oldHeight = drawData[i + startPos];
-	}
-
-	lcd.PatternFill(startPos, 60, startPos + 119, 179, lcd.drawBuffer[activeDrawBuffer]);
-	activeDrawBuffer = !activeDrawBuffer;
-
-	// Trigger MDMA frame buffer blanking (memset too slow)
-	MDMATransfer(lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 4);
-	bufferClear = false;
-
-
-	debugDraw.SetLow();			// Debug off
-}
-*/
-
-uint32_t blankData;			// Used to transfer zeros into frame buffer by MDMA
-
-void WaveTable::Draw()
-{
-	// Populate a frame buffer to display the wavetable values (full screen refresh)
-	//debugDraw.SetHigh();			// Debug
-
-	if (warpType != oldWarpType) {
-		oldWarpType = warpType;
-		std::string_view s = warpNames[(uint8_t)warpType];
-		//lcd.DrawString(60, 180, s, &lcd.Font_Small, LCD_WHITE, LCD_BLACK);
-
-		const uint32_t textLeft = 75;
-		const uint32_t textTop = 190;
-		lcd.DrawStringMem(0, 0, lcd.Font_Large.Width * s.length(), lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, LCD_WHITE, LCD_BLACK);
-		lcd.PatternFill(textLeft, textTop, textLeft - 1 + lcd.Font_Large.Width * s.length(), textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
-
-	} else {
-		uint8_t oldHeight = drawData[0];
-		for (uint8_t i = 0; i < 240; ++i) {
-
-			// do while loop needed to draw vertical lines where adjacent samples are vertically spaced by more than a pixel
-			uint8_t currHeight = drawData[i];
-			do {
-				const uint32_t pos = currHeight * LCD::height + i;
-				lcd.drawBuffer[activeDrawBuffer][pos] = LCD_GREEN;
-				currHeight += currHeight > oldHeight ? -1 : 1;
-			} while (currHeight != oldHeight);
-
-			oldHeight = drawData[i];
-		}
-
-		lcd.PatternFill(0, 60, LCD::width - 1, 179, lcd.drawBuffer[activeDrawBuffer]);
-	}
-	activeDrawBuffer = !activeDrawBuffer;
-
-	// Trigger MDMA frame buffer blanking
-	blankData = 0;
-	MDMATransfer(MDMA_Channel0, (const uint8_t*)&blankData, (const uint8_t*)lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 2);
-	bufferClear = false;
-
-
-	//debugDraw.SetLow();			// Debug off
-
-}
 
 bool WaveTable::GetWavInfo(Wav* wav)
 {
@@ -490,4 +363,15 @@ int32_t WaveTable::ParseInt(const std::string_view cmd, const std::string_view p
 		return low - 1;
 	}
 	return val;
+}
+
+
+
+// Algorithm source: https://varietyofsound.wordpress.com/2011/02/14/efficient-tanh-computation-using-lamberts-continued-fraction/
+float WaveTable::FastTanh(float x)
+{
+	float x2 = x * x;
+	float a = x * (135135.0f + x2 * (17325.0f + x2 * (378.0f + x2)));
+	float b = 135135.0f + x2 * (62370.0f + x2 * (3150.0f + x2 * 28.0f));
+	return a / b;
 }

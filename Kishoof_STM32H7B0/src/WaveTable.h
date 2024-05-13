@@ -9,15 +9,17 @@
 struct WaveTable {
 	friend class CDCHandler;				// Allow the serial handler access to private data for debug printing
 	friend class Config;					// Allow the config access to private data to save settings
+	friend class UI;
 public:
 	void CalcSample();						// Called by interrupt handler to generate next sample
 	void Init();							// Initialise caches, buffers etc
 	bool LoadWaveTable(uint32_t* startAddr);
 	void Draw();
 	bool UpdateWavetableList();
+	void ChangeWaveTable(int32_t upDown);
 
 	float testWavetable[4096];
-	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
+
 	float outputSamples[2] = {0.0f, 0.0f};
 
 	enum class Warp {none, squeeze, bend, mirror, reverse, tzfm, count} warpType = Warp::none;
@@ -55,6 +57,8 @@ public:
 	}
 
 private:
+	static constexpr uint32_t maxWavetable = 128;
+
 	struct Wav {
 		char name[11];
 		uint32_t size;						// Size of file in bytes
@@ -70,7 +74,7 @@ private:
 		uint8_t channels;					// 1 = mono, 2 = stereo
 		uint16_t tableCount;				// Number of 2048 sample wavetables in file
 		bool valid;							// false if header cannot be processed
-	} wavList[128];
+	} wavList[maxWavetable];
 
 	void OutputSample(uint8_t channel, float ratio);
 	float FastTanh(float x);
@@ -84,7 +88,9 @@ private:
 	char longFileName[100];
 	uint8_t lfnPosition = 0;
 
-	Wav* activeWaveTable;
+	uint32_t activeWaveTable;
+	char waveTableName[11];			// Store name of active wavetable so can be relocated after disk activity
+
 	struct {
 		volatile uint16_t& adcControl;
 		float pos;		// Smoothed ADC value
@@ -103,7 +109,7 @@ private:
 	float debugTiming;
 
 	uint8_t drawData[240];
-	bool activeDrawBuffer = true;
+
 
 
 	GpioPin debugMain{GPIOD, 6, GpioPin::Type::Output};		// PD5: Debug

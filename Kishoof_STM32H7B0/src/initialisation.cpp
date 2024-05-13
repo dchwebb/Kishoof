@@ -447,11 +447,11 @@ uint32_t ReadI2STimer()
 
 void InitDebugTimer()
 {
-	// Configure timer to use in internal debug timing - uses APB1 timer clock which is Main Clock / 2 [400MHz / 2 = 200MHz]
-	// Each tick is 5ns with PSC 10nS - full range is 655.350 uS
+	// Configure timer to use in internal debug timing - uses APB1 timer clock which is Main Clock [280MHz]
+	// Each tick is 4ns with PSC 12nS - full range is 786.42 uS
 	RCC->APB1LENR |= RCC_APB1LENR_TIM3EN;
 	TIM3->ARR = 65535;
-	TIM3->PSC = 1;
+	TIM3->PSC = 2;
 }
 
 
@@ -467,7 +467,7 @@ float StopDebugTimer()
 	// Return time running in microseconds
 	const uint32_t count = TIM3->CNT;
 	TIM3->CR1 &= ~TIM_CR1_CEN;
-	return 0.01f * count;
+	return 0.0012 * count;
 }
 
 

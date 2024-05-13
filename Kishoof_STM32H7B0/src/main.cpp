@@ -5,6 +5,7 @@
 #include "Filter.h"
 #include "lcd.h"
 #include "ExtFlash.h"
+#include "UI.h"
 
 volatile uint32_t SysTickVal;
 extern uint32_t SystemCoreClock;
@@ -26,7 +27,7 @@ extern "C" {
 #include "interrupts.h"
 }
 
-float filterInterval = 0.0f;
+float wavetableCalc = 0.0f;
 
 uint32_t lastVal;
 bool USBDebug = false;
@@ -45,16 +46,11 @@ int main(void) {
 
 	while (1) {
 		filter.Update();			// Check if filter coefficients need to be updated
-
-
 		usb.cdc.ProcessCommand();	// Check for incoming USB serial commands
+		ui.Update();
+		fatTools.CheckCache();		// Check if any outstanding cache changes need to be written to Flash
 
-		if (!(SPI_DMA_Working)) {
-			//StartDebugTimer();
-			wavetable.Draw();
-			//filterInterval = StopDebugTimer();
-			fatTools.CheckCache();		// Check if any outstanding cache changes need to be written to Flash
-		}
+
 
 #if (USB_DEBUG)
 		if ((GPIOB->IDR & GPIO_IDR_ID4) == 0 && USBDebug) {

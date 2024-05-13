@@ -27,7 +27,7 @@ public:
 	float windowBeta = 4;					// between 0.0 and 10.0 - trade-off between stop band attenuation and filter transistion width
 
 private:
-	uint8_t firTaps = 23;
+	uint8_t firTaps = 33;
 
 	bool activateFilter = true;				// For debug
 	bool activeFilter = 0;					// For double-buffering coefficients (so coefficient calculation won't interfere with current filter)
