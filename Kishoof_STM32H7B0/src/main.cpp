@@ -40,8 +40,9 @@ int main(void) {
 	extFlash.Init();
 
 	filter.Init();					// Initialise filter coefficients, windows etc
-	usb.Init(false);
 	wavetable.Init();
+
+	usb.Init(false);
 	InitI2S();						// Initialise I2S which will start main sample interrupts
 
 	while (1) {
