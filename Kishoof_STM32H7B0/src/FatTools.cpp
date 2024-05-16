@@ -29,6 +29,8 @@ bool FatTools::InitFatFS()
 	// Store pointer to start of root directoy
 	rootDirectory = (FATFileInfo*)(headerCache + fatFs.dirbase * fatSectorSize);
 
+	wavetable.UpdateWavetableList();						// Updated list of samples on flash
+
 	return true;
 }
 
@@ -128,13 +130,15 @@ void FatTools::CheckCache()
 			usb.ResumeEndpoint(usb.msc);
 		//}
 		cacheUpdated = 0;
+
+		busy = false;								// Current batch of writes has completed - release sample memory
 	}
 }
 
 
 uint8_t FatTools::FlushCache()
 {
-	flushCacheBusy = true;
+	busy = true;									// Will be reset once CheckCache has confirmed that sufficient time has elapsed since last write
 
 	// Writes any dirty data in the header cache to Flash
 	uint8_t blockPos = 0;
@@ -158,10 +162,10 @@ uint8_t FatTools::FlushCache()
 		}
 		writeCacheDirty = false;			// Indicates that write cache is clean
 	}
-	flushCacheBusy = false;
-
 	return count;
 }
+
+
 
 
 const uint8_t* FatTools::GetClusterAddr(const uint32_t cluster, const bool ignoreCache)
@@ -189,7 +193,6 @@ const uint8_t* FatTools::GetSectorAddr(const uint32_t sector, const uint8_t* buf
 		if (buffer == nullptr) {
 			return sectorAddress;
 		} else {
-			mdmaBusy = true;
 			MDMATransfer(MDMA_Channel1, sectorAddress, buffer, bufferSize);
 			return nullptr;
 		}

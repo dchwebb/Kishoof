@@ -28,7 +28,6 @@ void MDMA_IRQHandler()
 	// fires when MDMA Flash to memory transfer has completed
 	if (MDMA->GISR0 & MDMA_GISR0_GIF1) {
 		MDMA_Channel1->CIFCR |= MDMA_CIFCR_CBTIF;		// Clear transfer complete interrupt flag
-		fatTools.mdmaBusy = false;
 		usb.msc.DMATransferDone();
 	}
 }

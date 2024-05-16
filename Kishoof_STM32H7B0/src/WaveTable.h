@@ -90,7 +90,6 @@ private:
 
 	uint32_t activeWaveTable;
 	char waveTableName[11];			// Store name of active wavetable so can be relocated after disk activity
-	uint32_t wavetableCount;
 
 	struct {
 		volatile uint16_t& adcControl;

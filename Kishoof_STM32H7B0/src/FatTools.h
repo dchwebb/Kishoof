@@ -71,11 +71,7 @@ class FatTools
 {
 	friend class CDCHandler;
 public:
-	bool mdmaBusy = false;
-	bool flushCacheBusy = false;
-	bool writeBusy = false;
-
-
+	bool busy = false;
 	bool noFileSystem = true;
 	uint16_t* clusterChain;				// Pointer to beginning of cluster chain (AKA FAT)
 	FATFileInfo* rootDirectory;			// Pointer to start of FAT directory listing
@@ -92,7 +88,6 @@ public:
 	uint8_t FlushCache();
 	void InvalidateFatFSCache();
 	bool Format();
-	bool Busy() { return mdmaBusy | flushCacheBusy | writeBusy; }
 private:
 	FATFS fatFs;						// File system object for RAM disk logical drive
 	const char fatPath[4] = "0:/";		// Logical drive path for FAT File system
