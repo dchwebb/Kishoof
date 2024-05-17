@@ -474,10 +474,8 @@ float StopDebugTimer()
 
 void InitIO()
 {
-	GpioPin::Init(GPIOE, 2, GpioPin::Type::Input);				// PE2: Mode switch
 	GpioPin::Init(GPIOE, 3, GpioPin::Type::Input);				// PE3: Warp_Polarity_Btn
-	GpioPin::Init(GPIOD, 0, GpioPin::Type::Input);				// PD0: Octave_Up
-	GpioPin::Init(GPIOD, 1, GpioPin::Type::Input);				// PD1: Octave_Down
+
 	GpioPin::Init(GPIOD, 8, GpioPin::Type::Input);				// PD8: ChB_Mix
 	GpioPin::Init(GPIOD, 9, GpioPin::Type::Input);				// PD9: ChB_RM
 	GpioPin::Init(GPIOD, 10, GpioPin::Type::Input);				// PD10: B_Octave_Btn

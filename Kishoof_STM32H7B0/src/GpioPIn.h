@@ -2,7 +2,7 @@
 
 class GpioPin {
 public:
-	enum class Type {Input, InputPullup, Output, AlternateFunction};
+	enum class Type {Input, InputPullup, InputPulldown, Output, AlternateFunction};
 	enum class DriveStrength {Low, Medium, High, VeryHigh};
 
 	GpioPin(GPIO_TypeDef* port, uint32_t pin, Type pinType, uint32_t alternateFunction = 0, DriveStrength driveStrength = DriveStrength::Low) :
@@ -19,10 +19,13 @@ public:
 		RCC->AHB4ENR |= (1 << portPos);
 
 		// 00: Input, 01: Output, 10: Alternate function, 11: Analog (reset state)
-		if (pinType == Type::Input || pinType == Type::InputPullup) {
+		if (pinType == Type::Input || pinType == Type::InputPullup || pinType == Type::InputPulldown) {
 			port->MODER &= ~(0b11 << (pin * 2));
 			if (pinType == Type::InputPullup) {
 				port->PUPDR |= (0b1 << (pin * 2));
+			}
+			if (pinType == Type::InputPulldown) {
+				port->PUPDR |= (0b10 << (pin * 2));
 			}
 
 		} else if (pinType == Type::Output) {

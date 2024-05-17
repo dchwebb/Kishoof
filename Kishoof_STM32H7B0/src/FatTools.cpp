@@ -179,8 +179,6 @@ const uint8_t* FatTools::GetClusterAddr(const uint32_t cluster, const bool ignor
 	}
 }
 
-uint8_t mdmaDebugIndex = 0;
-MdmaDebug mdmaDebug[256];
 
 const uint8_t* FatTools::GetSectorAddr(const uint32_t sector, const uint8_t* buffer, const uint32_t bufferSize)
 {
@@ -196,10 +194,6 @@ const uint8_t* FatTools::GetSectorAddr(const uint32_t sector, const uint8_t* buf
 			return sectorAddress;
 		} else {
 			mdmaBusy = true;
-			mdmaDebug[mdmaDebugIndex].sector = sector;
-			mdmaDebug[mdmaDebugIndex].sectorAddress = (uint8_t*)sectorAddress;
-			mdmaDebug[mdmaDebugIndex].bufferSize = bufferSize;
-			mdmaDebug[mdmaDebugIndex++].finished = false;
 			MDMATransfer(MDMA_Channel1, sectorAddress, buffer, bufferSize);
 			return nullptr;
 		}

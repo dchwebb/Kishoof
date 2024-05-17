@@ -23,15 +23,6 @@ Blocks    Bytes			Description
 Cluster 2: 20480, Cluster 3: 22528, Cluster 4: 24576, Cluster 5: 26624, Cluster 6: 28672
 */
 
-struct MdmaDebug {
-	uint32_t sector;
-	uint8_t* sectorAddress;
-	uint32_t bufferSize;
-	bool finished;
-};
-extern uint8_t mdmaDebugIndex;
-extern MdmaDebug mdmaDebug[256];
-
 static constexpr uint32_t fatSectorSize = 512;										// Sector size used by FAT
 static constexpr uint32_t fatSectorCount = 125000;									// 125000 sectors of 512 bytes = 64 MBytes
 static constexpr uint32_t fatClusterSize = 4096;									// Cluster size used by FAT (ie block size in data section)

@@ -416,17 +416,13 @@ void MSCHandler::ReadReady()
 	}
 }
 
-uint32_t DMADone = 0;
-volatile bool testerror = false;
+
 void MSCHandler::DMATransferDone()
 {
-	mdmaDebug[mdmaDebugIndex++].sector = scsi_blk_addr;
-
 	// Triggered once data has been read from flash and copied to local buffer
 	SCB_InvalidateDCache_by_Addr((uint32_t*)bot_data, inBuffSize);		// Ensure cache is refreshed after write or erase
 	inBuff = bot_data;
 	ReadReady();
-	++DMADone;
 	fatTools.mdmaBusy = false;
 }
 
