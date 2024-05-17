@@ -29,8 +29,6 @@ bool FatTools::InitFatFS()
 	// Store pointer to start of root directoy
 	rootDirectory = (FATFileInfo*)(headerCache + fatFs.dirbase * fatSectorSize);
 
-	wavetable.UpdateWavetableList();						// Updated list of samples on flash
-
 	return true;
 }
 
@@ -100,7 +98,9 @@ void FatTools::Write(const uint8_t* readBuff, const uint32_t writeSector, const 
 			// Load cache with current flash values
 			writeBlock = block;
 			const uint8_t* readAddress = flashAddress + (block * fatEraseSectors * fatSectorSize);
+			writeBusy = true;
 			memcpy(writeBlockCache, readAddress, fatEraseSectors * fatSectorSize);
+			writeBusy = false;
 		}
 
 		// write cache is now valid - copy newly changed values into it
@@ -130,15 +130,13 @@ void FatTools::CheckCache()
 			usb.ResumeEndpoint(usb.msc);
 		//}
 		cacheUpdated = 0;
-
-		busy = false;								// Current batch of writes has completed - release sample memory
 	}
 }
 
 
 uint8_t FatTools::FlushCache()
 {
-	busy = true;									// Will be reset once CheckCache has confirmed that sufficient time has elapsed since last write
+	flushCacheBusy = true;
 
 	// Writes any dirty data in the header cache to Flash
 	uint8_t blockPos = 0;
@@ -162,10 +160,10 @@ uint8_t FatTools::FlushCache()
 		}
 		writeCacheDirty = false;			// Indicates that write cache is clean
 	}
+	flushCacheBusy = false;
+
 	return count;
 }
-
-
 
 
 const uint8_t* FatTools::GetClusterAddr(const uint32_t cluster, const bool ignoreCache)
@@ -181,6 +179,8 @@ const uint8_t* FatTools::GetClusterAddr(const uint32_t cluster, const bool ignor
 	}
 }
 
+uint8_t mdmaDebugIndex = 0;
+MdmaDebug mdmaDebug[256];
 
 const uint8_t* FatTools::GetSectorAddr(const uint32_t sector, const uint8_t* buffer, const uint32_t bufferSize)
 {
@@ -190,12 +190,20 @@ const uint8_t* FatTools::GetSectorAddr(const uint32_t sector, const uint8_t* buf
 		return &(headerCache[sector * fatSectorSize]);
 	} else {
 		const uint8_t* sectorAddress = flashAddress + (sector * fatSectorSize);
+		return sectorAddress;
+		/*
 		if (buffer == nullptr) {
 			return sectorAddress;
 		} else {
+			mdmaBusy = true;
+			mdmaDebug[mdmaDebugIndex].sector = sector;
+			mdmaDebug[mdmaDebugIndex].sectorAddress = (uint8_t*)sectorAddress;
+			mdmaDebug[mdmaDebugIndex].bufferSize = bufferSize;
+			mdmaDebug[mdmaDebugIndex++].finished = false;
 			MDMATransfer(MDMA_Channel1, sectorAddress, buffer, bufferSize);
 			return nullptr;
 		}
+		*/
 	}
 }
 

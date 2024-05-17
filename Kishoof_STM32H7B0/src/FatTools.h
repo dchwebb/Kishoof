@@ -23,6 +23,14 @@ Blocks    Bytes			Description
 Cluster 2: 20480, Cluster 3: 22528, Cluster 4: 24576, Cluster 5: 26624, Cluster 6: 28672
 */
 
+struct MdmaDebug {
+	uint32_t sector;
+	uint8_t* sectorAddress;
+	uint32_t bufferSize;
+	bool finished;
+};
+extern uint8_t mdmaDebugIndex;
+extern MdmaDebug mdmaDebug[256];
 
 static constexpr uint32_t fatSectorSize = 512;										// Sector size used by FAT
 static constexpr uint32_t fatSectorCount = 125000;									// 125000 sectors of 512 bytes = 64 MBytes
@@ -71,7 +79,11 @@ class FatTools
 {
 	friend class CDCHandler;
 public:
-	bool busy = false;
+	bool mdmaBusy = false;
+	bool flushCacheBusy = false;
+	bool writeBusy = false;
+
+
 	bool noFileSystem = true;
 	uint16_t* clusterChain;				// Pointer to beginning of cluster chain (AKA FAT)
 	FATFileInfo* rootDirectory;			// Pointer to start of FAT directory listing
@@ -88,6 +100,7 @@ public:
 	uint8_t FlushCache();
 	void InvalidateFatFSCache();
 	bool Format();
+	bool Busy() { return mdmaBusy | flushCacheBusy | writeBusy; }
 private:
 	FATFS fatFs;						// File system object for RAM disk logical drive
 	const char fatPath[4] = "0:/";		// Logical drive path for FAT File system

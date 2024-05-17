@@ -58,6 +58,7 @@ public:
 
 private:
 	static constexpr uint32_t maxWavetable = 128;
+	static constexpr float scaleOutput = -std::pow(2.0f, 31.0f);	// Multiple to convert -1.0 - 1.0 float to 32 bit int and invert
 
 	struct Wav {
 		char name[11];
@@ -90,6 +91,7 @@ private:
 
 	uint32_t activeWaveTable;
 	char waveTableName[11];			// Store name of active wavetable so can be relocated after disk activity
+	uint32_t wavetableCount;
 
 	struct {
 		volatile uint16_t& adcControl;

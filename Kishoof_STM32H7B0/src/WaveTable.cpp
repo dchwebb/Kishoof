@@ -13,13 +13,20 @@ WaveTable wavetable;
 // Create sine look up table as constexpr so will be stored in flash (create one extra entry to simplify interpolation)
 constexpr std::array<float, WaveTable::sinLUTSize + 1> sineLUT = wavetable.CreateSinLUT();
 
+uint32_t flashBusy = 0;
+
 void WaveTable::CalcSample()
 {
 	debugMain.SetHigh();		// Debug
 
 	// Previously calculated samples output at beginning of interrupt to keep timing independent of calculation time
-	SPI2->TXDR = (int32_t)(outputSamples[0] * floatToIntMult);
-	SPI2->TXDR = (int32_t)(outputSamples[1] * floatToIntMult);
+	SPI2->TXDR = (int32_t)(outputSamples[0] * scaleOutput);
+	SPI2->TXDR = (int32_t)(outputSamples[1] * scaleOutput);
+
+	if (fatTools.Busy() && activeWaveTable > 0) {			// If using built-in wavetable don't need flash memory
+		++flashBusy;
+		return;
+	}
 
 	// 0v = 61200; 1v = 50110; 2v = 39020; 3v = 27910; 4v = 16790; 5v = 5670
 	// C: 16.35 Hz 32.70 Hz; 65.41 Hz; 130.81 Hz; 261.63 Hz; 523.25 Hz; 1046.50 Hz; 2093.00 Hz; 4186.01 Hz
@@ -185,7 +192,7 @@ inline void WaveTable::AdditiveWave()
 void WaveTable::ChangeWaveTable(int32_t upDown)
 {
 	int32_t nextWavetable = (int32_t)activeWaveTable + upDown;
-	if (nextWavetable >= 0 && nextWavetable < (int32_t)maxWavetable) {
+	if (nextWavetable >= 0 && nextWavetable < (int32_t)wavetableCount) {
 		activeWaveTable = nextWavetable;
 		strncpy(waveTableName, wavList[activeWaveTable].name, 11);
 	}
@@ -194,53 +201,17 @@ void WaveTable::ChangeWaveTable(int32_t upDown)
 
 void WaveTable::Init()
 {
-	if (wavetableType == TestData::wavetable) {
-		// Locate valid wavetable
-		uint32_t pos = 0;
-		for (auto& wav : wavList) {
-			if (wav.valid) {
-				activeWaveTable = pos;
-				strncpy(waveTableName, wav.name, 11);
-				return;
-			}
-			++pos;
+	wavetable.UpdateWavetableList();						// Updated list of samples on flash
+
+	// Locate valid wavetable
+	uint32_t pos = 0;
+	for (auto& wav : wavList) {
+		if (wav.valid) {
+			activeWaveTable = pos;
+			strncpy(waveTableName, wav.name, 11);
+			return;
 		}
-
-	} else {
-		/*
-		// Populate wavFile info
-		wavFile.dataFormat = 3;
-		wavFile.channels   = 1;
-		wavFile.byteDepth  = 4;
-		wavFile.sampleCount = 2048;
-		wavFile.tableCount = 1;
-		wavFile.startAddr = (uint8_t*)&testWavetable;
-
-		activeWaveTable = testWavetable;
-
-		// Generate test waves
-		for (uint32_t i = 0; i < 2048; ++i) {
-			switch (wavetableType) {
-			case TestData::noise:
-				while ((RNG->SR & RNG_SR_DRDY) == 0) {};
-				testWavetable[i] = intToFloatMult * static_cast<int32_t>(RNG->DR);
-				break;
-			case TestData::testwaves:
-				testWavetable[i] = std::sin((float)i * M_PI * 2.0f / 2048.0f);
-				testWavetable[i + 2048] = (2.0f * i / 2048.0f) - 1.0f;
-				wavFile.sampleCount = 4096;
-				wavFile.tableCount = 2;
-				break;
-			case TestData::twintone:
-				testWavetable[i] = 0.5f * (std::sin((float)i * M_PI * 2.0f / 2048.0f) +
-						std::sin(200.0f * (float)i * M_PI * 2.0f / 2048.0f));
-				break;
-			default:
-				break;
-			}
-		}
-
-*/
+		++pos;
 	}
 }
 
@@ -302,13 +273,29 @@ bool WaveTable::GetWavInfo(Wav* wav)
 
 bool WaveTable::UpdateWavetableList()
 {
+
+	// Create a test wavetable with a couple of waveforms - also used in case of no file system
+	strncpy(wavList[0].name, "default    ", 11);
+	wavList[0].dataFormat = 3;
+	wavList[0].channels   = 1;
+	wavList[0].byteDepth  = 4;
+	wavList[0].sampleCount = 4096;
+	wavList[0].tableCount = 2;
+	wavList[0].startAddr = (uint8_t*)&testWavetable;
+
+	// Generate test waves
+	for (uint32_t i = 0; i < 2048; ++i) {
+		testWavetable[i] = std::sin((float)i * M_PI * 2.0f / 2048.0f);
+		testWavetable[i + 2048] = (2.0f * i / 2048.0f) - 1.0f;
+	}
+
 	// Updates list of samples from FAT root directory
 	FATFileInfo* dirEntry = fatTools.rootDirectory;
 
-	uint32_t pos = 0;
+	uint32_t pos = 1;
 	bool changed = false;
 
-	while (dirEntry->name[0] != 0) {
+	while (dirEntry->name[0] != 0 && pos < maxWavetable) {
 
 		if (dirEntry->name[0] != FATFileInfo::fileDeleted && dirEntry->attr == FATFileInfo::LONG_NAME) {
 			// Store long file name in temporary buffer as this may contain volume and panning information
@@ -342,11 +329,11 @@ bool WaveTable::UpdateWavetableList()
 		}
 		dirEntry++;
 	}
+	wavetableCount = pos;
 
 	// Blank next sample (if exists) to show end of list
 	Wav* sample = &(wavList[pos++]);
 	sample->name[0] = 0;
-
 
 	return changed;
 }
