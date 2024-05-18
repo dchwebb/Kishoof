@@ -478,9 +478,9 @@ void InitIO()
 
 	GpioPin::Init(GPIOD, 8, GpioPin::Type::Input);				// PD8: ChB_Mix
 	GpioPin::Init(GPIOD, 9, GpioPin::Type::Input);				// PD9: ChB_RM
-	GpioPin::Init(GPIOD, 10, GpioPin::Type::Input);				// PD10: B_Octave_Btn
 
-	GpioPin::Init(GPIOD, 14, GpioPin::Type::Output);			// PD14: LED_Oct_B
+
+
 }
 
 

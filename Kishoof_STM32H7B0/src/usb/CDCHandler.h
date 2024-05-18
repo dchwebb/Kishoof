@@ -40,6 +40,10 @@ private:
 	uint32_t xfer_buff[64];
 	uint32_t buffPos = 0;
 
+	// State machine for multi-stage commands
+	enum class serialState {pending, dfuConfirm, calibConfirm};
+	serialState state = serialState::pending;
+
 	static const uint8_t Descriptor[];
 
 	float ParseFloat(const std::string_view cmd, const char precedingChar, const float low, const float high);

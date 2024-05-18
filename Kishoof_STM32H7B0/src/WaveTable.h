@@ -19,8 +19,8 @@ public:
 	void ChangeWaveTable(int32_t upDown);
 
 	float testWavetable[4096];
-
 	float outputSamples[2] = {0.0f, 0.0f};
+	bool octaveChnB = false;				// True if the channel B octave button has been pressed
 
 	enum class Warp {none, squeeze, bend, mirror, reverse, tzfm, count} warpType = Warp::none;
 	static constexpr std::string_view warpNames[] = {" NONE  ", "SQUEEZE", " BEND  ", "MIRROR ", "REVERSE", " TZFM  "};
@@ -99,8 +99,8 @@ private:
 		float pos;		// Smoothed ADC value
 
 		float Val() {
-			constexpr float scaleOutput = 0.01f / 131072.0f;		// scale constant for two 16 bit values and filter
-			pos = (0.99f * pos) + (adcPot + adcCV) * scaleOutput;
+			constexpr float scaleOutput = 0.01f / 65536.0f;		// scale constant for two 16 bit values and filter
+			pos = (0.99f * pos) + std::min((adcPot + 65535 - adcCV), 65535) * scaleOutput;
 			return pos;
 		}
 	} channel[2] = {{adc.Wavetable_Pos_A_Pot, adc.WavetablePosA_CV, 0.0f}, {adc.Wavetable_Pos_B_Pot, adc.WavetablePosB_CV, 0.0f}};
@@ -120,12 +120,12 @@ private:
 	uint8_t drawData[240];
 
 
-	GpioPin modeSwitch{GPIOE, 2, GpioPin::Type::Input};			// PE2: Mode switch
-	GpioPin octaveUp{GPIOD, 0, GpioPin::Type::InputPulldown};			// PD0: Octave_Up
-	GpioPin octaveDown{GPIOD, 1, GpioPin::Type::InputPulldown};			// PD1: Octave_Down
+	GpioPin modeSwitch{GPIOE, 2, GpioPin::Type::Input};				// PE2: Mode switch
+	GpioPin octaveUp{GPIOD, 0, GpioPin::Type::InputPulldown};		// PD0: Octave_Up
+	GpioPin octaveDown{GPIOD, 1, GpioPin::Type::InputPulldown};		// PD1: Octave_Down
 
-	GpioPin debugMain{GPIOD, 6, GpioPin::Type::Output};			// PD5: Debug
-	GpioPin debugDraw{GPIOD, 5, GpioPin::Type::Output};			// PD6: Debug
+	GpioPin debugMain{GPIOD, 6, GpioPin::Type::Output};				// PD5: Debug
+	GpioPin debugDraw{GPIOD, 5, GpioPin::Type::Output};				// PD6: Debug
 };
 
 extern WaveTable wavetable;

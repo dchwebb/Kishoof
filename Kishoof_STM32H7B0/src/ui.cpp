@@ -104,28 +104,19 @@ void UI::Update()
 	}
 
 
-
-	// Check if encoder button is pressed with debounce
-	if (btnDown && SysTickVal > btnDown + 100 && encoderBtn.IsHigh()) {
-		btnDown = 0;
-	}
-
-	if (encoderBtn.IsLow() && btnDown == 0) {
-		btnDown = SysTickVal;
-
-		// Button action
+	if (buttons.octave.Pressed()) {
+		wavetable.octaveChnB = !wavetable.octaveChnB;
+		if (wavetable.octaveChnB) {
+			octaveLED.SetHigh();
+		} else {
+			octaveLED.SetLow();
+		}
 	}
 
 	if (!(SPI_DMA_Working)) {
-		//StartDebugTimer();
 		DrawWaveTable();
-		//wavetableCalc = StopDebugTimer();
 	}
 }
-
-
-
-
 
 
 std::string_view UI::FloatToString(float f, bool smartFormat)

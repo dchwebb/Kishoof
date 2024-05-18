@@ -58,17 +58,29 @@ defined in linker script */
   .weak  Reset_Handler
   .type  Reset_Handler, %function
 Reset_Handler:  
-  ldr   sp, =_estack      /* set stack pointer */
+  // Check for instruction to jump to STM bootloader
+  ldr r0, =0x20000000
+  ldr r1, =0xDEADBEEF
+  ldr r2, [r0, #0]			// load the value stored at 0x20000000 into register r2
+  ldr r3, =0x1FF0A000		// ROM address of boot loader for H7B0: 0x1FF0A000; H7: 0x1FF09800 (M4 F7 etc 0x1FF00000) */
+  str r3, [r0, #0]			// Store the r3 jump address to 0x20000000 (ie blank the magic word)
+  cmp r2, r1				// Check if the magic word is found
+  beq Reboot_Loader			// Jump to STM bootloader if magic word found
   
-/* Call the clock system initialization function.*/
-  bl  SystemInit
+  ldr   sp, =_estack		// set stack pointer
+  bl  SystemInit			// Call the clock system initialization function
   
-/* Copy the data segment initializers from flash to SRAM */  
+  // Copy the data segment initializers from flash to SRAM
   ldr r0, =_sdata
   ldr r1, =_edata
   ldr r2, =_sidata
   movs r3, #0
   b LoopCopyDataInit
+
+Reboot_Loader:
+  ldr sp, [r3, #0]			// Store the bootloader start address (eg 0x08100000) to the stack pointer (0x20020000)
+  ldr r0, [r3, #4]			// Store the bootloader jump address (eg 0x08100004) to the stack pointer (0x20020000)
+  bx r0						// Branch to bootloader jump address (0x08100004)
 
 CopyDataInit:
   ldr r4, [r2, r3]

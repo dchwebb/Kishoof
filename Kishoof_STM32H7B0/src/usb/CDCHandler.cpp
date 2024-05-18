@@ -17,7 +17,24 @@ void CDCHandler::ProcessCommand()
 
 	std::string_view cmd {comCmd};
 
-	if (cmd.compare("info") == 0) {		// Print diagnostic information
+	// Provide option to switch to USB DFU mode - this allows the MCU to be programmed with STM32CubeProgrammer in DFU mode
+	if (state == serialState::dfuConfirm) {
+		if (cmd.compare("y") == 0 || cmd.compare("Y") == 0) {
+			usb->SendString("Switching to DFU Mode ...\r\n");
+			uint32_t old = SysTickVal;
+			while (SysTickVal < old + 100) {};		// Give enough time to send the message
+			SCB_DisableDCache();
+			__disable_irq();
+			*reinterpret_cast<unsigned long *>(0x20000000) = 0xDEADBEEF; 	// Use DTCM RAM for DFU flag as this is not cleared at restart
+			__DSB();
+			NVIC_SystemReset();
+		} else {
+			state = serialState::pending;
+			usb->SendString("Upgrade cancelled\r\n");
+		}
+
+
+	} else if (cmd.compare("info") == 0) {		// Print diagnostic information
 
 		usb->SendString("Mountjoy Kishoof v1.0 - Current Settings:\r\n\r\n");
 
@@ -27,9 +44,7 @@ void CDCHandler::ProcessCommand()
 		usb->SendString("Mountjoy Kishoof\r\n"
 				"\r\nSupported commands:\r\n"
 				"info        -  Show diagnostic information\r\n"
-				"noise       -  Use noise wavetable\r\n"
-				"sine        -  Use sine wavetable\r\n"
-				"wav         -  Use wav file wavetable\r\n"
+				"dfu         -  USB firmware upgrade\r\n"
 				"\r\n"
 				"Flash Tools:\r\n"
 				"------------\r\n"
@@ -58,6 +73,11 @@ void CDCHandler::ProcessCommand()
 		USBDebug = true;
 		usb->SendString("Press link button to dump output\r\n");
 #endif
+
+	} else if (cmd.compare("dfu") == 0) {					// USB DFU firmware upgrade
+		usb->SendString("Start DFU upgrade mode? Press 'y' to confirm.\r\n");
+		state = serialState::dfuConfirm;
+
 
 	} else if (cmd.compare("mdma") == 0) {
 		const uint8_t* srcAddr = (uint8_t*)(0x90000000);

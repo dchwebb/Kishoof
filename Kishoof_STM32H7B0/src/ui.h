@@ -31,13 +31,35 @@ private:
 
 	uint32_t oldWavetable = 0xFFFFFFFF;
 
-	uint32_t btnDown = 0;
-	uint32_t btnReleased = 0;
-
 	char charBuff[100];
 	bool activeDrawBuffer = true;
 
-	GpioPin encoderBtn{GPIOE, 4, GpioPin::Type::InputPullup};		// PE4: Encoder button
+	// Struct to manage buttons with debounce and GPIO management
+	struct Btn {
+		GpioPin pin;
+		uint32_t down = 0;
+		uint32_t up = 0;
+
+		// Debounce button press mechanism
+		bool Pressed() {
+			if (pin.IsHigh() && down && SysTickVal > down + 100) {
+				down = 0;
+				up = SysTickVal;
+			}
+
+			if (pin.IsLow() && down == 0 && SysTickVal > up + 100) {
+				down = SysTickVal;
+				return true;
+			}
+			return false;
+		}
+	};
+	struct {
+		Btn encoder;
+		Btn octave;
+	} buttons = {{{GPIOE, 4, GpioPin::Type::InputPullup}, 0, 0}, {{GPIOD, 10, GpioPin::Type::InputPullup}, 0, 0}};
+
+	GpioPin octaveLED {GPIOD, 14, GpioPin::Type::Output};			// PD14: LED_Oct_B
 };
 
 extern UI ui;
