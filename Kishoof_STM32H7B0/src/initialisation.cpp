@@ -396,7 +396,7 @@ void InitI2S()
 
 	SPI2->CFG1 |= SPI_CFG1_UDRCFG_1;				// In the event of underrun resend last transmitted data frame
 	SPI2->CFG1 |= 0x1f << SPI_CFG1_DSIZE_Pos;		// Data size to 32 bits (FIFO holds 16 bytes = 4 x 32 bit words)
-	SPI2->CFG1 |= 3 << SPI_CFG1_FTHLV_Pos;			// FIFO threshold level. 0001: 2-data; 0010: 3 data; 0011: 4 data
+	SPI2->CFG1 |= 1 << SPI_CFG1_FTHLV_Pos;			// FIFO threshold level. 0001: 2-data; 0010: 3 data; 0011: 4 data
 
 	/* I2S Clock
 		PLL2: ((8MHz / 5) * 192 / 5) = 61.44 MHz

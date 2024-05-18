@@ -94,9 +94,16 @@ private:
 	uint32_t wavetableCount;
 
 	struct {
-		volatile uint16_t& adcControl;
+		volatile uint16_t& adcPot;
+		volatile uint16_t& adcCV;
 		float pos;		// Smoothed ADC value
-	} channel[2] = {{adc.Wavetable_Pos_A_Pot, 0.0f}, {adc.Wavetable_Pos_B_Pot, 0.0f}};
+
+		float Val() {
+			constexpr float scaleOutput = 0.01f / 131072.0f;		// scale constant for two 16 bit values and filter
+			pos = (0.99f * pos) + (adcPot + adcCV) * scaleOutput;
+			return pos;
+		}
+	} channel[2] = {{adc.Wavetable_Pos_A_Pot, adc.WavetablePosA_CV, 0.0f}, {adc.Wavetable_Pos_B_Pot, adc.WavetablePosB_CV, 0.0f}};
 
 
 

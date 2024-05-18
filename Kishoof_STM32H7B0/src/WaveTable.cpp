@@ -86,9 +86,10 @@ void WaveTable::CalcSample()
 inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 {
 	// Get location of current wavetable frame in wavetable
-	const float wtPos = ((float)(wavList[activeWaveTable].tableCount - 1) / 43000.0f) * channel[chn].adcControl;
-	channel[chn].pos = std::clamp((float)(0.99f * channel[chn].pos + 0.01f * wtPos), 0.0f, (float)(wavList[activeWaveTable].tableCount - 1));	// Smooth
-	const uint32_t sampleOffset = 2048 * std::floor(channel[chn].pos);			// get sample position of wavetable frame
+	//const float wtPos = ((float)(wavList[activeWaveTable].tableCount - 1) / 43000.0f) * channel[chn].adcPot;
+	//channel[chn].pos = std::clamp((float)(0.99f * channel[chn].pos + 0.01f * wtPos), 0.0f, (float)(wavList[activeWaveTable].tableCount - 1));	// Smooth
+	const float pos = std::clamp(channel[chn].Val() * (wavList[activeWaveTable].tableCount - 1), 0.0f, (float)(wavList[activeWaveTable].tableCount - 1));
+	const uint32_t sampleOffset = 2048 * std::floor(pos);			// get sample position of wavetable frame
 
 	// Interpolate between samples
 	const float ratio = readPos - (uint32_t)readPos;
@@ -96,7 +97,7 @@ inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 
 	// Interpolate between wavetables if channel A
 	if (!stepped && chn == 0) {
-		const float wtRatio = channel[chn].pos - (uint32_t)channel[chn].pos;
+		const float wtRatio = pos - (uint32_t)pos;
 		if (wtRatio > 0.0001f) {
 			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wavList[activeWaveTable].startAddr + sampleOffset + 2048, ratio);
 			outputSamples[0] = std::lerp(outputSamples[0], outputSample2, wtRatio);

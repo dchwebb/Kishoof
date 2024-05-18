@@ -10,7 +10,6 @@ void SPI2_IRQHandler()
 	if ((SPI2->SR & SPI_SR_UDR) == SPI_SR_UDR) {		// Check for Underrun condition
 		SPI2->IFCR |= SPI_IFCR_UDRC;					// Clear underrun condition
 		++underrun;
-		return;
 	}
 
 	wavetable.CalcSample();
