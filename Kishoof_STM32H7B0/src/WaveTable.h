@@ -108,7 +108,7 @@ private:
 
 
 	float pitchInc = 0.0f;
-	float readPos = 0;
+	float readPos[2] = {0.0f, 0.0f};
 	int32_t oldReadPos;
 
 	bool stepped = false;
