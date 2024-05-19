@@ -63,3 +63,4 @@ void InitMDMA();
 void MDMATransfer(MDMA_Channel_TypeDef* channel, const uint8_t* srcAddr, const uint8_t* destAddr, const uint32_t bytes);
 void InitEncoders();
 void InitOctoSPI();
+void JumpToBootloader();

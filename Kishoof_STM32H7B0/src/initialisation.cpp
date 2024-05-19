@@ -604,3 +604,34 @@ void InitOctoSPI()
 //	OCTOSPI1->DCR4 = 250; 									// Refresh Time: The chip select should be released every 4us
 //	OCTOSPI1->TCR |= OCTOSPI_TCR_DHQC;						// Delay hold quarter cycle; See RM p881
 }
+
+
+void JumpToBootloader()
+{
+	//void (*SysMemBootJump)();
+	volatile uint32_t BootAddr = 0x1FF0A000;	// Set the address of the entry point to bootloader
+	__disable_irq();							// Disable all interrupts
+	SysTick->CTRL = 0;							// Disable Systick timer
+
+	// Disable all peripheral clocks
+	RCC->APB1LENR = 0;
+	RCC->APB4ENR = 0;
+	RCC->AHB1ENR = 0;
+	RCC->APB2ENR = 0;
+	RCC->AHB3ENR = 0;
+	RCC->AHB4ENR = 0;
+
+	for (uint32_t i = 0; i < 5; ++i) {			// Clear Interrupt Enable Register & Interrupt Pending Register
+		NVIC->ICER[i] = 0xFFFFFFFF;
+		NVIC->ICPR[i] = 0xFFFFFFFF;
+	}
+
+	__enable_irq();								// Re-enable all interrupts
+	void (*SysMemBootJump)() = (void(*)()) (*((uint32_t *) (BootAddr + 4)));	// Set up the jump to booloader address + 4
+	__set_MSP(*(uint32_t *)BootAddr);			// Set the main stack pointer to the bootloader stack
+	SysMemBootJump(); 							// Call the function to jump to bootloader location
+
+	while (1) {
+		// Code should never reach this loop
+	}
+}
