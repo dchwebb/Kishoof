@@ -120,12 +120,14 @@ private:
 	uint8_t drawData[240];
 
 
-	GpioPin modeSwitch{GPIOE, 2, GpioPin::Type::Input};				// PE2: Mode switch
-	GpioPin octaveUp{GPIOD, 0, GpioPin::Type::InputPulldown};		// PD0: Octave_Up
-	GpioPin octaveDown{GPIOD, 1, GpioPin::Type::InputPulldown};		// PD1: Octave_Down
+	GpioPin modeSwitch	{GPIOE, 2, GpioPin::Type::Input};			// PE2: Mode switch
+	GpioPin octaveUp	{GPIOD, 0, GpioPin::Type::InputPulldown};	// PD0: Octave_Up
+	GpioPin octaveDown	{GPIOD, 1, GpioPin::Type::InputPulldown};	// PD1: Octave_Down
+	GpioPin chBMix		{GPIOD, 8, GpioPin::Type::InputPulldown};	// PD8: ChB_Mix
+	GpioPin chBRingMod	{GPIOD, 9, GpioPin::Type::InputPulldown};	// PD9: ChB_RM
 
-	GpioPin debugMain{GPIOD, 6, GpioPin::Type::Output};				// PD5: Debug
-	GpioPin debugDraw{GPIOD, 5, GpioPin::Type::Output};				// PD6: Debug
+	GpioPin debugMain	{GPIOD, 6, GpioPin::Type::Output};			// PD5: Debug
+	GpioPin debugDraw	{GPIOD, 5, GpioPin::Type::Output};			// PD6: Debug
 };
 
 extern WaveTable wavetable;

@@ -76,6 +76,12 @@ void WaveTable::CalcSample()
 
 	OutputSample(0, adjReadPos);
 
+	if (chBMix.IsHigh()) {
+		outputSamples[1] = FastTanh(outputSamples[0] + outputSamples[1]);
+	} else 	if (chBRingMod.IsHigh()) {
+		outputSamples[1] = outputSamples[0] * outputSamples[1];
+	}
+
 
 	// Enter sample in draw table to enable LCD update
 	constexpr float widthMult = (float)LCD::width / 2048.0f;		// Scale to width of the LCD

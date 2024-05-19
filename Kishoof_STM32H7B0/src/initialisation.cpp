@@ -476,11 +476,6 @@ void InitIO()
 {
 	GpioPin::Init(GPIOE, 3, GpioPin::Type::Input);				// PE3: Warp_Polarity_Btn
 
-	GpioPin::Init(GPIOD, 8, GpioPin::Type::Input);				// PD8: ChB_Mix
-	GpioPin::Init(GPIOD, 9, GpioPin::Type::Input);				// PD9: ChB_RM
-
-
-
 }
 
 
