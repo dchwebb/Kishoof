@@ -24,20 +24,6 @@ public:
 
 	enum class Warp {none, squeeze, bend, mirror, reverse, tzfm, count} warpType = Warp::none;
 	static constexpr std::string_view warpNames[] = {" NONE  ", "SQUEEZE", " BEND  ", "MIRROR ", "REVERSE", " TZFM  "};
-
-	struct WavFile {
-		const uint8_t* startAddr;			// Address of data section
-		uint32_t fileSize;
-		uint32_t dataSize;					// Size of data section in bytes
-		uint32_t sampleCount;				// Number of samples (stereo samples only counted once)
-		uint32_t sampleRate;
-		uint8_t byteDepth;
-		uint16_t dataFormat;				// 1 = PCM; 3 = Float
-		uint8_t channels;					// 1 = mono, 2 = stereo
-		uint16_t tableCount;				// Number of 2048 sample wavetables in file
-		bool valid;							// false if header cannot be processed
-	} wavFile;
-
 	static constexpr uint32_t harmonicSets = 3;
 	static constexpr uint32_t harmonicCount = 10;
 	float additiveHarmonics[harmonicSets][harmonicCount] = {
@@ -61,7 +47,7 @@ private:
 	static constexpr float scaleOutput = -std::pow(2.0f, 31.0f);	// Multiple to convert -1.0 - 1.0 float to 32 bit int and invert
 
 	struct Wav {
-		char name[11];
+		char name[8];
 		uint32_t size;						// Size of file in bytes
 		uint32_t cluster;					// Starting cluster
 		uint32_t lastCluster;				// If file spans multiple clusters store last cluster before jump - if 0xFFFFFFFF then clusters are contiguous
@@ -74,6 +60,7 @@ private:
 		uint16_t dataFormat;				// 1 = PCM; 3 = Float
 		uint8_t channels;					// 1 = mono, 2 = stereo
 		uint16_t tableCount;				// Number of 2048 sample wavetables in file
+		uint32_t metadata;					// Serum metadata
 		bool valid;							// false if header cannot be processed
 	} wavList[maxWavetable];
 
@@ -107,7 +94,7 @@ private:
 
 
 
-	float pitchInc = 0.0f;
+	float pitchInc[2] = {0.0f, 0.0f};
 	float readPos[2] = {0.0f, 0.0f};
 	int32_t oldReadPos;
 

@@ -46,6 +46,7 @@ void CDCHandler::ProcessCommand()
 				"\r\nSupported commands:\r\n"
 				"info        -  Show diagnostic information\r\n"
 				"dfu         -  USB firmware upgrade\r\n"
+				"wavetables  -  Print list of wavetables\r\n"
 				"\r\n"
 				"Flash Tools:\r\n"
 				"------------\r\n"
@@ -79,31 +80,13 @@ void CDCHandler::ProcessCommand()
 		usb->SendString("Start DFU upgrade mode? Press 'y' to confirm.\r\n");
 		state = serialState::dfuConfirm;
 
-
-	} else if (cmd.compare("mdma") == 0) {
-		const uint8_t* srcAddr = (uint8_t*)(0x90000000);
-		MDMATransfer(MDMA_Channel1, srcAddr, (uint8_t*)flashBuff, 4096);
-
-
-	} else if (cmd.compare("noise") == 0) {
-		wavetable.wavetableType = WaveTable::TestData::noise;
-		wavetable.Init();
-
-	} else if (cmd.compare("sine") == 0) {
-			wavetable.wavetableType = WaveTable::TestData::twintone;
-			wavetable.Init();
-
-	} else if (cmd.compare("wav") == 0) {
-			wavetable.wavetableType = WaveTable::TestData::wavetable;
-			wavetable.Init();
-
 	} else if (cmd.compare("wavetables") == 0) {				// Prints wavetable list
 		uint32_t pos = 0;
 
-		printf("Num Name          Bytes    Rate Bits Channels Valid Address    Frames\r\n");
+		printf("Num Name       Bytes    Rate Bits Channels Valid Address    Metadata Frames\r\n");
 
 		while (wavetable.wavList[pos].name[0] != 0) {
-			printf("%3lu %.11s %7lu %7lu %3u%1s %8u %s     0x%08x %.1f\r\n",
+			printf("%3lu %.8s %7lu %7lu %3u%1s %8u %s     0x%08x %08lu %.1f \r\n",
 					pos,
 					wavetable.wavList[pos].name,
 					wavetable.wavList[pos].size,
@@ -113,6 +96,7 @@ void CDCHandler::ProcessCommand()
 					wavetable.wavList[pos].channels,
 					wavetable.wavList[pos].valid ? "Y" : " ",
 					(unsigned int)wavetable.wavList[pos].startAddr,
+					wavetable.wavList[pos].metadata,
 					(float)wavetable.wavList[pos].sampleCount / 2048.0f
 					);
 			++pos;
@@ -444,6 +428,7 @@ int32_t CDCHandler::ParseInt(const std::string_view cmd, const char precedingCha
 	}
 	return val;
 }
+
 
 float CDCHandler::ParseFloat(const std::string_view cmd, const char precedingChar, const float low = 0.0f, const float high = 0.0f) {
 	float val = -1.0f;

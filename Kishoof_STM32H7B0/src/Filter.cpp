@@ -5,11 +5,41 @@ Filter filter;
 
 void Filter::Init()
 {
-	filter.FIRFilterWindow();
+	FIRFilterWindow();
 	currentCutoff = 0.0f;
 	cutoff = 0.0f;
-	filter.Update(true);
+	Update(true);
+	BuildLUT();
 }
+
+static inline float fasterlog2 (float x)
+{
+	union { float f; uint32_t i; } vx = { x };
+	float y = vx.i;
+	y *= 1.1920928955078125e-7f;
+	return y - 126.94269504f;
+}
+
+
+void Filter::BuildLUT()
+{
+	GpioPin::SetHigh(GPIOD, 6);
+	// Eg is sampling freq = 20 kHz, then Nyquist = 10 kHz. LPF with 3 dB corner at 1 kHz set omega = 0.1 (1 kHz / 10 kHz)
+	// Each LUT is for an integer pitch increment from 1 to 90 (maximum pitch increment with 5V and octave up
+	const float inc = (float)lutRange / (float)lutSize;
+	for (uint32_t i = 1; i <= lutSize; ++i) {
+		float pitchInc = std::pow(2.0f, inc * i);
+		const float omega = 1.0f / pitchInc;
+		filterLUT[i].inc = pitchInc;
+		for (int8_t j = 0; j < firTaps / 2 + 1; ++j) {
+			const int8_t  arg = j - (firTaps - 1) / 2;
+			filterLUT[i].coeff[j] = omega * Sinc(omega * arg * M_PI) * winCoeff[j];
+		}
+	}
+	GpioPin::SetLow(GPIOD, 6);
+}
+
+
 
 
 void Filter::Update(bool reset)
@@ -43,6 +73,44 @@ void Filter::InitFIRFilter(float omega)
 	}
 
 	currentCutoff = omega;
+}
+
+
+float Filter::CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio, float pitchInc)
+{
+	// FIR Convolution routine using folded FIR structure.
+	// Samples are interpolated according to ratio and filtering is carried out to minimise multiplications
+
+	if (ratio < 0.00001f) {								// To avoid a divide by zero and for better performance
+		return CalcFilter(pos, waveTable);
+	}
+
+	// Calculate filter coefficient lookup table (converts pitchInc from exponential to linear scale
+	const uint32_t lutPos = uint32_t(std::log2(pitchInc) * lutLookupMult);
+	auto& filterCoeff = filterLUT[lutPos].coeff;
+
+	float outputSample = 0.0f;
+
+	const float invertedRatio = 1.0f / ratio - 1.0f;	// half the samples are interpolated during filtering, and then the total normalised
+
+	// pos = position of sample N, N-1, N-2 etc
+	int32_t revpos = (pos - firTaps + 1) & 0x7FF;		// position of sample 1, 2, 3 etc
+
+	for (uint8_t i = 0; i < firTaps / 2; ++i) {
+		// Folded FIR structure - as coefficients are symmetrical we can multiple the sample 1 + sample N by the 1st coefficient, sample 2 + sample N - 1 by 2nd coefficient etc
+		const int32_t pos2 = (pos + 1) & 0x7FF;
+		const int32_t revpos2 = (revpos + 1) & 0x7FF;
+
+		outputSample += filterCoeff[i] * ((invertedRatio * (waveTable[revpos] + waveTable[pos]) +
+				(waveTable[revpos2] + waveTable[pos2])));
+
+		revpos = revpos2;
+		pos = (pos - 1) & 0x7FF;
+	}
+
+	outputSample += filterCoeff[firTaps / 2] * (invertedRatio * waveTable[revpos] + waveTable[(revpos + 1) & 0x7FF]);
+
+	return outputSample * ratio;
 }
 
 

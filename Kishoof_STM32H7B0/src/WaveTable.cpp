@@ -43,14 +43,15 @@ void WaveTable::CalcSample()
 	constexpr float pitchBase = (65.41f * (2048.0f / sampleRate)) / std::pow(2.0, -50050.0f / 11330.0f);
 	constexpr float cvMult = -1.0f / 11330.0f;
 	float newInc = pitchBase * std::pow(2.0f, (float)adc.Pitch_CV * cvMult) * octave;			// for cycle length matching sample rate (48k)
-	pitchInc = 0.99 * pitchInc + 0.01 * newInc;
+	pitchInc[0] = 0.99 * pitchInc[0] + 0.01 * newInc;
 
-	filter.cutoff = 1.0f / pitchInc;				// Set filter for recalculation
+	filter.cutoff = 1.0f / pitchInc[0];				// Set filter for recalculation
 
-	readPos[0] += pitchInc;
+	readPos[0] += pitchInc[0];
 	if (readPos[0] >= 2048) { readPos[0] -= 2048; }
 
-	readPos[1] += pitchInc * (octaveChnB ? 0.5f : 1.0f);
+	pitchInc[1] = pitchInc[0] * (octaveChnB ? 0.5f : 1.0f);
+	readPos[1] += pitchInc[1];
 	if (readPos[1] >= 2048) { readPos[1] -= 2048; }
 
 
@@ -62,17 +63,6 @@ void WaveTable::CalcSample()
 		AdditiveWave();
 	}
 
-	if (warpType == Warp::tzfm) {
-		// Through Zero FM: Phase distorts channel A using scaled bipolar version of channel B's waveform
-		float bendAmt = 1.0f / 48.0f;		// Increase to extend bend amount range
-		if (adc.Warp_Amt_Pot > 32767) {
-			adjReadPos = readPos[0] + outputSamples[1] * (adc.Warp_Amt_Pot - 32767) * bendAmt;
-		} else {
-			adjReadPos = readPos[0] - outputSamples[1] * (32767 - adc.Warp_Amt_Pot) * bendAmt;
-		}
-		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
-		if (adjReadPos < 0) { adjReadPos += 2048; }
-	}
 
 	OutputSample(0, adjReadPos);
 
@@ -103,13 +93,13 @@ inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 
 	// Interpolate between samples
 	const float ratio = readPos - (uint32_t)readPos;
-	outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wavList[activeWaveTable].startAddr + sampleOffset, ratio);
+	outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wavList[activeWaveTable].startAddr + sampleOffset, ratio, pitchInc[chn]);
 
 	// Interpolate between wavetables if channel A
 	if (!stepped && chn == 0) {
 		const float wtRatio = pos - (uint32_t)pos;
 		if (wtRatio > 0.0001f) {
-			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wavList[activeWaveTable].startAddr + sampleOffset + 2048, ratio);
+			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wavList[activeWaveTable].startAddr + sampleOffset + 2048, ratio, pitchInc[chn]);
 			outputSamples[0] = std::lerp(outputSamples[0], outputSample2, wtRatio);
 		}
 	}
@@ -125,14 +115,17 @@ inline float WaveTable::CalcWarp()
 	}
 
 	float adjReadPos;					// Read position after warp applied
+	float pitchMult = 1.0f;				// Multiply to adjust the pitch increment for calculating ant-aliasing filter cutoff
 	switch (warpType) {
 	case Warp::bend: {
 		// Waveform is stretched to one side (or squeezed to the other side) [Like 'Asym' in Serum]
 		// https://www.desmos.com/calculator/u9aphhyiqm
 		const float a = std::clamp((float)adc.Warp_Amt_Pot / 32768.0f, 0.1f, 1.9f);
 		if (readPos[0] < 1024.0f * a) {
+			pitchMult = 1.0f / a;
 			adjReadPos = readPos[0] / a;
 		} else {
+			pitchMult = 1.0f / (2.0f - a);
 			adjReadPos = (readPos[0] + 2048.0f - 2048.0f * a) / (2.0f - a);
 		}
 	}
@@ -173,6 +166,17 @@ inline float WaveTable::CalcWarp()
 		adjReadPos = 2048.0f - readPos[0];
 	}
 	break;
+
+
+	case Warp::tzfm: {
+		// Through Zero FM: Phase distorts channel A using scaled bipolar version of channel B's waveform
+		float bendAmt = 1.0f / 48.0f;		// Increase to extend bend amount range
+		adjReadPos = readPos[0] + outputSamples[1] * (adc.Warp_Amt_Pot - 32767) * bendAmt;
+		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
+		if (adjReadPos < 0) { adjReadPos += 2048; }
+	}
+	break;
+
 	default:
 		adjReadPos = readPos[0];
 		break;
@@ -257,6 +261,17 @@ bool WaveTable::GetWavInfo(Wav* wav)
 	wav->channels   = *(uint16_t*)&(wavHeader[pos + 10]);
 	wav->byteDepth  = *(uint16_t*)&(wavHeader[pos + 22]) / 8;
 
+	// Check if there is a clm chunk with Serum metadata
+	pos += (8 + *(uint32_t*)&(wavHeader[pos + 4]));
+	if (*(uint32_t*)&(wavHeader[pos]) == 0x206d6c63) {		// Look for string 'clm '
+		const char* metadata = (char*)&(wavHeader[pos + 16]);
+		if (std::strspn(metadata, "0123456789") == 8) {
+			wav->metadata = std::stoi(metadata);
+		}
+
+
+	}
+
 	// Navigate forward to find the start of the data area
 	while (*(uint32_t*)&(wavHeader[pos]) != 0x61746164) {		// Look for string 'data'
 		pos += (8 + *(uint32_t*)&(wavHeader[pos + 4]));
@@ -287,7 +302,6 @@ bool WaveTable::GetWavInfo(Wav* wav)
 
 bool WaveTable::UpdateWavetableList()
 {
-
 	// Create a test wavetable with a couple of waveforms - also used in case of no file system
 	strncpy(wavList[0].name, "default    ", 11);
 	wavList[0].dataFormat = 3;
@@ -303,7 +317,7 @@ bool WaveTable::UpdateWavetableList()
 		testWavetable[i + 2048] = (2.0f * i / 2048.0f) - 1.0f;
 	}
 
-	// Updates list of samples from FAT root directory
+	// Updates list of wavetables from FAT root directory
 	FATFileInfo* dirEntry = fatTools.rootDirectory;
 
 	uint32_t pos = 1;
@@ -324,7 +338,7 @@ bool WaveTable::UpdateWavetableList()
 			}
 			lfnPosition += 13;
 
-		// Valid sample: not LFN, not deleted, not directory, extension = WAV
+		// Valid wavetable: not LFN, not deleted, not directory, extension = WAV
 		} else if (dirEntry->name[0] != FATFileInfo::fileDeleted && (dirEntry->attr & AM_DIR) == 0 && strncmp(&(dirEntry->name[8]), "WAV", 3) == 0) {
 			Wav* wav = &(wavList[pos++]);
 
@@ -332,7 +346,7 @@ bool WaveTable::UpdateWavetableList()
 			if (wav->cluster != dirEntry->firstClusterLow || wav->size != dirEntry->fileSize ||
 					strncmp(wav->name, dirEntry->name, 11) != 0) {
 				changed = true;
-				strncpy(wav->name, dirEntry->name, 11);
+				strncpy(wav->name, dirEntry->name, 8);
 				wav->cluster = dirEntry->firstClusterLow;
 				wav->size = dirEntry->fileSize;
 
@@ -346,8 +360,8 @@ bool WaveTable::UpdateWavetableList()
 	wavetableCount = pos;
 
 	// Blank next sample (if exists) to show end of list
-	Wav* sample = &(wavList[pos++]);
-	sample->name[0] = 0;
+	Wav* wav = &(wavList[pos++]);
+	wav->name[0] = 0;
 
 	return changed;
 }
