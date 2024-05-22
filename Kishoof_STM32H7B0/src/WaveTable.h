@@ -87,13 +87,14 @@ private:
 
 		float Val() {
 			constexpr float scaleOutput = 0.01f / 65536.0f;		// scale constant for two 16 bit values and filter
-			pos = (0.99f * pos) + std::min((adcPot + 65535 - adcCV), 65535) * scaleOutput;
+			pos = (0.99f * pos) + std::clamp((adcPot + 61000.0f - adcCV), 0.0f, 65535.0f) * scaleOutput;	// Reduce to ensure can hit zero with noise
 			return pos;
 		}
-	} channel[2] = {{adc.Wavetable_Pos_A_Pot, adc.WavetablePosA_CV, 0.0f}, {adc.Wavetable_Pos_B_Pot, adc.WavetablePosB_CV, 0.0f}};
+	} wavetablePos[2] = {{adc.Wavetable_Pos_A_Pot, adc.WavetablePosA_CV, 0.0f}, {adc.Wavetable_Pos_B_Pot, adc.WavetablePosB_CV, 0.0f}};
 
 
 
+	float smoothedInc = 0.0f;
 	float pitchInc[2] = {0.0f, 0.0f};
 	float readPos[2] = {0.0f, 0.0f};
 	int32_t oldReadPos;

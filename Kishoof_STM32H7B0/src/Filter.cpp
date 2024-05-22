@@ -81,13 +81,13 @@ float Filter::CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio,
 	// FIR Convolution routine using folded FIR structure.
 	// Samples are interpolated according to ratio and filtering is carried out to minimise multiplications
 
-	if (ratio < 0.00001f) {								// To avoid a divide by zero and for better performance
-		return CalcFilter(pos, waveTable);
-	}
-
 	// Calculate filter coefficient lookup table (converts pitchInc from exponential to linear scale
-	const uint32_t lutPos = uint32_t(std::log2(pitchInc) * lutLookupMult);
+	const uint32_t lutPos = std::min(uint32_t(std::round(std::log2(pitchInc) * lutLookupMult)), lutSize - 1);
 	auto& filterCoeff = filterLUT[lutPos].coeff;
+
+	if (ratio < 0.00001f) {								// To avoid a divide by zero and for better performance
+		return CalcFilter(pos, waveTable, lutPos);
+	}
 
 	float outputSample = 0.0f;
 
@@ -147,6 +147,27 @@ float Filter::CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio)
 	return outputSample * ratio;
 }
 
+
+float Filter::CalcFilter(int32_t pos, float* waveTable, uint32_t lutPos)
+{
+	// FIR Convolution routine using folded FIR structure
+	float outputSample = 0.0f;
+	auto& filterCoeff = filterLUT[lutPos].coeff;
+
+	// pos = position of sample N, N-1, N-2 etc
+	int32_t revpos = (pos - firTaps + 1) & 0x7FF;		// position of sample 1, 2, 3 etc
+
+	for (uint8_t i = 0; i < firTaps / 2; ++i) {
+		// Folded FIR structure - as coefficients are symmetrical we can multiple the sample 1 + sample N by the 1st coefficient, sample 2 + sample N - 1 by 2nd coefficient etc
+		outputSample += filterCoeff[i] * (waveTable[revpos] + waveTable[pos]);
+		revpos = (revpos + 1) & 0x7FF;
+		pos = (pos - 1) & 0x7FF;
+	}
+
+	outputSample += filterCoeff[firTaps / 2] * waveTable[revpos];
+
+	return outputSample;
+}
 
 float Filter::CalcFilter(int32_t pos, float* waveTable)
 {

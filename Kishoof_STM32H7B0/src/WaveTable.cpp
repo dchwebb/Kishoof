@@ -15,6 +15,8 @@ constexpr std::array<float, WaveTable::sinLUTSize + 1> sineLUT = wavetable.Creat
 
 uint32_t flashBusy = 0;
 
+float debugOutput[2048];
+
 void WaveTable::CalcSample()
 {
 	debugMain.SetHigh();		// Debug
@@ -43,41 +45,54 @@ void WaveTable::CalcSample()
 	constexpr float pitchBase = (65.41f * (2048.0f / sampleRate)) / std::pow(2.0, -50050.0f / 11330.0f);
 	constexpr float cvMult = -1.0f / 11330.0f;
 	float newInc = pitchBase * std::pow(2.0f, (float)adc.Pitch_CV * cvMult) * octave;			// for cycle length matching sample rate (48k)
-	pitchInc[0] = 0.99 * pitchInc[0] + 0.01 * newInc;
+	smoothedInc = 0.99 * smoothedInc + 0.01 * newInc;
 
-	filter.cutoff = 1.0f / pitchInc[0];				// Set filter for recalculation
+	filter.cutoff = 1.0f / smoothedInc;				// Set filter for recalculation
 
-	readPos[0] += pitchInc[0];
+	pitchInc[0] = smoothedInc;
+	readPos[0] += smoothedInc;
 	if (readPos[0] >= 2048) { readPos[0] -= 2048; }
 
-	pitchInc[1] = pitchInc[0] * (octaveChnB ? 0.5f : 1.0f);
+	pitchInc[1] = smoothedInc * (octaveChnB ? 0.5f : 1.0f);
 	readPos[1] += pitchInc[1];
 	if (readPos[1] >= 2048) { readPos[1] -= 2048; }
-
-
-	float adjReadPos = CalcWarp();
 
 	if (stepped) {
 		OutputSample(1, readPos[1]);
 	} else {
 		AdditiveWave();
 	}
-
-
+	float adjReadPos = CalcWarp();
 	OutputSample(0, adjReadPos);
+	outputSamples[0] = FastTanh(outputSamples[0]);
 
 	if (chBMix.IsHigh()) {
 		outputSamples[1] = FastTanh(outputSamples[0] + outputSamples[1]);
 	} else 	if (chBRingMod.IsHigh()) {
-		outputSamples[1] = outputSamples[0] * outputSamples[1];
+		outputSamples[1] = FastTanh(outputSamples[0] * outputSamples[1]);
 	}
 
 
 	// Enter sample in draw table to enable LCD update
 	constexpr float widthMult = (float)LCD::width / 2048.0f;		// Scale to width of the LCD
-	const uint8_t drawPos = std::min((uint8_t)std::round(readPos[0] * widthMult), (uint8_t)(LCD::width - 1));		// convert position from position in 2048 sample wavetable to 240 wide screen
-	//drawData[drawPos] = (uint8_t)((1.0f - outputSampleA) * 60.0f);
-	drawData[drawPos] = (uint8_t)(((1.0f - outputSamples[0]) * 60.0f * 0.5f) + (0.5f * drawData[drawPos]));		// Smoothed and inverted
+
+	// If channel A is affected by channel B (TZFM, Mix, RM) Use channel B's position to draw waveform
+//	const uint32_t drawPosChn = (warpType == Warp::tzfm || (octaveChnB && (chBMix.IsHigh() || chBRingMod.IsHigh()))) ? 1 : 0;
+	const uint32_t drawPosChn = (warpType == Warp::tzfm) ? 1 : 0;
+
+	debugOutput[(uint32_t)readPos[1]] = outputSamples[0];
+
+	const uint8_t drawPos = std::min((uint8_t)std::round(readPos[drawPosChn] * widthMult), (uint8_t)(LCD::width - 1));		// convert position from position in 2048 sample wavetable to 240 wide screen
+
+	if ((1.0f - outputSamples[0]) * 60.0f > 255.0f) {
+		volatile uint32_t susp = 1;
+		++susp;
+	}
+
+
+
+	drawData[drawPos] = (uint8_t)((1.0f - outputSamples[0]) * 60.0f);
+	//drawData[drawPos] = (uint8_t)(((1.0f - outputSamples[0]) * 60.0f * 0.5f) + (0.5f * drawData[drawPos]));		// Smoothed and inverted
 
 	debugMain.SetLow();			// Debug off
 }
@@ -88,7 +103,7 @@ inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 	// Get location of current wavetable frame in wavetable
 	//const float wtPos = ((float)(wavList[activeWaveTable].tableCount - 1) / 43000.0f) * channel[chn].adcPot;
 	//channel[chn].pos = std::clamp((float)(0.99f * channel[chn].pos + 0.01f * wtPos), 0.0f, (float)(wavList[activeWaveTable].tableCount - 1));	// Smooth
-	const float pos = std::clamp(channel[chn].Val() * (wavList[activeWaveTable].tableCount - 1), 0.0f, (float)(wavList[activeWaveTable].tableCount - 1));
+	const float pos = std::clamp(wavetablePos[chn].Val() * (wavList[activeWaveTable].tableCount - 1), 0.0f, (float)(wavList[activeWaveTable].tableCount - 1));
 	const uint32_t sampleOffset = 2048 * std::floor(pos);			// get sample position of wavetable frame
 
 	// Interpolate between samples
@@ -115,19 +130,20 @@ inline float WaveTable::CalcWarp()
 	}
 
 	float adjReadPos;					// Read position after warp applied
-	float pitchMult = 1.0f;				// Multiply to adjust the pitch increment for calculating ant-aliasing filter cutoff
+	float pitchAdj;						// To adjust the pitch increment for calculating ant-aliasing filter cutoff
 	switch (warpType) {
 	case Warp::bend: {
 		// Waveform is stretched to one side (or squeezed to the other side) [Like 'Asym' in Serum]
 		// https://www.desmos.com/calculator/u9aphhyiqm
 		const float a = std::clamp((float)adc.Warp_Amt_Pot / 32768.0f, 0.1f, 1.9f);
 		if (readPos[0] < 1024.0f * a) {
-			pitchMult = 1.0f / a;
-			adjReadPos = readPos[0] / a;
+			pitchAdj = 1.0f / a;
+			adjReadPos = readPos[0] * pitchAdj;
 		} else {
-			pitchMult = 1.0f / (2.0f - a);
+			pitchAdj = 1.0f / (2.0f - a);
 			adjReadPos = (readPos[0] + 2048.0f - 2048.0f * a) / (2.0f - a);
 		}
+		pitchInc[0] *= pitchAdj;
 	}
 	break;
 
@@ -137,13 +153,13 @@ inline float WaveTable::CalcWarp()
 		float bendAmt = 1.0f / 96.0f;		// Increase to extend bend amount range
 		if (adc.Warp_Amt_Pot > 32767) {
 			float sinWarp = sineLUT[((uint32_t)readPos[0] + 1024) & 0x7ff];			// Apply a 180 degree phase shift and limit to 2047
-			adjReadPos = readPos[0] + sinWarp * (adc.Warp_Amt_Pot - 32767) * bendAmt;
-
+			pitchAdj = sinWarp * (adc.Warp_Amt_Pot - 32767) * bendAmt;
 		} else {
 			float sinWarp = sineLUT[(uint32_t)readPos[0]];			// Get amount of warp
-			adjReadPos = readPos[0] + sinWarp * (32767 - adc.Warp_Amt_Pot) * bendAmt;
+			pitchAdj = sinWarp * (32767 - adc.Warp_Amt_Pot) * bendAmt;
 		}
-
+		adjReadPos = readPos[0] + pitchAdj;
+		pitchInc[0] *= 1.5f;			// adding warp offset to increment for filter calculation is very noisy - approximate an average instead
 	}
 	break;
 
@@ -151,14 +167,19 @@ inline float WaveTable::CalcWarp()
 		// Like bend but flips direction in center: https://www.desmos.com/calculator/8jtheoca0l
 		const float a = std::clamp((float)adc.Warp_Amt_Pot / 32768.0f, 0.1f, 1.9f);
 		if (readPos[0] < 512.0f * a) {
-			adjReadPos = 2.0f * readPos[0] / a;
+			pitchAdj = 2.0f / a;
+			adjReadPos = pitchAdj * readPos[0];
 		} else if (readPos[0] < 1024.0f) {
-			adjReadPos = (readPos[0] * 2.0f) / (2.0f - a) + 2048.0f * (1.0f - a) / (2.0f - a);
+			pitchAdj = 2.0f / (2.0f - a);
+			adjReadPos = (readPos[0] * pitchAdj) + 2048.0f * (1.0f - a) / (2.0f - a);
 		} else if (readPos[0] < 2048.0f * (4.0f - a) / 4) {
-			adjReadPos = (readPos[0] * -2.0f) / (2.0f - a) + 2048.0f * (3.0f - a) / (2.0f - a);
+			pitchAdj = 2.0f / (2.0f - a);
+			adjReadPos = (readPos[0] * -pitchAdj) + 2048.0f * (3.0f - a) / (2.0f - a);
 		} else {
+			pitchAdj = 2.0f / a;
 			adjReadPos = (4096.0f - readPos[0] * 2.0f) / a;
 		}
+		pitchInc[0] *= pitchAdj;
 	}
 	break;
 
@@ -171,7 +192,10 @@ inline float WaveTable::CalcWarp()
 	case Warp::tzfm: {
 		// Through Zero FM: Phase distorts channel A using scaled bipolar version of channel B's waveform
 		float bendAmt = 1.0f / 48.0f;		// Increase to extend bend amount range
-		adjReadPos = readPos[0] + outputSamples[1] * (adc.Warp_Amt_Pot - 32767) * bendAmt;
+		pitchAdj = outputSamples[1] * (adc.Warp_Amt_Pot - 32767) * bendAmt;
+		adjReadPos = readPos[0] + pitchAdj;
+		pitchInc[0] *= 1.5f;
+
 		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
 		if (adjReadPos < 0) { adjReadPos += 2048; }
 	}
@@ -181,6 +205,7 @@ inline float WaveTable::CalcWarp()
 		adjReadPos = readPos[0];
 		break;
 	}
+
 	return adjReadPos;
 }
 

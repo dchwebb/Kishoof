@@ -19,6 +19,7 @@ public:
 	void Init();
 	void Update(bool reset = false);
 	float CalcFilter(int32_t pos, float* wavetable);
+	float CalcFilter(int32_t pos, float* waveTable, uint32_t lutPos);
 	float CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio);
 	float CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio, float pitchInc);
 
@@ -26,7 +27,7 @@ public:
 	float windowBeta = 4;					// between 0.0 and 10.0 - trade-off between stop band attenuation and filter transistion width
 
 private:
-	static constexpr uint32_t firTaps = 29;
+	static constexpr uint32_t firTaps = 31;
 	static constexpr uint32_t lutSize = 90;
 	static constexpr uint32_t lutRange = 7;
 	static constexpr float lutLookupMult = (float)lutSize / (float)lutRange;

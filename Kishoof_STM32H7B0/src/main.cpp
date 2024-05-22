@@ -44,7 +44,7 @@ int main(void) {
 	InitI2S();						// Initialise I2S which will start main sample interrupts
 
 	while (1) {
-		filter.Update();			// Check if filter coefficients need to be updated
+		//filter.Update();			// Check if filter coefficients need to be updated
 		usb.cdc.ProcessCommand();	// Check for incoming USB serial commands
 		ui.Update();
 		fatTools.CheckCache();		// Check if any outstanding cache changes need to be written to Flash
