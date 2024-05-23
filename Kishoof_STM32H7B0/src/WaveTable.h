@@ -1,26 +1,37 @@
 #pragma once
 
-#include "initialisation.h"
-#include "Filter.h"
-#include "GpioPIn.h"
-#include "FatTools.h"
 #include <string_view>
 
+#include "initialisation.h"
+#include "Filter.h"
+#include "GpioPin.h"
+#include "FatTools.h"
+#include "configManager.h"
+
 struct WaveTable {
-	friend class CDCHandler;				// Allow the serial handler access to private data for debug printing
-	friend class Config;					// Allow the config access to private data to save settings
+	friend class CDCHandler;					// Allow the serial handler access to private data for debug printing
+	friend class Config;						// Allow the config access to private data to save settings
 	friend class UI;
 public:
-	void CalcSample();						// Called by interrupt handler to generate next sample
-	void Init();							// Initialise caches, buffers etc
+	void CalcSample();							// Called by interrupt handler to generate next sample
+	void Init();								// Initialise caches, buffers etc
 	bool LoadWaveTable(uint32_t* startAddr);
 	void Draw();
 	bool UpdateWavetableList();
 	void ChangeWaveTable(int32_t upDown);
+	void ChannelBOctave(bool change = false);	// Called when channel B octave button is pressed
+	static void UpdateConfig();
 
-	float testWavetable[4096];
-	float outputSamples[2] = {0.0f, 0.0f};
-	bool octaveChnB = false;				// True if the channel B octave button has been pressed
+	struct {
+		char wavetable[8];
+		bool octaveChnB = false;
+	} cfg;
+
+	ConfigSaver configSaver = {
+		.settingsAddress = &cfg,
+		.settingsSize = sizeof(cfg),
+		.validateSettings = &WaveTable::UpdateConfig
+	};
 
 	enum class Warp {none, squeeze, bend, mirror, reverse, tzfm, count} warpType = Warp::none;
 	static constexpr std::string_view warpNames[] = {" NONE  ", "SQUEEZE", " BEND  ", "MIRROR ", "REVERSE", " TZFM  "};
@@ -71,13 +82,13 @@ private:
 	int32_t ParseInt(const std::string_view cmd, const std::string_view precedingChar, const int32_t low, const int32_t high);
 	bool GetWavInfo(Wav* sample);
 
-	enum class TestData {noise, twintone, testwaves, wavetable} wavetableType = TestData::wavetable;
+	float defaultWavetable[4096];				// Built-in wavetable
+	float outputSamples[2] = {0.0f, 0.0f};
 
 	char longFileName[100];
 	uint8_t lfnPosition = 0;
 
 	uint32_t activeWaveTable;
-	char waveTableName[11];			// Store name of active wavetable so can be relocated after disk activity
 	uint32_t wavetableCount;
 
 	struct {
@@ -97,22 +108,20 @@ private:
 	float smoothedInc = 0.0f;
 	float pitchInc[2] = {0.0f, 0.0f};
 	float readPos[2] = {0.0f, 0.0f};
-	int32_t oldReadPos;
 
 	bool stepped = false;
 	int32_t warpVal = 0;					// Used for setting hysteresis on warp type
 	Warp oldWarpType = Warp::none;
 
-	float debugTiming;
-
 	uint8_t drawData[240];
-
 
 	GpioPin modeSwitch	{GPIOE, 2, GpioPin::Type::Input};			// PE2: Mode switch
 	GpioPin octaveUp	{GPIOD, 0, GpioPin::Type::InputPulldown};	// PD0: Octave_Up
 	GpioPin octaveDown	{GPIOD, 1, GpioPin::Type::InputPulldown};	// PD1: Octave_Down
 	GpioPin chBMix		{GPIOD, 8, GpioPin::Type::InputPulldown};	// PD8: ChB_Mix
 	GpioPin chBRingMod	{GPIOD, 9, GpioPin::Type::InputPulldown};	// PD9: ChB_RM
+
+	GpioPin octaveLED	{GPIOD, 14, GpioPin::Type::Output};			// PD14: LED_Oct_B
 
 	GpioPin debugMain	{GPIOD, 6, GpioPin::Type::Output};			// PD5: Debug
 	GpioPin debugDraw	{GPIOD, 5, GpioPin::Type::Output};			// PD6: Debug

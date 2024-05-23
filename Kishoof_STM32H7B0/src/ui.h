@@ -59,7 +59,7 @@ private:
 		Btn octave;
 	} buttons = {{{GPIOE, 4, GpioPin::Type::InputPullup}, 0, 0}, {{GPIOD, 10, GpioPin::Type::InputPullup}, 0, 0}};
 
-	GpioPin octaveLED {GPIOD, 14, GpioPin::Type::Output};			// PD14: LED_Oct_B
+
 };
 
 extern UI ui;

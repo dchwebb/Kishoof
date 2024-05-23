@@ -1,4 +1,4 @@
-#include <WaveTable.h>
+//#include "WaveTable.h"
 #include "stm32h7b0xx.h"
 #include "initialisation.h"
 #include "GpioPin.h"
@@ -129,7 +129,7 @@ void InitCache()
 
 void InitSysTick()
 {
-	SysTick_Config(SystemCoreClock / SYSTICK);		// gives 1ms
+	SysTick_Config(SystemCoreClock / sysTickInterval);		// gives 1ms
 	NVIC_SetPriority(SysTick_IRQn, 0);
 }
 

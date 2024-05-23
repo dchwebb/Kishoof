@@ -105,12 +105,7 @@ void UI::Update()
 
 
 	if (buttons.octave.Pressed()) {
-		wavetable.octaveChnB = !wavetable.octaveChnB;
-		if (wavetable.octaveChnB) {
-			octaveLED.SetHigh();
-		} else {
-			octaveLED.SetLow();
-		}
+		wavetable.ChannelBOctave(true);
 	}
 
 	if (!(SPI_DMA_Working)) {

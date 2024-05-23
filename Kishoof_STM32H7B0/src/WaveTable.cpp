@@ -15,8 +15,6 @@ constexpr std::array<float, WaveTable::sinLUTSize + 1> sineLUT = wavetable.Creat
 
 uint32_t flashBusy = 0;
 
-float debugOutput[2048];
-
 void WaveTable::CalcSample()
 {
 	debugMain.SetHigh();		// Debug
@@ -47,16 +45,17 @@ void WaveTable::CalcSample()
 	float newInc = pitchBase * std::pow(2.0f, (float)adc.Pitch_CV * cvMult) * octave;			// for cycle length matching sample rate (48k)
 	smoothedInc = 0.99 * smoothedInc + 0.01 * newInc;
 
-	filter.cutoff = 1.0f / smoothedInc;				// Set filter for recalculation
-
+	// Increment the read position for each channel; pitch inc will be used in filter to set anti-aliasing cutoff frequency
 	pitchInc[0] = smoothedInc;
 	readPos[0] += smoothedInc;
 	if (readPos[0] >= 2048) { readPos[0] -= 2048; }
 
-	pitchInc[1] = smoothedInc * (octaveChnB ? 0.5f : 1.0f);
+	pitchInc[1] = smoothedInc * (cfg.octaveChnB ? 0.5f : 1.0f);
 	readPos[1] += pitchInc[1];
 	if (readPos[1] >= 2048) { readPos[1] -= 2048; }
 
+
+	// Generate channel B output first as used in TZFM to alter channel A read position
 	if (stepped) {
 		OutputSample(1, readPos[1]);
 	} else {
@@ -66,6 +65,7 @@ void WaveTable::CalcSample()
 	OutputSample(0, adjReadPos);
 	outputSamples[0] = FastTanh(outputSamples[0]);
 
+	// Apply mix/ring mod to channel B
 	if (chBMix.IsHigh()) {
 		outputSamples[1] = FastTanh(outputSamples[0] + outputSamples[1]);
 	} else 	if (chBRingMod.IsHigh()) {
@@ -74,35 +74,23 @@ void WaveTable::CalcSample()
 
 
 	// Enter sample in draw table to enable LCD update
+
+	// If channel A is affected by channel B (TZFM with octave down) Use channel B's position to draw waveform
+	const uint32_t drawPosChn = (warpType == Warp::tzfm && cfg.octaveChnB) ? 1 : 0;
 	constexpr float widthMult = (float)LCD::width / 2048.0f;		// Scale to width of the LCD
-
-	// If channel A is affected by channel B (TZFM, Mix, RM) Use channel B's position to draw waveform
-//	const uint32_t drawPosChn = (warpType == Warp::tzfm || (octaveChnB && (chBMix.IsHigh() || chBRingMod.IsHigh()))) ? 1 : 0;
-	const uint32_t drawPosChn = (warpType == Warp::tzfm) ? 1 : 0;
-
-	debugOutput[(uint32_t)readPos[1]] = outputSamples[0];
-
 	const uint8_t drawPos = std::min((uint8_t)std::round(readPos[drawPosChn] * widthMult), (uint8_t)(LCD::width - 1));		// convert position from position in 2048 sample wavetable to 240 wide screen
-
-	if ((1.0f - outputSamples[0]) * 60.0f > 255.0f) {
-		volatile uint32_t susp = 1;
-		++susp;
-	}
-
-
-
 	drawData[drawPos] = (uint8_t)((1.0f - outputSamples[0]) * 60.0f);
 	//drawData[drawPos] = (uint8_t)(((1.0f - outputSamples[0]) * 60.0f * 0.5f) + (0.5f * drawData[drawPos]));		// Smoothed and inverted
 
 	debugMain.SetLow();			// Debug off
+
+	config.SaveConfig();		// Save any changes only after sample calculation
 }
 
 
 inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 {
 	// Get location of current wavetable frame in wavetable
-	//const float wtPos = ((float)(wavList[activeWaveTable].tableCount - 1) / 43000.0f) * channel[chn].adcPot;
-	//channel[chn].pos = std::clamp((float)(0.99f * channel[chn].pos + 0.01f * wtPos), 0.0f, (float)(wavList[activeWaveTable].tableCount - 1));	// Smooth
 	const float pos = std::clamp(wavetablePos[chn].Val() * (wavList[activeWaveTable].tableCount - 1), 0.0f, (float)(wavList[activeWaveTable].tableCount - 1));
 	const uint32_t sampleOffset = 2048 * std::floor(pos);			// get sample position of wavetable frame
 
@@ -129,13 +117,15 @@ inline float WaveTable::CalcWarp()
 		warpType = (Warp)((uint32_t)Warp::count * warpVal  / 65536);
 	}
 
+	const float warpAmt = std::clamp((61000.0f + adc.Warp_Amt_Pot - adc.WarpCV), 0.0f, 65535.0f);	// Calculate warp amount from pot and cv
+
 	float adjReadPos;					// Read position after warp applied
 	float pitchAdj;						// To adjust the pitch increment for calculating ant-aliasing filter cutoff
 	switch (warpType) {
 	case Warp::bend: {
 		// Waveform is stretched to one side (or squeezed to the other side) [Like 'Asym' in Serum]
 		// https://www.desmos.com/calculator/u9aphhyiqm
-		const float a = std::clamp((float)adc.Warp_Amt_Pot / 32768.0f, 0.1f, 1.9f);
+		const float a = std::clamp(warpAmt / 32768.0f, 0.1f, 1.9f);
 		if (readPos[0] < 1024.0f * a) {
 			pitchAdj = 1.0f / a;
 			adjReadPos = readPos[0] * pitchAdj;
@@ -150,13 +140,13 @@ inline float WaveTable::CalcWarp()
 	case Warp::squeeze: {
 		// Pinched: waveform squashed from sides to center; Stretched: from center to sides [Like 'Bend' in Serum]
 		// Deforms readPos using sine wave
-		float bendAmt = 1.0f / 96.0f;		// Increase to extend bend amount range
-		if (adc.Warp_Amt_Pot > 32767) {
+		const float bendAmt = 1.0f / 96.0f;		// Increase to extend bend amount range
+		if (warpAmt > 32767.0f) {
 			float sinWarp = sineLUT[((uint32_t)readPos[0] + 1024) & 0x7ff];			// Apply a 180 degree phase shift and limit to 2047
-			pitchAdj = sinWarp * (adc.Warp_Amt_Pot - 32767) * bendAmt;
+			pitchAdj = sinWarp * (warpAmt - 32767.0f) * bendAmt;
 		} else {
 			float sinWarp = sineLUT[(uint32_t)readPos[0]];			// Get amount of warp
-			pitchAdj = sinWarp * (32767 - adc.Warp_Amt_Pot) * bendAmt;
+			pitchAdj = sinWarp * (32767.0f - warpAmt) * bendAmt;
 		}
 		adjReadPos = readPos[0] + pitchAdj;
 		pitchInc[0] *= 1.5f;			// adding warp offset to increment for filter calculation is very noisy - approximate an average instead
@@ -165,7 +155,7 @@ inline float WaveTable::CalcWarp()
 
 	case Warp::mirror: {
 		// Like bend but flips direction in center: https://www.desmos.com/calculator/8jtheoca0l
-		const float a = std::clamp((float)adc.Warp_Amt_Pot / 32768.0f, 0.1f, 1.9f);
+		const float a = std::clamp(warpAmt / 32768.0f, 0.1f, 1.9f);
 		if (readPos[0] < 512.0f * a) {
 			pitchAdj = 2.0f / a;
 			adjReadPos = pitchAdj * readPos[0];
@@ -192,7 +182,7 @@ inline float WaveTable::CalcWarp()
 	case Warp::tzfm: {
 		// Through Zero FM: Phase distorts channel A using scaled bipolar version of channel B's waveform
 		float bendAmt = 1.0f / 48.0f;		// Increase to extend bend amount range
-		pitchAdj = outputSamples[1] * (adc.Warp_Amt_Pot - 32767) * bendAmt;
+		pitchAdj = outputSamples[1] * (warpAmt - 32767.0f) * bendAmt;
 		adjReadPos = readPos[0] + pitchAdj;
 		pitchInc[0] *= 1.5f;
 
@@ -237,7 +227,8 @@ void WaveTable::ChangeWaveTable(int32_t upDown)
 	int32_t nextWavetable = (int32_t)activeWaveTable + upDown;
 	if (nextWavetable >= 0 && nextWavetable < (int32_t)wavetableCount) {
 		activeWaveTable = nextWavetable;
-		strncpy(waveTableName, wavList[activeWaveTable].name, 11);
+		strncpy(cfg.wavetable, wavList[activeWaveTable].name, 8);
+		config.ScheduleSave();
 	}
 }
 
@@ -249,9 +240,8 @@ void WaveTable::Init()
 	// Locate valid wavetable
 	uint32_t pos = 0;
 	for (auto& wav : wavList) {
-		if (wav.valid) {
+		if (strncmp(wav.name, cfg.wavetable, 8) == 0) {
 			activeWaveTable = pos;
-			strncpy(waveTableName, wav.name, 11);
 			return;
 		}
 		++pos;
@@ -288,13 +278,11 @@ bool WaveTable::GetWavInfo(Wav* wav)
 
 	// Check if there is a clm chunk with Serum metadata
 	pos += (8 + *(uint32_t*)&(wavHeader[pos + 4]));
-	if (*(uint32_t*)&(wavHeader[pos]) == 0x206d6c63) {		// Look for string 'clm '
+	if (*(uint32_t*)&(wavHeader[pos]) == 0x206d6c63) {			// Look for string 'clm '
 		const char* metadata = (char*)&(wavHeader[pos + 16]);
 		if (std::strspn(metadata, "0123456789") == 8) {
 			wav->metadata = std::stoi(metadata);
 		}
-
-
 	}
 
 	// Navigate forward to find the start of the data area
@@ -305,7 +293,7 @@ bool WaveTable::GetWavInfo(Wav* wav)
 		}
 	}
 
-	wav->dataSize = *(uint32_t*)&(wavHeader[pos + 4]);		// Num Samples * Num Channels * Bits per Sample / 8
+	wav->dataSize = *(uint32_t*)&(wavHeader[pos + 4]);			// Num Samples * Num Channels * Bits per Sample / 8
 	wav->sampleCount = wav->dataSize / (wav->channels * wav->byteDepth);
 	wav->startAddr = &(wavHeader[pos + 8]);
 	wav->tableCount = wav->sampleCount / 2048;
@@ -334,12 +322,13 @@ bool WaveTable::UpdateWavetableList()
 	wavList[0].byteDepth  = 4;
 	wavList[0].sampleCount = 4096;
 	wavList[0].tableCount = 2;
-	wavList[0].startAddr = (uint8_t*)&testWavetable;
+	wavList[0].startAddr = (uint8_t*)&defaultWavetable;
+	wavList[0].valid = true;
 
 	// Generate test waves
 	for (uint32_t i = 0; i < 2048; ++i) {
-		testWavetable[i] = std::sin((float)i * M_PI * 2.0f / 2048.0f);
-		testWavetable[i + 2048] = (2.0f * i / 2048.0f) - 1.0f;
+		defaultWavetable[i] = std::sin((float)i * M_PI * 2.0f / 2048.0f);
+		defaultWavetable[i + 2048] = (2.0f * i / 2048.0f) - 1.0f;
 	}
 
 	// Updates list of wavetables from FAT root directory
@@ -414,4 +403,25 @@ float WaveTable::FastTanh(float x)
 	float a = x * (135135.0f + x2 * (17325.0f + x2 * (378.0f + x2)));
 	float b = 135135.0f + x2 * (62370.0f + x2 * (3150.0f + x2 * 28.0f));
 	return a / b;
+}
+
+
+void WaveTable::UpdateConfig()
+{
+	wavetable.ChannelBOctave();
+}
+
+
+void WaveTable::ChannelBOctave(bool change)
+{
+	if (change) {
+		cfg.octaveChnB = !cfg.octaveChnB;
+		config.ScheduleSave();
+	}
+	if (cfg.octaveChnB) {
+		octaveLED.SetHigh();
+	} else {
+		octaveLED.SetLow();
+	}
+
 }

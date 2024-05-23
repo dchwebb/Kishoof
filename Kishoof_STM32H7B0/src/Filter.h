@@ -28,6 +28,7 @@ public:
 
 private:
 	static constexpr uint32_t firTaps = 31;
+	static constexpr uint32_t foldedFirTaps = (firTaps + 1) / 2;
 	static constexpr uint32_t lutSize = 90;
 	static constexpr uint32_t lutRange = 7;
 	static constexpr float lutLookupMult = (float)lutSize / (float)lutRange;
@@ -51,7 +52,7 @@ private:
 	struct {
 		float log;
 		float inc;
-		float coeff[(firTaps + 1) / 2];
+		float coeff[foldedFirTaps];
 	} filterLUT[lutSize];
 
 	//GpioPin debugFilter{GPIOE, 3, GpioPin::Type::Output};		// PE3: Debug

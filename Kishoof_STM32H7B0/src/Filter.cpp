@@ -27,11 +27,11 @@ void Filter::BuildLUT()
 	// Eg is sampling freq = 20 kHz, then Nyquist = 10 kHz. LPF with 3 dB corner at 1 kHz set omega = 0.1 (1 kHz / 10 kHz)
 	// Each LUT is for an integer pitch increment from 1 to 90 (maximum pitch increment with 5V and octave up
 	const float inc = (float)lutRange / (float)lutSize;
-	for (uint32_t i = 1; i <= lutSize; ++i) {
+	for (uint32_t i = 0; i < lutSize; ++i) {
 		float pitchInc = std::pow(2.0f, inc * i);
 		const float omega = 1.0f / pitchInc;
 		filterLUT[i].inc = pitchInc;
-		for (int8_t j = 0; j < firTaps / 2 + 1; ++j) {
+		for (int8_t j = 0; j < (int8_t)foldedFirTaps; ++j) {
 			const int8_t  arg = j - (firTaps - 1) / 2;
 			filterLUT[i].coeff[j] = omega * Sinc(omega * arg * M_PI) * winCoeff[j];
 		}
@@ -58,7 +58,6 @@ void Filter::Update(bool reset)
 }
 
 
-
 // Rectangular FIR
 void Filter::InitFIRFilter(float omega)
 {
@@ -67,7 +66,7 @@ void Filter::InitFIRFilter(float omega)
 	// cycle between two sets of coefficients so one can be changed without affecting the other
 	const bool inactiveFilter = !activeFilter;
 
-	for (int8_t j = 0; j < firTaps / 2 + 1; ++j) {
+	for (int8_t j = 0; j < (int8_t)foldedFirTaps; ++j) {
 		int8_t  arg = j - (firTaps - 1) / 2;
 		firCoeff[inactiveFilter][j] = omega * Sinc(omega * arg * M_PI) * winCoeff[j];
 	}
@@ -81,7 +80,7 @@ float Filter::CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio,
 	// FIR Convolution routine using folded FIR structure.
 	// Samples are interpolated according to ratio and filtering is carried out to minimise multiplications
 
-	// Calculate filter coefficient lookup table (converts pitchInc from exponential to linear scale
+	// Calculate filter coefficient lookup table (converts pitch increment from exponential to linear scale)
 	const uint32_t lutPos = std::min(uint32_t(std::round(std::log2(pitchInc) * lutLookupMult)), lutSize - 1);
 	auto& filterCoeff = filterLUT[lutPos].coeff;
 
