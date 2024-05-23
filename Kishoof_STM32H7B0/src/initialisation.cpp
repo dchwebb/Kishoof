@@ -1,7 +1,6 @@
-//#include "WaveTable.h"
 #include "stm32h7b0xx.h"
 #include "initialisation.h"
-#include "GpioPin.h"
+
 
 
 // Clock overview:
@@ -556,7 +555,7 @@ void InitEncoders()
 	RCC->APB4ENR |= RCC_APB4ENR_SYSCFGEN;			// Enable system configuration clock: used to manage external interrupt line connection to GPIOs
 	// Encoder using timer functionality - PC6 and PC7
 	GPIOC->PUPDR |= GPIO_PUPDR_PUPD6_0 |			// Set encoder pins to pull up
-		GPIO_PUPDR_PUPD7_0;
+					GPIO_PUPDR_PUPD7_0;
 
 	RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;				// Enable Timer 8
 	TIM8->PSC = 0;									// Set prescaler
@@ -595,16 +594,12 @@ void InitOctoSPI()
 
 	OCTOSPI1->DCR2 |= (1 << OCTOSPI_DCR2_PRESCALER_Pos);	// Set prescaler to n + 1 => 153.6 MHz / (n + 1) - tested to 76.8MHz
 
-//	OCTOSPI1->DCR3 |= (3 << OCTOSPI_DCR3_CSBOUND_Pos);		// Set Chip select boundary
-//	OCTOSPI1->DCR4 = 250; 									// Refresh Time: The chip select should be released every 4us
-//	OCTOSPI1->TCR |= OCTOSPI_TCR_DHQC;						// Delay hold quarter cycle; See RM p881
 }
 
 
 void JumpToBootloader()
 {
-	//void (*SysMemBootJump)();
-	volatile uint32_t BootAddr = 0x1FF0A000;	// Set the address of the entry point to bootloader
+	volatile uint32_t bootAddr = 0x1FF0A000;	// Set the address of the entry point to bootloader
 	__disable_irq();							// Disable all interrupts
 	SysTick->CTRL = 0;							// Disable Systick timer
 
@@ -622,8 +617,8 @@ void JumpToBootloader()
 	}
 
 	__enable_irq();								// Re-enable all interrupts
-	void (*SysMemBootJump)() = (void(*)()) (*((uint32_t *) (BootAddr + 4)));	// Set up the jump to booloader address + 4
-	__set_MSP(*(uint32_t *)BootAddr);			// Set the main stack pointer to the bootloader stack
+	void (*SysMemBootJump)() = (void(*)()) (*((uint32_t *) (bootAddr + 4)));	// Set up the jump to booloader address + 4
+	__set_MSP(*(uint32_t *)bootAddr);			// Set the main stack pointer to the bootloader stack
 	SysMemBootJump(); 							// Call the function to jump to bootloader location
 
 	while (1) {

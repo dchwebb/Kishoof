@@ -7,8 +7,8 @@
 bool Config::SaveConfig(bool forceSave)
 {
 	bool result = true;
-	if (forceSave || (scheduleSave && SysTickVal > saveBooked + 30000)) {			// 30 seconds between saves
-
+	if (forceSave || (scheduleSave && SysTickVal > saveBooked + 10000)) {			// 30 seconds between saves
+		GpioPin::SetHigh(GPIOD, 5);
 		scheduleSave = false;
 
 		if (currentSettingsOffset == -1) {					// First set in RestoreConfig
@@ -24,7 +24,8 @@ bool Config::SaveConfig(bool forceSave)
 		// Check if flash needs erasing
 		bool eraseFlash = false;
 		for (uint32_t i = 0; i < settingsSize / 4; ++i) {
-			if (flashPos[i] != 0xFFFFFFFF) {
+			//if (flashPos[i] != 0xFFFFFFFF) {
+			if (true) {
 				eraseFlash = true;
 				currentSettingsOffset = 0;					// Reset offset of current settings to beginning of page
 				flashPos = flashConfigAddr;
@@ -40,7 +41,6 @@ bool Config::SaveConfig(bool forceSave)
 			configPos += saver->settingsSize;
 		}
 
-		__disable_irq();									// Disable Interrupts
 		FlashUnlock();										// Unlock Flash memory for writing
 		FLASH->SR1 = flashAllErrors;						// Clear error flags in Status Register
 
@@ -50,13 +50,14 @@ bool Config::SaveConfig(bool forceSave)
 		result = FlashProgram(flashPos, reinterpret_cast<uint32_t*>(&configBuffer), settingsSize);
 
 		FlashLock();										// Lock Flash
-		__enable_irq(); 									// Enable Interrupts
+
 
 		if (result) {
 			printf("Config Saved (%lu bytes at %#010lx)\r\n", settingsSize, (uint32_t)flashPos);
 		} else {
 			printf("Error saving config\r\n");
 		}
+		GpioPin::SetLow(GPIOD, 5);
 	}
 	return result;
 }
@@ -159,16 +160,15 @@ bool Config::FlashWaitForLastOperation()
 
 bool Config::FlashProgram(uint32_t* dest_addr, uint32_t* src_addr, size_t size)
 {
-	// - requires that 64 bit words are written in rows of 32 bits
 	if (FlashWaitForLastOperation()) {
 		FLASH->CR1 |= FLASH_CR_PG;
 
 		__ISB();
 		__DSB();
 
-		// Each write block is 64 bits
-		for (uint16_t b = 0; b < std::ceil(static_cast<float>(size) / 8); ++b) {
-			for (uint8_t i = 0; i < 2; ++i) {
+		// Each write block is up to 128 bits
+		for (uint16_t b = 0; b < std::ceil(static_cast<float>(size) / 16); ++b) {
+			for (uint8_t i = 0; i < 4; ++i) {
 				*dest_addr = *src_addr;
 				++dest_addr;
 				++src_addr;

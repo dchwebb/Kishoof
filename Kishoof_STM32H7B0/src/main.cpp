@@ -25,6 +25,7 @@ Config config{&wavetable.configSaver};		// Construct config handler with list of
  * Implement encoder button
  * Implement warp type button
  * Check drive strength on SPI pins
+ * Allow multiple flash sectors to be used for config storage
  */
 
 extern "C" {

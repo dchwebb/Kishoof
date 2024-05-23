@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cmath>
-
+#include "GpioPin.h"
 
 extern volatile uint32_t SysTickVal;
 

@@ -16,9 +16,9 @@ public:
 	static constexpr uint8_t configVersion = 1;
 	
 	// STM32H7B0 has 128k Flash in 16 sectors of 8192k
-	static constexpr uint32_t flashConfigPage = 14;		// Allow 3 sectors for config giving a config size of 24k before erase needed
+	static constexpr uint32_t flashConfigSector = 14;		// Allow 3 sectors for config giving a config size of 24k before erase needed
 	static constexpr uint32_t flashSectorSize = 8192;
-	uint32_t* const flashConfigAddr = reinterpret_cast<uint32_t* const>(FLASH_BASE + flashSectorSize * (flashConfigPage - 1));
+	uint32_t* const flashConfigAddr = reinterpret_cast<uint32_t* const>(FLASH_BASE + flashSectorSize * (flashConfigSector - 1));
 
 	bool scheduleSave = false;
 	uint32_t saveBooked = false;
@@ -29,7 +29,7 @@ public:
 			settingsSize += saver->settingsSize;
 		}
 		// Ensure config size (plus 4 byte header) is aligned to 8 byte boundary
-		settingsSize = AlignTo8Bytes(settingsSize + sizeof(ConfigHeader));
+		settingsSize = AlignTo16Bytes(settingsSize + sizeof(ConfigHeader));
 	}
 
 	void ScheduleSave();				// called whenever a config setting is changed to schedule a save after waiting to see if any more changes are being made
@@ -52,10 +52,10 @@ private:
 	bool FlashWaitForLastOperation();
 	bool FlashProgram(uint32_t* dest_addr, uint32_t* src_addr, size_t size);
 
-	static const inline uint32_t AlignTo8Bytes(uint32_t val) {
-		val += 7;
-		val >>= 3;
-		val <<= 3;
+	static const inline uint32_t AlignTo16Bytes(uint32_t val) {
+		val += 15;
+		val >>= 4;
+		val <<= 4;
 		return val;
 	}
 };

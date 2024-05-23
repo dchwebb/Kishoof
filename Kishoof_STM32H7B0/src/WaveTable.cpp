@@ -29,7 +29,7 @@ void WaveTable::CalcSample()
 	}
 
 	stepped = modeSwitch.IsLow();
-	float octave = octaveUp.IsHigh() ? 2.0f : octaveDown.IsHigh() ? 0.5 : 1.0f;
+	const float octave = octaveUp.IsHigh() ? 2.0f : octaveDown.IsHigh() ? 0.5 : 1.0f;
 
 	// 0v = 61200; 1v = 50110; 2v = 39020; 3v = 27910; 4v = 16790; 5v = 5670
 	// C: 16.35 Hz 32.70 Hz; 65.41 Hz; 130.81 Hz; 261.63 Hz; 523.25 Hz; 1046.50 Hz; 2093.00 Hz; 4186.01 Hz
@@ -42,7 +42,7 @@ void WaveTable::CalcSample()
 	//constexpr float pitchBase = (65.41f * (2048.0f / sampleRate)) / std::pow(2.0, -50120.0f / 11090.0f);
 	constexpr float pitchBase = (65.41f * (2048.0f / sampleRate)) / std::pow(2.0, -50050.0f / 11330.0f);
 	constexpr float cvMult = -1.0f / 11330.0f;
-	float newInc = pitchBase * std::pow(2.0f, (float)adc.Pitch_CV * cvMult) * octave;			// for cycle length matching sample rate (48k)
+	const float newInc = pitchBase * std::pow(2.0f, (float)adc.Pitch_CV * cvMult) * octave;			// for cycle length matching sample rate (48k)
 	smoothedInc = 0.99 * smoothedInc + 0.01 * newInc;
 
 	// Increment the read position for each channel; pitch inc will be used in filter to set anti-aliasing cutoff frequency
@@ -61,7 +61,7 @@ void WaveTable::CalcSample()
 	} else {
 		AdditiveWave();
 	}
-	float adjReadPos = CalcWarp();
+	const float adjReadPos = CalcWarp();
 	OutputSample(0, adjReadPos);
 	outputSamples[0] = FastTanh(outputSamples[0]);
 
@@ -84,7 +84,7 @@ void WaveTable::CalcSample()
 
 	debugMain.SetLow();			// Debug off
 
-	config.SaveConfig();		// Save any changes only after sample calculation
+	config.SaveConfig();		// Save any scheduled changes only after sample calculation
 }
 
 
@@ -102,7 +102,7 @@ inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 	if (!stepped && chn == 0) {
 		const float wtRatio = pos - (uint32_t)pos;
 		if (wtRatio > 0.0001f) {
-			float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wavList[activeWaveTable].startAddr + sampleOffset + 2048, ratio, pitchInc[chn]);
+			const float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wavList[activeWaveTable].startAddr + sampleOffset + 2048, ratio, pitchInc[chn]);
 			outputSamples[0] = std::lerp(outputSamples[0], outputSample2, wtRatio);
 		}
 	}
@@ -121,6 +121,7 @@ inline float WaveTable::CalcWarp()
 
 	float adjReadPos;					// Read position after warp applied
 	float pitchAdj;						// To adjust the pitch increment for calculating ant-aliasing filter cutoff
+
 	switch (warpType) {
 	case Warp::bend: {
 		// Waveform is stretched to one side (or squeezed to the other side) [Like 'Asym' in Serum]
@@ -142,10 +143,10 @@ inline float WaveTable::CalcWarp()
 		// Deforms readPos using sine wave
 		const float bendAmt = 1.0f / 96.0f;		// Increase to extend bend amount range
 		if (warpAmt > 32767.0f) {
-			float sinWarp = sineLUT[((uint32_t)readPos[0] + 1024) & 0x7ff];			// Apply a 180 degree phase shift and limit to 2047
+			const float sinWarp = sineLUT[((uint32_t)readPos[0] + 1024) & 0x7ff];			// Apply a 180 degree phase shift and limit to 2047
 			pitchAdj = sinWarp * (warpAmt - 32767.0f) * bendAmt;
 		} else {
-			float sinWarp = sineLUT[(uint32_t)readPos[0]];			// Get amount of warp
+			const float sinWarp = sineLUT[(uint32_t)readPos[0]];			// Get amount of warp
 			pitchAdj = sinWarp * (32767.0f - warpAmt) * bendAmt;
 		}
 		adjReadPos = readPos[0] + pitchAdj;
@@ -203,9 +204,9 @@ inline float WaveTable::CalcWarp()
 inline void WaveTable::AdditiveWave()
 {
 	// Calculate which pair of harmonic sets to interpolate between
-	float harmonicPos = (float)((harmonicSets - 1) * adc.Wavetable_Pos_B_Pot) / 65536.0f;
-	uint32_t harmonicLow = (uint32_t)harmonicPos;
-	float ratio = harmonicPos - harmonicLow;
+	const float harmonicPos = (float)((harmonicSets - 1) * adc.Wavetable_Pos_B_Pot) / 65536.0f;
+	const uint32_t harmonicLow = (uint32_t)harmonicPos;
+	const float ratio = harmonicPos - harmonicLow;
 
 	float sample = 0.0f;
 	float pos = 0.0f;
@@ -214,7 +215,6 @@ inline void WaveTable::AdditiveWave()
 		while (pos >= 2048.0f) {
 			pos -= 2048.0f;
 		}
-		//outputSampleB += additiveHarmonics[i] * std::lerp(sineLUT[(uint32_t)pos], sineLUT[std::ceil(pos)], pos - std::floor(pos));
 		float harmonicLevel = std::lerp(additiveHarmonics[harmonicLow][i], additiveHarmonics[harmonicLow + 1][i], ratio);
 		sample += harmonicLevel * sineLUT[(uint32_t)pos];
 	}
@@ -224,7 +224,7 @@ inline void WaveTable::AdditiveWave()
 
 void WaveTable::ChangeWaveTable(int32_t upDown)
 {
-	int32_t nextWavetable = (int32_t)activeWaveTable + upDown;
+	const int32_t nextWavetable = (int32_t)activeWaveTable + upDown;
 	if (nextWavetable >= 0 && nextWavetable < (int32_t)wavetableCount) {
 		activeWaveTable = nextWavetable;
 		strncpy(cfg.wavetable, wavList[activeWaveTable].name, 8);
@@ -237,7 +237,7 @@ void WaveTable::Init()
 {
 	wavetable.UpdateWavetableList();						// Updated list of samples on flash
 
-	// Locate valid wavetable
+	// Locate wavetable if stored in config - otherwise use default built-in wavetable
 	uint32_t pos = 0;
 	for (auto& wav : wavList) {
 		if (strncmp(wav.name, cfg.wavetable, 8) == 0) {
@@ -316,7 +316,7 @@ bool WaveTable::GetWavInfo(Wav* wav)
 bool WaveTable::UpdateWavetableList()
 {
 	// Create a test wavetable with a couple of waveforms - also used in case of no file system
-	strncpy(wavList[0].name, "default    ", 11);
+	strncpy(wavList[0].name, "Default    ", 8);
 	wavList[0].dataFormat = 3;
 	wavList[0].channels   = 1;
 	wavList[0].byteDepth  = 4;
@@ -358,7 +358,7 @@ bool WaveTable::UpdateWavetableList()
 
 			// Check if any fields have changed
 			if (wav->cluster != dirEntry->firstClusterLow || wav->size != dirEntry->fileSize ||
-					strncmp(wav->name, dirEntry->name, 11) != 0) {
+					strncmp(wav->name, dirEntry->name, 8) != 0) {
 				changed = true;
 				strncpy(wav->name, dirEntry->name, 8);
 				wav->cluster = dirEntry->firstClusterLow;
@@ -399,9 +399,9 @@ int32_t WaveTable::ParseInt(const std::string_view cmd, const std::string_view p
 // Algorithm source: https://varietyofsound.wordpress.com/2011/02/14/efficient-tanh-computation-using-lamberts-continued-fraction/
 float WaveTable::FastTanh(float x)
 {
-	float x2 = x * x;
-	float a = x * (135135.0f + x2 * (17325.0f + x2 * (378.0f + x2)));
-	float b = 135135.0f + x2 * (62370.0f + x2 * (3150.0f + x2 * 28.0f));
+	const float x2 = x * x;
+	const float a = x * (135135.0f + x2 * (17325.0f + x2 * (378.0f + x2)));
+	const float b = 135135.0f + x2 * (62370.0f + x2 * (3150.0f + x2 * 28.0f));
 	return a / b;
 }
 
