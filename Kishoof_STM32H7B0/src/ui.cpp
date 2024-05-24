@@ -40,25 +40,46 @@ void UI::DrawWaveTable()
 		lcd.PatternFill(textLeft, textTop, textLeft - 1 + lcd.Font_Large.Width * s.length(), textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
 	} else {
-		// Pixel order is across then down
-		const uint32_t channel = (displayWave == DisplayWave::channelA ? 0 : 1);
-		uint8_t oldHeight = wavetable.drawData[channel][0];
-		for (uint8_t i = 0; i < waveDrawWidth; ++i) {
+		if (displayWave == DisplayWave::Both) {
 
-			// do while loop needed to draw vertical lines where adjacent samples are vertically spaced by more than a pixel
-			uint8_t currHeight = wavetable.drawData[channel][i];
-			do {
-				const uint32_t pos = currHeight * waveDrawWidth + i;
-				lcd.drawBuffer[activeDrawBuffer][pos] = (displayWave == DisplayWave::channelA) ? LCD_LIGHTBLUE : LCD_ORANGE;
-				currHeight += currHeight > oldHeight ? -1 : 1;
-			} while (currHeight != oldHeight);
+			for (uint32_t channel = 0; channel < 2; ++channel) {
+				uint8_t oldHeight = (channel ? 60 : 0) + wavetable.drawData[channel][0] / 2;
+				for (uint8_t i = 0; i < waveDrawWidth; ++i) {
 
-			oldHeight = wavetable.drawData[channel][i];
+					// do while loop needed to draw vertical lines where adjacent samples are vertically spaced by more than a pixel
+					uint8_t currHeight = (channel ? 60 : 0) + wavetable.drawData[channel][i] / 2;
+					do {
+						const uint32_t pos = currHeight * waveDrawWidth + i;		// Pixel order is across then down
+						lcd.drawBuffer[activeDrawBuffer][pos] = channel ? LCD_ORANGE : LCD_LIGHTBLUE;
+						currHeight += currHeight > oldHeight ? -1 : 1;
+					} while (currHeight != oldHeight);
+
+					oldHeight = (channel ? 60 : 0) + wavetable.drawData[channel][i] / 2;
+				}
+			}
+
+		} else {
+			const uint32_t channel = (displayWave == DisplayWave::channelA ? 0 : 1);
+			uint8_t oldHeight = wavetable.drawData[channel][0];
+			for (uint8_t i = 0; i < waveDrawWidth; ++i) {
+
+				// do while loop needed to draw vertical lines where adjacent samples are vertically spaced by more than a pixel
+				uint8_t currHeight = wavetable.drawData[channel][i];
+				do {
+					const uint32_t pos = currHeight * waveDrawWidth + i;		// Pixel order is across then down
+					lcd.drawBuffer[activeDrawBuffer][pos] = (displayWave == DisplayWave::channelA) ? LCD_LIGHTBLUE : LCD_ORANGE;
+					currHeight += currHeight > oldHeight ? -1 : 1;
+				} while (currHeight != oldHeight);
+
+				oldHeight = wavetable.drawData[channel][i];
+			}
 		}
 
 		constexpr uint32_t drawL = (LCD::width - waveDrawWidth) / 2;
 		constexpr uint32_t drawR = drawL + waveDrawWidth - 1;
-		lcd.PatternFill(drawL, 60, drawR, 179, lcd.drawBuffer[activeDrawBuffer]);
+		constexpr uint32_t drawT = (LCD::height - waveDrawHeight) / 2;
+		constexpr uint32_t drawB = drawT + waveDrawHeight - 1;
+		lcd.PatternFill(drawL, drawT, drawR, drawB, lcd.drawBuffer[activeDrawBuffer]);
 
 	}
 	activeDrawBuffer = !activeDrawBuffer;
@@ -109,10 +130,16 @@ void UI::Update()
 	}
 
 	if (buttons.encoder.Pressed()) {
-		if (displayWave == DisplayWave::channelA) {
+		switch (displayWave) {
+		case DisplayWave::channelA:
 			displayWave = DisplayWave::channelB;
-		} else {
+			break;
+		case DisplayWave::channelB:
+			displayWave = DisplayWave::Both;
+			break;
+		case DisplayWave::Both:
 			displayWave = DisplayWave::channelA;
+			break;
 		}
 	}
 

@@ -62,6 +62,7 @@ private:
 
 	struct Wav {
 		char name[8];
+		char lfn[20];
 		uint32_t size;						// Size of file in bytes
 		uint32_t cluster;					// Starting cluster
 		uint32_t lastCluster;				// If file spans multiple clusters store last cluster before jump - if 0xFFFFFFFF then clusters are contiguous
@@ -117,7 +118,8 @@ private:
 	Warp oldWarpType = Warp::none;
 
 	uint8_t drawData[2][UI::waveDrawWidth];
-	static constexpr float drawWidthMult = (float)UI::waveDrawWidth / 2048.0f;		// Scale to width of the LCD
+	static constexpr float drawWidthMult = (float)UI::waveDrawWidth / 2048.0f;		// Scale to width of the LCD draw area
+	static constexpr float drawHeightMult = (float)UI::waveDrawHeight / 2.0f;		// Scale to height of the LCD draw area
 
 	float vcaMult;
 

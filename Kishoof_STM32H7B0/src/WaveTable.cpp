@@ -85,14 +85,11 @@ void WaveTable::CalcSample()
 	// If channel A is affected by channel B (TZFM with octave down) Use channel B's position to draw waveform
 	const uint32_t drawPosChn = (warpType == Warp::tzfm && cfg.octaveChnB) ? 1 : 0;
 
-	//const uint8_t drawPos0 = std::min((uint8_t)std::round(readPos[drawPosChn] * drawWidthMult), (uint8_t)(ui.waveDrawWidth - 1));		// convert position from position in 2048 sample wavetable to 240 wide screen
-	//	const uint8_t drawPos1 = std::min((uint8_t)std::round(readPos[1] * drawWidthMult), (uint8_t)(ui.waveDrawWidth - 1));
-
 	const uint8_t drawPos0 = (uint8_t)std::round(readPos[drawPosChn] * drawWidthMult);		// convert from position in 2048 sample wavetable to draw width
-	drawData[0][drawPos0] = (uint8_t)((1.0f - outputSamples[0]) * 60.0f);
+	drawData[0][drawPos0] = (uint8_t)((1.0f - outputSamples[0]) * drawHeightMult);
 
 	const uint8_t drawPos1 = (uint8_t)std::round(readPos[1] * drawWidthMult);
-	drawData[1][drawPos1] = (uint8_t)((1.0f - outputSamples[1]) * 60.0f);
+	drawData[1][drawPos1] = (uint8_t)((1.0f - outputSamples[1]) * drawHeightMult);
 
 	debugMain.SetLow();			// Debug off
 }
@@ -350,7 +347,7 @@ bool WaveTable::UpdateWavetableList()
 	while (dirEntry->name[0] != 0 && pos < maxWavetable) {
 
 		if (dirEntry->name[0] != FATFileInfo::fileDeleted && dirEntry->attr == FATFileInfo::LONG_NAME) {
-			// Store long file name in temporary buffer as this may contain volume and panning information
+			// Store long file name in temporary buffer
 			const FATLongFilename* lfn = (FATLongFilename*)dirEntry;
 			const char tempFileName[13] {lfn->name1[0], lfn->name1[2], lfn->name1[4], lfn->name1[6], lfn->name1[8],
 				lfn->name2[0], lfn->name2[2], lfn->name2[4], lfn->name2[6], lfn->name2[8], lfn->name2[10],
@@ -365,6 +362,14 @@ bool WaveTable::UpdateWavetableList()
 		// Valid wavetable: not LFN, not deleted, not directory, extension = WAV
 		} else if (dirEntry->name[0] != FATFileInfo::fileDeleted && (dirEntry->attr & AM_DIR) == 0 && strncmp(&(dirEntry->name[8]), "WAV", 3) == 0) {
 			Wav* wav = &(wavList[pos++]);
+
+			if (lfnPosition > 0) {
+				longFileName[lfnPosition] = '\0';
+				std::string_view lfn {longFileName};
+				size_t copyLen = std::min(lfn.find(".wav"), sizeof(wav->lfn));
+				std::strncpy(wav->lfn, longFileName, copyLen);
+				lfnPosition = 0;
+			}
 
 			// Check if any fields have changed
 			if (wav->cluster != dirEntry->firstClusterLow || wav->size != dirEntry->fileSize ||
