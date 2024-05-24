@@ -56,6 +56,7 @@ public:
 private:
 	static constexpr uint32_t maxWavetable = 128;
 	static constexpr float scaleOutput = -std::pow(2.0f, 31.0f);	// Multiple to convert -1.0 - 1.0 float to 32 bit int and invert
+	static constexpr float scaleVCAOutput = scaleOutput / 65536.0f;	// To scale when VCA is used
 
 	struct Wav {
 		char name[8];
@@ -114,6 +115,8 @@ private:
 	Warp oldWarpType = Warp::none;
 
 	uint8_t drawData[240];
+
+	float vcaMult;
 
 	GpioPin modeSwitch	{GPIOE, 2, GpioPin::Type::Input};			// PE2: Mode switch
 	GpioPin octaveUp	{GPIOD, 0, GpioPin::Type::InputPulldown};	// PD0: Octave_Up

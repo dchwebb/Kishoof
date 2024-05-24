@@ -17,15 +17,20 @@ volatile ADCValues __attribute__((section (".dma_buffer"))) adc;
 Config config{&wavetable.configSaver};		// Construct config handler with list of configSavers
 
 /* TODO:
- * Adjust aliasing filters to cope with warp and tzfm
+
  * VCA on output
+ * Config - add calibration
+ * Directory support
+ * UI updates
  * Switch warp type on zero crossing
  * Cross-fade switching wavetables
  * Implement CV trimmers
  * Implement encoder button
  * Implement warp type button
+
  * Check drive strength on SPI pins
  * Allow multiple flash sectors to be used for config storage
+ * Adjust aliasing filters to cope with warp and tzfm
  */
 
 extern "C" {
@@ -50,7 +55,8 @@ int main(void) {
 		usb.cdc.ProcessCommand();	// Check for incoming USB serial commands
 		ui.Update();
 		fatTools.CheckCache();		// Check if any outstanding cache changes need to be written to Flash
-
+		config.SaveConfig();		// Save any scheduled changes
+		CheckVCA();					// Bodge to check if VCA is normalled to 3.3v
 #if (USB_DEBUG)
 		if ((GPIOB->IDR & GPIO_IDR_ID4) == 0 && USBDebug) {
 			USBDebug = false;

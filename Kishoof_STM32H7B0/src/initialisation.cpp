@@ -625,3 +625,35 @@ void JumpToBootloader()
 		// Code should never reach this loop
 	}
 }
+
+
+bool vcaConnected = true;
+
+void CheckVCA()
+{
+	// Routine to check if VCA is normalled to 3.3V (ie value of 3.3V measured for 10 ms)
+	static uint32_t vcaNormalStart = 0;
+	static uint32_t vcaNonNormalStart = 0;
+
+	if (std::abs((int32_t)adc.VcaCV - 24000) > 100) {		// VCA adc is out of 3.3V range
+		if (vcaNonNormalStart > 0 && SysTickVal - vcaNonNormalStart > 2) {
+			vcaNormalStart = 0;
+			vcaConnected = true;
+		}
+		if (vcaNonNormalStart == 0) {
+			vcaNonNormalStart = SysTickVal;
+		}
+	} else  {
+		if (vcaNormalStart > 0 && SysTickVal - vcaNormalStart > 10) {
+			vcaNonNormalStart = 0;
+			vcaConnected = false;
+		}
+		if (vcaNormalStart == 0) {
+			vcaNormalStart = SysTickVal;
+		}
+	}
+}
+
+
+
+

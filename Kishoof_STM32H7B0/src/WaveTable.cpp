@@ -15,13 +15,21 @@ constexpr std::array<float, WaveTable::sinLUTSize + 1> sineLUT = wavetable.Creat
 
 uint32_t flashBusy = 0;
 
+extern bool vcaConnected;			// Temporary hack as current hardware does not have VCA normalled correctly
+
 void WaveTable::CalcSample()
 {
 	debugMain.SetHigh();		// Debug
 
 	// Previously calculated samples output at beginning of interrupt to keep timing independent of calculation time
-	SPI2->TXDR = (int32_t)(outputSamples[0] * scaleOutput);
-	SPI2->TXDR = (int32_t)(outputSamples[1] * scaleOutput);
+	if (vcaConnected) {
+		vcaMult = std::max(60000.0f - adc.VcaCV, 0.0f);
+		SPI2->TXDR = (int32_t)(outputSamples[0] * scaleVCAOutput * vcaMult);
+		SPI2->TXDR = (int32_t)(outputSamples[1] * scaleVCAOutput * vcaMult);
+	} else {
+		SPI2->TXDR = (int32_t)(outputSamples[0] * scaleOutput);
+		SPI2->TXDR = (int32_t)(outputSamples[1] * scaleOutput);
+	}
 
 	if (fatTools.Busy() && activeWaveTable > 0) {			// If using built-in wavetable don't need flash memory
 		++flashBusy;
@@ -83,8 +91,6 @@ void WaveTable::CalcSample()
 	//drawData[drawPos] = (uint8_t)(((1.0f - outputSamples[0]) * 60.0f * 0.5f) + (0.5f * drawData[drawPos]));		// Smoothed and inverted
 
 	debugMain.SetLow();			// Debug off
-
-	config.SaveConfig();		// Save any scheduled changes only after sample calculation
 }
 
 

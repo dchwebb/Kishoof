@@ -7,11 +7,11 @@
 bool Config::SaveConfig(bool forceSave)
 {
 	bool result = true;
-	if (forceSave || (scheduleSave && SysTickVal > saveBooked + 10000)) {			// 30 seconds between saves
+	if (forceSave || (scheduleSave && SysTickVal > saveBooked + 10000)) {			// 10 seconds between saves
 		GpioPin::SetHigh(GPIOD, 5);
 		scheduleSave = false;
 
-		if (currentSettingsOffset == -1) {					// First set in RestoreConfig
+		if (currentSettingsOffset == -1) {					// Default = -1 if not first set in RestoreConfig
 			currentSettingsOffset = 0;
 		} else {
 			currentSettingsOffset += settingsSize;
@@ -24,10 +24,9 @@ bool Config::SaveConfig(bool forceSave)
 		// Check if flash needs erasing
 		bool eraseFlash = false;
 		for (uint32_t i = 0; i < settingsSize / 4; ++i) {
-			//if (flashPos[i] != 0xFFFFFFFF) {
-			if (true) {
+			if (flashPos[i] != 0xFFFFFFFF) {
 				eraseFlash = true;
-				currentSettingsOffset = 0;					// Reset offset of current settings to beginning of page
+				currentSettingsOffset = 0;					// Reset offset of current settings to beginning of sector
 				flashPos = flashConfigAddr;
 				break;
 			}
@@ -45,7 +44,7 @@ bool Config::SaveConfig(bool forceSave)
 		FLASH->SR1 = flashAllErrors;						// Clear error flags in Status Register
 
 		if (eraseFlash) {
-			FlashEraseSector(flashConfigPage - 1);
+			FlashEraseSector(flashConfigSector - 1);
 		}
 		result = FlashProgram(flashPos, reinterpret_cast<uint32_t*>(&configBuffer), settingsSize);
 
@@ -72,7 +71,7 @@ void Config::RestoreConfig()
 			currentSettingsOffset = pos;
 			pos += settingsSize;
 		} else {
-			break;			// Either reached the end of the page or found the latest valid config block
+			break;			// Either reached the end of the sector or found the latest valid config block
 		}
 	}
 
@@ -98,7 +97,7 @@ void Config::EraseConfig()
 	FlashUnlock();										// Unlock Flash memory for writing
 	FLASH->SR1 = flashAllErrors;						// Clear error flags in Status Register
 
-	FlashEraseSector(flashConfigPage - 1);
+	FlashEraseSector(flashConfigSector - 1);
 
 	FlashLock();										// Lock Flash
 	__enable_irq();
