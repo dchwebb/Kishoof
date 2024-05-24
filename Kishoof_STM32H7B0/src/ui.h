@@ -10,24 +10,20 @@ public:
 	void DrawUI();
 	void Update();
 
-//	uint32_t SerialiseConfig(uint8_t** buff);
-//	uint32_t StoreConfig(uint8_t* buff);
-
-//	struct Config {
-//		DispMode displayMode = DispMode::Oscilloscope;
-//	} config;
-
-
 	std::string_view FloatToString(float f, bool smartFormat);
 	std::string_view IntToString(const int32_t v);
 	uint16_t DarkenColour(const uint16_t& colour, uint16_t amount);
 
 	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
-
+	static constexpr uint16_t waveDrawWidth = 200;
+	static constexpr uint16_t waveDrawHeight = 120;
 
 private:
 	void DrawMenu();
 	void DrawWaveTable();
+
+	enum class DisplayWave {channelA, channelB, Both};
+	DisplayWave displayWave = DisplayWave::channelA;
 
 	uint32_t oldWavetable = 0xFFFFFFFF;
 

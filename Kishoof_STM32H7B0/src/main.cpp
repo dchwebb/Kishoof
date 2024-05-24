@@ -18,7 +18,6 @@ Config config{&wavetable.configSaver};		// Construct config handler with list of
 
 /* TODO:
 
- * VCA on output
  * Config - add calibration
  * Directory support
  * UI updates

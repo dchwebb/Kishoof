@@ -40,21 +40,26 @@ void UI::DrawWaveTable()
 		lcd.PatternFill(textLeft, textTop, textLeft - 1 + lcd.Font_Large.Width * s.length(), textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
 	} else {
-		uint8_t oldHeight = wavetable.drawData[0];
-		for (uint8_t i = 0; i < 240; ++i) {
+		// Pixel order is across then down
+		const uint32_t channel = (displayWave == DisplayWave::channelA ? 0 : 1);
+		uint8_t oldHeight = wavetable.drawData[channel][0];
+		for (uint8_t i = 0; i < waveDrawWidth; ++i) {
 
 			// do while loop needed to draw vertical lines where adjacent samples are vertically spaced by more than a pixel
-			uint8_t currHeight = wavetable.drawData[i];
+			uint8_t currHeight = wavetable.drawData[channel][i];
 			do {
-				const uint32_t pos = currHeight * LCD::height + i;
-				lcd.drawBuffer[activeDrawBuffer][pos] = LCD_GREEN;
+				const uint32_t pos = currHeight * waveDrawWidth + i;
+				lcd.drawBuffer[activeDrawBuffer][pos] = (displayWave == DisplayWave::channelA) ? LCD_LIGHTBLUE : LCD_ORANGE;
 				currHeight += currHeight > oldHeight ? -1 : 1;
 			} while (currHeight != oldHeight);
 
-			oldHeight = wavetable.drawData[i];
+			oldHeight = wavetable.drawData[channel][i];
 		}
 
-		lcd.PatternFill(0, 60, LCD::width - 1, 179, lcd.drawBuffer[activeDrawBuffer]);
+		constexpr uint32_t drawL = (LCD::width - waveDrawWidth) / 2;
+		constexpr uint32_t drawR = drawL + waveDrawWidth - 1;
+		lcd.PatternFill(drawL, 60, drawR, 179, lcd.drawBuffer[activeDrawBuffer]);
+
 	}
 	activeDrawBuffer = !activeDrawBuffer;
 
@@ -103,6 +108,13 @@ void UI::Update()
 		//cfg.ScheduleSave();
 	}
 
+	if (buttons.encoder.Pressed()) {
+		if (displayWave == DisplayWave::channelA) {
+			displayWave = DisplayWave::channelB;
+		} else {
+			displayWave = DisplayWave::channelA;
+		}
+	}
 
 	if (buttons.octave.Pressed()) {
 		wavetable.ChannelBOctave(true);

@@ -1,7 +1,6 @@
 #include "WaveTable.h"
 #include "Filter.h"
 #include "GpioPin.h"
-#include "LCD.h"
 
 #include <cmath>
 #include <cstring>
@@ -85,10 +84,15 @@ void WaveTable::CalcSample()
 
 	// If channel A is affected by channel B (TZFM with octave down) Use channel B's position to draw waveform
 	const uint32_t drawPosChn = (warpType == Warp::tzfm && cfg.octaveChnB) ? 1 : 0;
-	constexpr float widthMult = (float)LCD::width / 2048.0f;		// Scale to width of the LCD
-	const uint8_t drawPos = std::min((uint8_t)std::round(readPos[drawPosChn] * widthMult), (uint8_t)(LCD::width - 1));		// convert position from position in 2048 sample wavetable to 240 wide screen
-	drawData[drawPos] = (uint8_t)((1.0f - outputSamples[0]) * 60.0f);
-	//drawData[drawPos] = (uint8_t)(((1.0f - outputSamples[0]) * 60.0f * 0.5f) + (0.5f * drawData[drawPos]));		// Smoothed and inverted
+
+	//const uint8_t drawPos0 = std::min((uint8_t)std::round(readPos[drawPosChn] * drawWidthMult), (uint8_t)(ui.waveDrawWidth - 1));		// convert position from position in 2048 sample wavetable to 240 wide screen
+	//	const uint8_t drawPos1 = std::min((uint8_t)std::round(readPos[1] * drawWidthMult), (uint8_t)(ui.waveDrawWidth - 1));
+
+	const uint8_t drawPos0 = (uint8_t)std::round(readPos[drawPosChn] * drawWidthMult);		// convert from position in 2048 sample wavetable to draw width
+	drawData[0][drawPos0] = (uint8_t)((1.0f - outputSamples[0]) * 60.0f);
+
+	const uint8_t drawPos1 = (uint8_t)std::round(readPos[1] * drawWidthMult);
+	drawData[1][drawPos1] = (uint8_t)((1.0f - outputSamples[1]) * 60.0f);
 
 	debugMain.SetLow();			// Debug off
 }

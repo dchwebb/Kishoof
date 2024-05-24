@@ -7,6 +7,8 @@
 #include "GpioPin.h"
 #include "FatTools.h"
 #include "configManager.h"
+#include "UI.h"
+
 
 struct WaveTable {
 	friend class CDCHandler;					// Allow the serial handler access to private data for debug printing
@@ -114,7 +116,8 @@ private:
 	int32_t warpVal = 0;					// Used for setting hysteresis on warp type
 	Warp oldWarpType = Warp::none;
 
-	uint8_t drawData[240];
+	uint8_t drawData[2][UI::waveDrawWidth];
+	static constexpr float drawWidthMult = (float)UI::waveDrawWidth / 2048.0f;		// Scale to width of the LCD
 
 	float vcaMult;
 
