@@ -9,6 +9,7 @@ class UI {
 public:
 	void DrawUI();
 	void Update();
+	void SetWavetable(int32_t index);
 
 	std::string_view FloatToString(float f, bool smartFormat);
 	std::string_view IntToString(const int32_t v);
@@ -19,13 +20,16 @@ public:
 	static constexpr uint16_t waveDrawHeight = 120;
 
 private:
-	void DrawMenu();
+	uint32_t WavetablePicker(int32_t upDown);
 	void DrawWaveTable();
 
 	enum class DisplayWave {channelA, channelB, Both};
 	DisplayWave displayWave = DisplayWave::channelA;
 
 	uint32_t oldWavetable = 0xFFFFFFFF;
+	uint32_t activeWaveTable = 0;
+	uint32_t pickerOpened = 0;
+	bool pickerDir = false;			// True if picker is currently selecting a directory
 
 	char charBuff[100];
 	bool activeDrawBuffer = true;

@@ -30,14 +30,20 @@ void UI::DrawWaveTable()
 		lcd.DrawStringMem(0, 0, lcd.Font_Large.Width * s.length(), lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, LCD_WHITE, LCD_BLACK);
 		lcd.PatternFill(textLeft, textTop, textLeft - 1 + lcd.Font_Large.Width * s.length(), textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
-	} else if (wavetable.activeWaveTable != oldWavetable) {
-		oldWavetable = wavetable.activeWaveTable;
-		std::string_view s = std::string_view(wavetable.wavList[wavetable.activeWaveTable].name, 8);
+	} else if (activeWaveTable != oldWavetable) {
+		oldWavetable = activeWaveTable;
+		std::string_view s;
+		if (wavetable.wavList[activeWaveTable].lfn[0]) {
+			s = std::string_view(wavetable.wavList[activeWaveTable].lfn);
+		} else {
+			s = std::string_view(wavetable.wavList[activeWaveTable].name, 8);
+		}
 
-		const uint32_t textLeft = 75;
-		const uint32_t textTop = 40;
-		lcd.DrawStringMem(0, 0, lcd.Font_Large.Width * s.length(), lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, LCD_WHITE, LCD_BLACK);
-		lcd.PatternFill(textLeft, textTop, textLeft - 1 + lcd.Font_Large.Width * s.length(), textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
+		constexpr uint32_t textLeft = 54;
+		constexpr uint32_t textWidth = LCD::width - (2 * textLeft);
+		constexpr uint32_t textTop = 36;
+		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, pickerDir ? LCD_YELLOW : LCD_WHITE, LCD_BLACK);
+		lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
 	} else {
 		if (displayWave == DisplayWave::Both) {
@@ -94,27 +100,30 @@ void UI::DrawWaveTable()
 
 }
 
-void UI::DrawMenu()
+void UI::SetWavetable(int32_t index)
 {
-//	lcd.DrawString(10, 6, "L", &lcd.Font_Large, LCD_WHITE, LCD_BLACK);
-//	lcd.DrawString(80, 6, "Encoder Action", &lcd.Font_Large, LCD_ORANGE, LCD_BLACK);
-//	lcd.DrawString(303, 6, "R", &lcd.Font_Large, LCD_WHITE, LCD_BLACK);
-//	lcd.DrawRect(0, 1, 319, 239, LCD_WHITE);
-//	lcd.DrawLine(0, 27, 319, 27, LCD_WHITE);
-//	lcd.DrawLine(26, 1, 26, 27, LCD_WHITE);
-//	lcd.DrawLine(294, 1, 294, 27, LCD_WHITE);
-//	lcd.DrawLine(159, 27, 159, 239, LCD_WHITE);
-//
-//	const std::vector<MenuItem>* currentMenu =
-//			config.displayMode == DispMode::Oscilloscope ? &oscMenu :
-//			config.displayMode == DispMode::Tuner ? &tunerMenu :
-//			config.displayMode == DispMode::Fourier || config.displayMode == DispMode::Waterfall ? &fftMenu : nullptr;
-//
-//	uint8_t pos = 0;
-//	for (auto m = currentMenu->cbegin(); m != currentMenu->cend(); m++, pos++) {
-//		lcd.DrawString(10, 32 + pos * 20, m->name, &lcd.Font_Large, (m->selected == encoderModeL) ? LCD_BLACK : LCD_WHITE, (m->selected == encoderModeL) ? LCD_WHITE : LCD_BLACK);
-//		lcd.DrawString(170, 32 + pos * 20, m->name, &lcd.Font_Large, (m->selected == encoderModeR) ? LCD_BLACK : LCD_WHITE, (m->selected == encoderModeR) ? LCD_WHITE : LCD_BLACK);
-//	}
+	// Allows wavetable class to set current wavetable at Init
+	activeWaveTable = index;
+	pickerDir = wavetable.wavList[index].isDir;
+
+}
+
+uint32_t UI::WavetablePicker(int32_t upDown)
+{
+	// Selects next/previous wavetable, unless directory in which case it can be opened
+	const int32_t nextWavetable = (int32_t)activeWaveTable + upDown;
+	auto& currentWT = wavetable.wavList[activeWaveTable];
+	auto& nextWT = wavetable.wavList[nextWavetable];
+
+	if (nextWavetable >= 0 && nextWavetable < (int32_t)wavetable.wavetableCount && nextWT.valid && nextWT.dir == currentWT.dir) {
+		pickerOpened = SysTickVal;			// Store time opened to check if drawing picker
+		activeWaveTable = nextWavetable;
+		pickerDir = nextWT.isDir;
+		if (!pickerDir) {
+			wavetable.ChangeWaveTable(nextWavetable);
+		}
+	}
+	return 0;
 }
 
 
@@ -123,10 +132,9 @@ void UI::Update()
 	// encoders count in fours with the zero point set to 32000
 	if (std::abs((int16_t)32000 - (int16_t)TIM8->CNT) > 3) {
 		int8_t v = TIM8->CNT > 32000 ? 1 : -1;
-		wavetable.ChangeWaveTable(v);
+		WavetablePicker(v);
 
 		TIM8->CNT -= TIM8->CNT > 32000 ? 4 : -4;
-		//cfg.ScheduleSave();
 	}
 
 	if (buttons.encoder.Pressed()) {

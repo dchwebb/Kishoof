@@ -265,7 +265,7 @@ void LCD::DrawRect(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, const uin
 }
 
 
-void LCD::DrawChar(uint16_t x, uint16_t y, char c, const FontData *font, const uint32_t& foreground, const uint16_t background)
+void LCD::DrawChar(uint16_t x, uint16_t y, char c, const FontData* font, const uint32_t& foreground, const uint16_t background)
 {
 	// If at the end of a line of display, go to new line and set x to 0 position
 	if ((x + font->Width) > width) {
@@ -297,7 +297,7 @@ void LCD::DrawChar(uint16_t x, uint16_t y, char c, const FontData *font, const u
 
 
 // writes a character to an existing display array
-void LCD::DrawCharMem(const uint16_t x, const uint16_t y, const uint16_t memWidth, uint16_t* memBuffer, char c, const FontData *font, const uint16_t foreground, const uint16_t background)
+void LCD::DrawCharMem(const uint16_t x, const uint16_t y, const uint16_t memWidth, uint16_t* memBuffer, char c, const FontData* font, const uint16_t foreground, const uint16_t background)
 {
 	// Write character colour data to array
 	uint16_t px, py, i;
@@ -318,7 +318,7 @@ void LCD::DrawCharMem(const uint16_t x, const uint16_t y, const uint16_t memWidt
 }
 
 
-void LCD::DrawString(uint16_t x0, const uint16_t y0, const std::string_view s, const FontData *font, const uint16_t foreground, const uint16_t background)
+void LCD::DrawString(uint16_t x0, const uint16_t y0, const std::string_view s, const FontData* font, const uint16_t foreground, const uint16_t background)
 {
 	for (const char& c : s) {
 		DrawChar(x0, y0, c, font, foreground, background);
@@ -327,10 +327,27 @@ void LCD::DrawString(uint16_t x0, const uint16_t y0, const std::string_view s, c
 }
 
 
-void LCD::DrawStringMem(uint16_t x0, const uint16_t y0, uint16_t const memWidth, uint16_t* memBuffer, std::string_view s, const FontData *font, const uint16_t foreground, const uint16_t background) {
+void LCD::DrawStringMem(uint16_t x0, const uint16_t y0, uint16_t const memWidth, uint16_t* memBuffer, std::string_view s, const FontData* font, const uint16_t foreground, const uint16_t background) {
 	for (const char& c : s) {
 		DrawCharMem(x0, y0, memWidth, memBuffer, c, font, foreground, background);
 		x0 += font->Width;
+	}
+}
+
+
+void LCD::DrawStringMemCenter(uint16_t x0, const uint16_t y0, const size_t width, uint16_t* memBuffer, std::string_view s, const FontData* font, const uint16_t foreground, const uint16_t background) {
+	// If string width is less than width of draw buffer move x0 so that text will be centered
+	const uint32_t strWidth = std::min(font->Width * s.length(), width);
+	if (strWidth < width) {
+		x0 = (width - strWidth) / 2;
+	}
+
+	for (const char& c : s) {
+		DrawCharMem(x0, y0, width, memBuffer, c, font, foreground, background);
+		x0 += font->Width;
+		if (x0 > width - font->Width) {
+			break;
+		}
 	}
 }
 

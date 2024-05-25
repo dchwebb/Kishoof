@@ -229,19 +229,12 @@ inline void WaveTable::AdditiveWave()
 }
 
 
-uint32_t WaveTable::ChangeWaveTable(int32_t upDown)
+void WaveTable::ChangeWaveTable(int32_t index)
 {
-	// Selects next/previous wavetable, unless directory is selected in which case return index to UI
-	const int32_t nextWavetable = (int32_t)activeWaveTable + upDown;
-	if (nextWavetable >= 0 && nextWavetable < (int32_t)wavetableCount && wavList[nextWavetable].valid) {
-		if (wavList[nextWavetable].isDir) {
-			return nextWavetable;
-		}
-		activeWaveTable = nextWavetable;
-		strncpy(cfg.wavetable, wavList[activeWaveTable].name, 8);
-		config.ScheduleSave();
-	}
-	return 0;
+	// Called by UI when changing wavetable
+	activeWaveTable = index;
+	strncpy(cfg.wavetable, wavList[activeWaveTable].name, 8);
+	config.ScheduleSave();
 }
 
 
@@ -254,6 +247,7 @@ void WaveTable::Init()
 	for (auto& wav : wavList) {
 		if (strncmp(wav.name, cfg.wavetable, 8) == 0) {
 			activeWaveTable = pos;
+			ui.SetWavetable(activeWaveTable);
 			return;
 		}
 		++pos;

@@ -20,7 +20,7 @@ public:
 	bool LoadWaveTable(uint32_t* startAddr);
 	void Draw();
 	bool UpdateWavetableList();
-	uint32_t ChangeWaveTable(int32_t upDown);
+	void ChangeWaveTable(int32_t index);
 	void ChannelBOctave(bool change = false);	// Called when channel B octave button is pressed
 	static void UpdateConfig();
 
