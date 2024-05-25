@@ -56,13 +56,16 @@ public:
 	}
 
 private:
-	static constexpr uint32_t maxWavetable = 128;
+	static constexpr uint32_t maxWavetable = 1000;
+	static constexpr uint32_t maxDirs = 20;
+	static constexpr size_t lfnSize = 20;
 	static constexpr float scaleOutput = -std::pow(2.0f, 31.0f);	// Multiple to convert -1.0 - 1.0 float to 32 bit int and invert
 	static constexpr float scaleVCAOutput = scaleOutput / 65536.0f;	// To scale when VCA is used
 
 	struct Wav {
 		char name[8];
-		char lfn[20];
+		char lfn[lfnSize];
+		uint32_t dir;						// Index into the directory array
 		uint32_t size;						// Size of file in bytes
 		uint32_t cluster;					// Starting cluster
 		uint32_t lastCluster;				// If file spans multiple clusters store last cluster before jump - if 0xFFFFFFFF then clusters are contiguous
@@ -79,12 +82,22 @@ private:
 		bool valid;							// false if header cannot be processed
 	} wavList[maxWavetable];
 
+	struct Dir {
+		char name[8];
+		char lfn[lfnSize];
+		uint32_t cluster;					// Starting cluster
+		bool valid;							// valid if contains wavetables
+	} dirList[maxDirs];
+
+
 	void OutputSample(uint8_t channel, float ratio);
 	float FastTanh(float x);
 	float CalcWarp();
 	void AdditiveWave();
 	int32_t ParseInt(const std::string_view cmd, const std::string_view precedingChar, const int32_t low, const int32_t high);
 	bool GetWavInfo(Wav* sample);
+	bool ReadDir(FATFileInfo* dirEntry);
+	void CleanLFN(char* storeName);
 
 	float defaultWavetable[4096];				// Built-in wavetable
 	float outputSamples[2] = {0.0f, 0.0f};
@@ -94,6 +107,7 @@ private:
 
 	uint32_t activeWaveTable;
 	uint32_t wavetableCount;
+	uint32_t dirCount;
 
 	struct {
 		volatile uint16_t& adcPot;

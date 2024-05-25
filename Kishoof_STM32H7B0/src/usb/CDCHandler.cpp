@@ -23,11 +23,6 @@ void CDCHandler::ProcessCommand()
 			usb->SendString("Switching to DFU Mode ...\r\n");
 			uint32_t old = SysTickVal;
 			while (SysTickVal < old + 100) {};		// Give enough time to send the message
-//			SCB_DisableDCache();
-//			__disable_irq();
-//			*reinterpret_cast<unsigned long *>(0x20000000) = 0xDEADBEEF; 	// Use DTCM RAM for DFU flag as this is not cleared at restart
-//			__DSB();
-//			NVIC_SystemReset();
 			JumpToBootloader();
 		} else {
 			state = serialState::pending;

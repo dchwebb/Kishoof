@@ -339,12 +339,34 @@ bool WaveTable::UpdateWavetableList()
 	}
 
 	// Updates list of wavetables from FAT root directory
-	FATFileInfo* dirEntry = fatTools.rootDirectory;
 
-	uint32_t pos = 1;
+	wavetableCount = 1;
+	dirCount = 0;
+
+	bool changed = false;
+	if (ReadDir(fatTools.rootDirectory)) {
+		changed = true;
+	}
+	for (uint32_t i = 0; i < dirCount; ++i) {
+		if (ReadDir((FATFileInfo*)fatTools.GetClusterAddr(dirList[i].cluster))) {
+			changed = true;
+		}
+	}
+
+	// Blank next sample (if exists) to show end of list
+	Wav* wav = &(wavList[wavetableCount + 1]);
+	wav->name[0] = 0;
+
+	return changed;
+}
+
+
+bool WaveTable::ReadDir(FATFileInfo* dirEntry)
+{
+	// Store contents of a directory into the wavetable and directory lists
 	bool changed = false;
 
-	while (dirEntry->name[0] != 0 && pos < maxWavetable) {
+	while (dirEntry->name[0] != 0 && wavetableCount < maxWavetable) {
 
 		if (dirEntry->name[0] != FATFileInfo::fileDeleted && dirEntry->attr == FATFileInfo::LONG_NAME) {
 			// Store long file name in temporary buffer
@@ -361,14 +383,10 @@ bool WaveTable::UpdateWavetableList()
 
 		// Valid wavetable: not LFN, not deleted, not directory, extension = WAV
 		} else if (dirEntry->name[0] != FATFileInfo::fileDeleted && (dirEntry->attr & AM_DIR) == 0 && strncmp(&(dirEntry->name[8]), "WAV", 3) == 0) {
-			Wav* wav = &(wavList[pos++]);
+			Wav* wav = &(wavList[wavetableCount++]);
 
 			if (lfnPosition > 0) {
-				longFileName[lfnPosition] = '\0';
-				std::string_view lfn {longFileName};
-				size_t copyLen = std::min(lfn.find(".wav"), sizeof(wav->lfn));
-				std::strncpy(wav->lfn, longFileName, copyLen);
-				lfnPosition = 0;
+				CleanLFN(wav->lfn);
 			}
 
 			// Check if any fields have changed
@@ -378,21 +396,41 @@ bool WaveTable::UpdateWavetableList()
 				strncpy(wav->name, dirEntry->name, 8);
 				wav->cluster = dirEntry->firstClusterLow;
 				wav->size = dirEntry->fileSize;
-
 				wav->valid = GetWavInfo(wav);
+			}
+
+		// Sub folder: not hidden or system; ignore entries '.' and '..'
+		}  else if (dirEntry->name[0] != FATFileInfo::fileDeleted && dirEntry->name[0] != '.' &&
+				(dirEntry->attr & AM_DIR) && (dirEntry->attr & AM_HID) == 0 && (dirEntry->attr & AM_SYS) == 0) {
+			Dir* dir = &(dirList[dirCount++]);
+
+			if (lfnPosition > 0) {
+				CleanLFN(dir->lfn);
+			}
+
+			// Check if any fields have changed
+			if (dir->cluster != dirEntry->firstClusterLow || strncmp(dir->name, dirEntry->name, 8) != 0) {
+				changed = true;
+				strncpy(dir->name, dirEntry->name, 8);
+				dir->cluster = dirEntry->firstClusterLow;
 			}
 		} else {
 			lfnPosition = 0;
 		}
 		dirEntry++;
 	}
-	wavetableCount = pos;
-
-	// Blank next sample (if exists) to show end of list
-	Wav* wav = &(wavList[pos++]);
-	wav->name[0] = 0;
-
 	return changed;
+}
+
+
+void WaveTable::CleanLFN(char* storeName)
+{
+	// Clean long file name and store in wavetable or directory list
+	longFileName[lfnPosition] = '\0';
+	std::string_view lfn {longFileName};
+	size_t copyLen = std::min(lfn.find(".wav"), lfnSize);
+	std::strncpy(storeName, longFileName, copyLen);
+	lfnPosition = 0;
 }
 
 
