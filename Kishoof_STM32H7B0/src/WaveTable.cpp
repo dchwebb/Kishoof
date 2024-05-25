@@ -229,14 +229,19 @@ inline void WaveTable::AdditiveWave()
 }
 
 
-void WaveTable::ChangeWaveTable(int32_t upDown)
+uint32_t WaveTable::ChangeWaveTable(int32_t upDown)
 {
+	// Selects next/previous wavetable, unless directory is selected in which case return index to UI
 	const int32_t nextWavetable = (int32_t)activeWaveTable + upDown;
-	if (nextWavetable >= 0 && nextWavetable < (int32_t)wavetableCount) {
+	if (nextWavetable >= 0 && nextWavetable < (int32_t)wavetableCount && wavList[nextWavetable].valid) {
+		if (wavList[nextWavetable].isDir) {
+			return nextWavetable;
+		}
 		activeWaveTable = nextWavetable;
 		strncpy(cfg.wavetable, wavList[activeWaveTable].name, 8);
 		config.ScheduleSave();
 	}
+	return 0;
 }
 
 
@@ -339,17 +344,22 @@ bool WaveTable::UpdateWavetableList()
 	}
 
 	// Updates list of wavetables from FAT root directory
-
 	wavetableCount = 1;
-	dirCount = 0;
 
 	bool changed = false;
-	if (ReadDir(fatTools.rootDirectory)) {
+	if (ReadDir(fatTools.rootDirectory, 0)) {
 		changed = true;
 	}
-	for (uint32_t i = 0; i < dirCount; ++i) {
-		if (ReadDir((FATFileInfo*)fatTools.GetClusterAddr(dirList[i].cluster))) {
-			changed = true;
+	for (uint32_t i = 0; i < wavetableCount; ++i) {
+		if (wavList[i].isDir) {
+			uint32_t oldWavetableCount = wavetableCount;
+
+			if (ReadDir((FATFileInfo*)fatTools.GetClusterAddr(wavList[i].cluster), i)) {
+				changed = true;
+			}
+			if (oldWavetableCount != wavetableCount) {		// Valid wav files found in directory
+				wavList[i].valid = true;
+			}
 		}
 	}
 
@@ -361,12 +371,14 @@ bool WaveTable::UpdateWavetableList()
 }
 
 
-bool WaveTable::ReadDir(FATFileInfo* dirEntry)
+bool WaveTable::ReadDir(FATFileInfo* dirEntry, uint32_t dirIndex)
 {
 	// Store contents of a directory into the wavetable and directory lists
 	bool changed = false;
 
 	while (dirEntry->name[0] != 0 && wavetableCount < maxWavetable) {
+		const bool isValidDir = dirEntry->name[0] != '.' &&	(dirEntry->attr & AM_DIR) && (dirEntry->attr & AM_HID) == 0 && (dirEntry->attr & AM_SYS) == 0;
+		const bool isValidWav = (dirEntry->attr & AM_DIR) == 0 && strncmp(&(dirEntry->name[8]), "WAV", 3) == 0;
 
 		if (dirEntry->name[0] != FATFileInfo::fileDeleted && dirEntry->attr == FATFileInfo::LONG_NAME) {
 			// Store long file name in temporary buffer
@@ -382,38 +394,30 @@ bool WaveTable::ReadDir(FATFileInfo* dirEntry)
 			lfnPosition += 13;
 
 		// Valid wavetable: not LFN, not deleted, not directory, extension = WAV
-		} else if (dirEntry->name[0] != FATFileInfo::fileDeleted && (dirEntry->attr & AM_DIR) == 0 && strncmp(&(dirEntry->name[8]), "WAV", 3) == 0) {
+		} else if (dirEntry->name[0] != FATFileInfo::fileDeleted && (isValidWav || isValidDir)) {
 			Wav* wav = &(wavList[wavetableCount++]);
 
-			if (lfnPosition > 0) {
-				CleanLFN(wav->lfn);
-			}
-
 			// Check if any fields have changed
-			if (wav->cluster != dirEntry->firstClusterLow || wav->size != dirEntry->fileSize ||
-					strncmp(wav->name, dirEntry->name, 8) != 0) {
+			if (wav->cluster != dirEntry->firstClusterLow || wav->size != dirEntry->fileSize ||	strncmp(wav->name, dirEntry->name, 8) != 0 || wav->dir != dirIndex) {
+
 				changed = true;
 				strncpy(wav->name, dirEntry->name, 8);
+				if (lfnPosition > 0) {
+					CleanLFN(wav->lfn);
+				}
+
+				wav->dir = dirIndex;
 				wav->cluster = dirEntry->firstClusterLow;
-				wav->size = dirEntry->fileSize;
-				wav->valid = GetWavInfo(wav);
+
+				if (isValidWav) {
+					wav->size = dirEntry->fileSize;
+					wav->valid = GetWavInfo(wav);
+				} else {
+					wav->isDir = true;
+					wav->valid = false;
+				}
 			}
 
-		// Sub folder: not hidden or system; ignore entries '.' and '..'
-		}  else if (dirEntry->name[0] != FATFileInfo::fileDeleted && dirEntry->name[0] != '.' &&
-				(dirEntry->attr & AM_DIR) && (dirEntry->attr & AM_HID) == 0 && (dirEntry->attr & AM_SYS) == 0) {
-			Dir* dir = &(dirList[dirCount++]);
-
-			if (lfnPosition > 0) {
-				CleanLFN(dir->lfn);
-			}
-
-			// Check if any fields have changed
-			if (dir->cluster != dirEntry->firstClusterLow || strncmp(dir->name, dirEntry->name, 8) != 0) {
-				changed = true;
-				strncpy(dir->name, dirEntry->name, 8);
-				dir->cluster = dirEntry->firstClusterLow;
-			}
 		} else {
 			lfnPosition = 0;
 		}
