@@ -19,7 +19,7 @@ public:
 	void Init();								// Initialise caches, buffers etc
 	bool LoadWaveTable(uint32_t* startAddr);
 	void Draw();
-	bool UpdateWavetableList();
+	void UpdateWavetableList();
 	void ChangeWaveTable(int32_t index);
 	void ChannelBOctave(bool change = false);	// Called when channel B octave button is pressed
 	static void UpdateConfig();
@@ -36,7 +36,7 @@ public:
 	};
 
 	enum class Warp {none, squeeze, bend, mirror, reverse, tzfm, count} warpType = Warp::none;
-	static constexpr std::string_view warpNames[] = {" NONE  ", "SQUEEZE", " BEND  ", "MIRROR ", "REVERSE", " TZFM  "};
+	static constexpr std::string_view warpNames[] = {"No Warp", "Squeeze", "Bend", "Mirror", "Reverse", "TZFM"};
 	static constexpr uint32_t harmonicSets = 3;
 	static constexpr uint32_t harmonicCount = 10;
 	float additiveHarmonics[harmonicSets][harmonicCount] = {
@@ -92,17 +92,30 @@ private:
 	void AdditiveWave();
 	int32_t ParseInt(const std::string_view cmd, const std::string_view precedingChar, const int32_t low, const int32_t high);
 	bool GetWavInfo(Wav& wav);
-	bool ReadDir(FATFileInfo* dirEntry, uint32_t dirIndex);
+	void ReadDir(FATFileInfo* dirEntry, uint32_t dirIndex);
 	void CleanLFN(char* storeName);
+	static bool WavetableSorter(Wav const& lhs, Wav const& rhs);
 
 	float defaultWavetable[4096];				// Built-in wavetable
-	float outputSamples[2] = {0.0f, 0.0f};
+	float outputSamples[2] = {0.0f, 0.0f};		// Preprepared samples sent to DAC on interrupt
 
-	char longFileName[100];
+	uint32_t activeWaveTable;					// Index of active wavetable in wavList
+	uint32_t wavetableCount;					// number of wavetables and directories found in file system
+
+	float smoothedInc = 0.0f;					// For smoothing pitch CV
+	float pitchInc[2] = {0.0f, 0.0f};			// Pitch increment - reciprocal used in anti-aliasing filter calculations
+	float readPos[2] = {0.0f, 0.0f};			// Wavetable read position for each channel
+
+	bool stepped = false;						// Store Stepped/Smooth switch position
+	int32_t warpVal = 0;						// Used for setting hysteresis on warp type
+	Warp oldWarpType = Warp::count;				// To tell UI when screen update is needed
+
+	char longFileName[100];						// Holds long file name as it is made from multiple fat entries
 	uint8_t lfnPosition = 0;
 
-	uint32_t activeWaveTable;
-	uint32_t wavetableCount;
+	uint8_t drawData[2][UI::waveDrawWidth];		// Holds scaled output samples from both channels for use in wavetable display
+	static constexpr float drawWidthMult = (float)UI::waveDrawWidth / 2048.0f;		// Scale to width of the LCD draw area
+	static constexpr float drawHeightMult = (float)UI::waveDrawHeight / 2.0f;		// Scale to height of the LCD draw area
 
 	struct {
 		volatile uint16_t& adcPot;
@@ -116,21 +129,6 @@ private:
 		}
 	} wavetablePos[2] = {{adc.Wavetable_Pos_A_Pot, adc.WavetablePosA_CV, 0.0f}, {adc.Wavetable_Pos_B_Pot, adc.WavetablePosB_CV, 0.0f}};
 
-
-
-	float smoothedInc = 0.0f;
-	float pitchInc[2] = {0.0f, 0.0f};
-	float readPos[2] = {0.0f, 0.0f};
-
-	bool stepped = false;
-	int32_t warpVal = 0;					// Used for setting hysteresis on warp type
-	Warp oldWarpType = Warp::none;
-
-	uint8_t drawData[2][UI::waveDrawWidth];
-	static constexpr float drawWidthMult = (float)UI::waveDrawWidth / 2048.0f;		// Scale to width of the LCD draw area
-	static constexpr float drawHeightMult = (float)UI::waveDrawHeight / 2.0f;		// Scale to height of the LCD draw area
-
-	float vcaMult;
 
 	GpioPin modeSwitch	{GPIOE, 2, GpioPin::Type::Input};			// PE2: Mode switch
 	GpioPin octaveUp	{GPIOD, 0, GpioPin::Type::InputPulldown};	// PD0: Octave_Up

@@ -22,7 +22,7 @@ void WaveTable::CalcSample()
 
 	// Previously calculated samples output at beginning of interrupt to keep timing independent of calculation time
 	if (vcaConnected) {
-		vcaMult = std::max(60000.0f - adc.VcaCV, 0.0f);
+		const float vcaMult = std::max(60000.0f - adc.VcaCV, 0.0f);
 		SPI2->TXDR = (int32_t)(outputSamples[0] * scaleVCAOutput * vcaMult);
 		SPI2->TXDR = (int32_t)(outputSamples[1] * scaleVCAOutput * vcaMult);
 	} else {
@@ -240,27 +240,13 @@ void WaveTable::ChangeWaveTable(int32_t index)
 
 void WaveTable::Init()
 {
-	wavetable.UpdateWavetableList();						// Updated list of samples on flash
-
-	// Locate wavetable if stored in config - otherwise use default built-in wavetable
-	uint32_t pos = 0;
-	for (auto& wav : wavList) {
-		if (strncmp(wav.name, cfg.wavetable, 8) == 0) {
-			activeWaveTable = pos;
-			ui.SetWavetable(activeWaveTable);
-			return;
-		}
-		++pos;
-	}
+	wavetable.UpdateWavetableList();							// Updated list of samples on flash
 }
-
 
 
 bool WaveTable::GetWavInfo(Wav& wav)
 {
-	// populate the sample object with sample rate, number of channels etc
-	// Parsing the .wav format is a pain because the header is split into a variable number of chunks and sections are not word aligned
-
+	// populate the wavetable object with sample rate, number of channels etc
 	const uint8_t* wavHeader = fatTools.GetClusterAddr(wav.cluster, true);
 
 	// Check validity
@@ -277,7 +263,7 @@ bool WaveTable::GetWavInfo(Wav& wav)
 		}
 	}
 
-	wav.dataFormat = *(uint16_t*)&(wavHeader[pos + 8]);
+	wav.dataFormat = *(uint16_t*)&(wavHeader[pos + 8]);			// 1 = PCM integer; 3 = float
 	wav.sampleRate = *(uint32_t*)&(wavHeader[pos + 12]);
 	wav.channels   = *(uint16_t*)&(wavHeader[pos + 10]);
 	wav.byteDepth  = *(uint16_t*)&(wavHeader[pos + 22]) / 8;
@@ -315,11 +301,25 @@ bool WaveTable::GetWavInfo(Wav& wav)
 		cluster = fatTools.clusterChain[cluster];
 	}
 	wav.endAddr = fatTools.GetClusterAddr(cluster);
+	return (wav.byteDepth == 4 && wav.dataFormat == 3 && wav.channels == 1);	// FIXME - Only 1 channel 32 bit floats supported
+}
+
+
+bool WaveTable::WavetableSorter(Wav const& lhs, Wav const& rhs) {
+	// Sort wavetables with sub-folders first followed by short file name
+	if (lhs.isDir != rhs.isDir) {
+		return lhs.isDir;
+	}
+	for (uint8_t i = 0; i < 8; ++i) {
+		if (lhs.name[i] != rhs.name[i]) {
+			return lhs.name[i] < rhs.name[i];
+		}
+	}
 	return true;
 }
 
 
-bool WaveTable::UpdateWavetableList()
+void WaveTable::UpdateWavetableList()
 {
 	// Create a test wavetable with a couple of waveforms - also used in case of no file system
 	strncpy(wavList[0].name, "Default ", 8);
@@ -339,13 +339,12 @@ bool WaveTable::UpdateWavetableList()
 
 	// Updates list of wavetables from FAT root directory
 	wavetableCount = 1;
+	ReadDir(fatTools.rootDirectory, 0);
+	std::sort(&wavList[1], &wavList[wavetableCount], &WavetableSorter);
 
-	bool changed = false;
-	if (ReadDir(fatTools.rootDirectory, 0)) {
-		changed = true;
-	}
 	for (uint32_t i = 0; i < wavetableCount; ++i) {
 		if (wavList[i].isDir && wavList[i].name[0] != '.') {
+
 			// Create dummy folder for back navigation
 			if (wavetableCount < maxWavetable) {
 				Wav& wav = wavList[wavetableCount++];
@@ -357,10 +356,9 @@ bool WaveTable::UpdateWavetableList()
 				wav.valid = true;
 			}
 
-			uint32_t oldWavetableCount = wavetableCount;
-			if (ReadDir((FATFileInfo*)fatTools.GetClusterAddr(wavList[i].cluster), i)) {
-				changed = true;
-			}
+			const uint32_t oldWavetableCount = wavetableCount;
+			ReadDir((FATFileInfo*)fatTools.GetClusterAddr(wavList[i].cluster), i);
+			std::sort(&wavList[oldWavetableCount], &wavList[wavetableCount], &WavetableSorter);
 			if (oldWavetableCount != wavetableCount) {		// Valid wav files found in directory
 				wavList[i].valid = true;
 			}
@@ -371,15 +369,24 @@ bool WaveTable::UpdateWavetableList()
 	Wav& wav = wavList[wavetableCount + 1];
 	wav.name[0] = 0;
 
-	return changed;
+	// Attempt to locate active wavetable
+	uint32_t wtlocation = 0;
+	for (uint32_t i = 0; i < wavetableCount; ++i) {
+		if (wavList[i].valid && !wavList[i].isDir && strncmp(wavList[i].name, cfg.wavetable, 8) == 0) {
+			wtlocation = i;
+			break;
+		}
+	}
+	if (activeWaveTable != wtlocation) {
+		activeWaveTable = wtlocation;
+		ui.SetWavetable(activeWaveTable);
+	}
 }
 
 
-bool WaveTable::ReadDir(FATFileInfo* dirEntry, uint32_t dirIndex)
+void WaveTable::ReadDir(FATFileInfo* dirEntry, uint32_t dirIndex)
 {
 	// Store contents of a directory into the wavetable and directory lists
-	bool changed = false;
-
 	while (dirEntry->name[0] != 0 && wavetableCount < maxWavetable) {
 		const bool isValidDir = dirEntry->name[0] != '.' &&	(dirEntry->attr & AM_DIR) && (dirEntry->attr & AM_HID) == 0 && (dirEntry->attr & AM_SYS) == 0;
 		const bool isValidWav = (dirEntry->attr & AM_DIR) == 0 && strncmp(&(dirEntry->name[8]), "WAV", 3) == 0;
@@ -400,41 +407,34 @@ bool WaveTable::ReadDir(FATFileInfo* dirEntry, uint32_t dirIndex)
 		// Valid wavetable: not LFN, not deleted, not directory, extension = WAV
 		} else if (dirEntry->name[0] != FATFileInfo::fileDeleted && (isValidWav || isValidDir)) {
 			Wav& wav = wavList[wavetableCount];
+			memset(&wav, 0, sizeof(wav));
 
-			// Check if any fields have changed
-			if (wav.cluster != dirEntry->firstClusterLow || wav.size != dirEntry->fileSize ||	strncmp(wav.name, dirEntry->name, 8) != 0 || wav.dir != dirIndex) {
-
-				changed = true;
-				strncpy(wav.name, dirEntry->name, 8);
-
-				if (lfnPosition > 0) {
-					CleanLFN(wav.lfn);
-				}
-
-				wav.dir = dirIndex;
-				wav.cluster = dirEntry->firstClusterLow;
-
-				if (isValidWav) {
-					wav.size = dirEntry->fileSize;
-					wav.valid = GetWavInfo(wav);
-				} else {
-					wav.isDir = true;
-					wav.valid = false;
-				}
-
-				// If storing the first file in a sub directory, store the index against the directory item
-				if (dirIndex > 0 && wavList[dirIndex].firstWav == 0) {
-					wavList[dirIndex].firstWav = wavetableCount;
-				}
+			strncpy(wav.name, dirEntry->name, 8);
+			if (lfnPosition > 0) {
+				CleanLFN(wav.lfn);
 			}
-			wavetableCount++;
+			wav.dir = dirIndex;
+			wav.cluster = dirEntry->firstClusterLow;
 
+			if (isValidWav) {
+				wav.size = dirEntry->fileSize;
+				wav.valid = GetWavInfo(wav);
+			} else {
+				wav.isDir = true;
+				wav.valid = false;
+			}
+
+			// If storing the first file in a sub directory, store the index against the directory item
+			if (dirIndex > 0 && wavList[dirIndex].firstWav == 0) {
+				wavList[dirIndex].firstWav = wavetableCount;
+			}
+
+			wavetableCount++;
 		} else {
 			lfnPosition = 0;
 		}
 		dirEntry++;
 	}
-	return changed;
 }
 
 

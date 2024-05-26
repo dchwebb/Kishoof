@@ -80,21 +80,20 @@ void CDCHandler::ProcessCommand()
 
 		printf("Num Name       Bytes    Rate Bits Channels Valid Address    Metadata Frames\r\n");
 
-		while (wavetable.wavList[pos].name[0] != 0) {
+		for (uint32_t i = 0; i < wavetable.wavetableCount; ++i) {
 			printf("%3lu %.8s %7lu %7lu %3u%1s %8u %s     0x%08x %08lu %.1f \r\n",
 					pos,
-					wavetable.wavList[pos].name,
-					wavetable.wavList[pos].size,
-					wavetable.wavList[pos].sampleRate,
-					wavetable.wavList[pos].byteDepth * 8,
-					wavetable.wavList[pos].dataFormat == 3 ? "f" : " ",		// floating point format
-					wavetable.wavList[pos].channels,
-					wavetable.wavList[pos].valid ? "Y" : " ",
-					(unsigned int)wavetable.wavList[pos].startAddr,
-					wavetable.wavList[pos].metadata,
-					(float)wavetable.wavList[pos].sampleCount / 2048.0f
+					wavetable.wavList[i].name,
+					wavetable.wavList[i].size,
+					wavetable.wavList[i].sampleRate,
+					wavetable.wavList[i].byteDepth * 8,
+					wavetable.wavList[i].dataFormat == 3 ? "f" : " ",		// floating point format
+					wavetable.wavList[i].channels,
+					wavetable.wavList[i].valid ? "Y" : " ",
+					(unsigned int)wavetable.wavList[i].startAddr,
+					wavetable.wavList[i].metadata,
+					(float)wavetable.wavList[i].sampleCount / 2048.0f
 					);
-			++pos;
 		}
 		printf("\r\n");
 

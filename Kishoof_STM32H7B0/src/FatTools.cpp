@@ -119,16 +119,13 @@ void FatTools::CheckCache()
 	if ((dirtyCacheBlocks || writeCacheDirty) && cacheUpdated > 0 && ((int32_t)SysTickVal - (int32_t)cacheUpdated) > 100)	{
 
 		// Update the sample list to check if any meaningful data has changed (ignores Windows disk spam, assuming this occurs in the header cache)
-		[[maybe_unused]] bool sampleChanged = false;			// FIXME - need to better identify spurious Windows writes
 		if (dirtyCacheBlocks) {
-			sampleChanged = wavetable.UpdateWavetableList();
+			wavetable.UpdateWavetableList();
 		}
 
-		//if (sampleChanged || writeCacheDirty) {
-			usb.PauseEndpoint(usb.msc);				// Sends NAKs from the msc endpoint whilst the Flash device is unavailable
-			FlushCache();
-			usb.ResumeEndpoint(usb.msc);
-		//}
+		usb.PauseEndpoint(usb.msc);				// Sends NAKs from the msc endpoint whilst the Flash device is unavailable
+		FlushCache();
+		usb.ResumeEndpoint(usb.msc);
 		cacheUpdated = 0;
 	}
 }

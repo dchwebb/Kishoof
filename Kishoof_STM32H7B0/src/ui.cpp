@@ -23,12 +23,12 @@ void UI::DrawWaveTable()
 	if (wavetable.warpType != wavetable.oldWarpType) {
 		wavetable.oldWarpType = wavetable.warpType;
 		std::string_view s = wavetable.warpNames[(uint8_t)wavetable.warpType];
-		//lcd.DrawString(60, 180, s, &lcd.Font_Small, LCD_WHITE, LCD_BLACK);
 
-		const uint32_t textLeft = 75;
-		const uint32_t textTop = 190;
-		lcd.DrawStringMem(0, 0, lcd.Font_Large.Width * s.length(), lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, LCD_WHITE, LCD_BLACK);
-		lcd.PatternFill(textLeft, textTop, textLeft - 1 + lcd.Font_Large.Width * s.length(), textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
+		constexpr uint32_t textLeft = 80;
+		constexpr uint32_t textWidth = LCD::width - (2 * textLeft);			// Allows for 12 chars wide
+		constexpr uint32_t textTop = 192;
+		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, wavetable.warpType == WaveTable::Warp::none ? LCD_GREY : LCD_WHITE, LCD_BLACK);
+		lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
 	} else if (activeWaveTable != oldWavetable) {
 		oldWavetable = activeWaveTable;
@@ -42,7 +42,7 @@ void UI::DrawWaveTable()
 
 		constexpr uint32_t textLeft = 54;
 		constexpr uint32_t textWidth = LCD::width - (2 * textLeft);			// Allows for 12 chars wide
-		constexpr uint32_t textTop = 36;
+		constexpr uint32_t textTop = 35;
 		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, pickerDir ? LCD_YELLOW : LCD_WHITE, LCD_BLACK);
 		lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 

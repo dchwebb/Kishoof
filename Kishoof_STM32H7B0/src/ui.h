@@ -24,7 +24,7 @@ private:
 	void DrawWaveTable();
 
 	enum class DisplayWave {channelA, channelB, Both};
-	DisplayWave displayWave = DisplayWave::channelA;
+	DisplayWave displayWave = DisplayWave::Both;
 
 	uint32_t oldWavetable = 0xFFFFFFFF;
 	uint32_t activeWaveTable = 0;

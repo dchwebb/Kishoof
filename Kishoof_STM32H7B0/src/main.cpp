@@ -19,17 +19,15 @@ Config config{&wavetable.configSaver};		// Construct config handler with list of
 /* TODO:
 
  * Config - add calibration
- * Directory support
- * UI updates
  * Switch warp type on zero crossing
  * Cross-fade switching wavetables
  * Implement CV trimmers
- * Implement encoder button
  * Implement warp type button
+ * Support wavetables other than mono 32 bit floats
 
  * Check drive strength on SPI pins
  * Allow multiple flash sectors to be used for config storage
- * Adjust aliasing filters to cope with warp and tzfm
+ * Adjust aliasing filters to more accurately cope with warp and tzfm
  */
 
 extern "C" {
