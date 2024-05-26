@@ -256,12 +256,12 @@ void WaveTable::Init()
 
 
 
-bool WaveTable::GetWavInfo(Wav* wav)
+bool WaveTable::GetWavInfo(Wav& wav)
 {
 	// populate the sample object with sample rate, number of channels etc
 	// Parsing the .wav format is a pain because the header is split into a variable number of chunks and sections are not word aligned
 
-	const uint8_t* wavHeader = fatTools.GetClusterAddr(wav->cluster, true);
+	const uint8_t* wavHeader = fatTools.GetClusterAddr(wav.cluster, true);
 
 	// Check validity
 	if (*(uint32_t*)wavHeader != 0x46464952) {					// wav file should start with letters 'RIFF'
@@ -277,17 +277,17 @@ bool WaveTable::GetWavInfo(Wav* wav)
 		}
 	}
 
-	wav->dataFormat = *(uint16_t*)&(wavHeader[pos + 8]);
-	wav->sampleRate = *(uint32_t*)&(wavHeader[pos + 12]);
-	wav->channels   = *(uint16_t*)&(wavHeader[pos + 10]);
-	wav->byteDepth  = *(uint16_t*)&(wavHeader[pos + 22]) / 8;
+	wav.dataFormat = *(uint16_t*)&(wavHeader[pos + 8]);
+	wav.sampleRate = *(uint32_t*)&(wavHeader[pos + 12]);
+	wav.channels   = *(uint16_t*)&(wavHeader[pos + 10]);
+	wav.byteDepth  = *(uint16_t*)&(wavHeader[pos + 22]) / 8;
 
 	// Check if there is a clm chunk with Serum metadata
 	pos += (8 + *(uint32_t*)&(wavHeader[pos + 4]));
 	if (*(uint32_t*)&(wavHeader[pos]) == 0x206d6c63) {			// Look for string 'clm '
 		const char* metadata = (char*)&(wavHeader[pos + 16]);
 		if (std::strspn(metadata, "0123456789") == 8) {
-			wav->metadata = std::stoi(metadata);
+			wav.metadata = std::stoi(metadata);
 		}
 	}
 
@@ -299,22 +299,22 @@ bool WaveTable::GetWavInfo(Wav* wav)
 		}
 	}
 
-	wav->dataSize = *(uint32_t*)&(wavHeader[pos + 4]);			// Num Samples * Num Channels * Bits per Sample / 8
-	wav->sampleCount = wav->dataSize / (wav->channels * wav->byteDepth);
-	wav->startAddr = &(wavHeader[pos + 8]);
-	wav->tableCount = wav->sampleCount / 2048;
+	wav.dataSize = *(uint32_t*)&(wavHeader[pos + 4]);			// Num Samples * Num Channels * Bits per Sample / 8
+	wav.sampleCount = wav.dataSize / (wav.channels * wav.byteDepth);
+	wav.startAddr = &(wavHeader[pos + 8]);
+	wav.tableCount = wav.sampleCount / 2048;
 
 	// Follow cluster chain and store last cluster if not contiguous to tell playback engine when to do a fresh address lookup
-	uint32_t cluster = wav->cluster;
-	wav->lastCluster = 0xFFFFFFFF;
+	uint32_t cluster = wav.cluster;
+	wav.lastCluster = 0xFFFFFFFF;
 
 	while (fatTools.clusterChain[cluster] != 0xFFFF) {
-		if (fatTools.clusterChain[cluster] != cluster + 1 && wav->lastCluster == 0xFFFFFFFF) {		// Store cluster at first discontinuity of chain
-			wav->lastCluster = cluster;
+		if (fatTools.clusterChain[cluster] != cluster + 1 && wav.lastCluster == 0xFFFFFFFF) {		// Store cluster at first discontinuity of chain
+			wav.lastCluster = cluster;
 		}
 		cluster = fatTools.clusterChain[cluster];
 	}
-	wav->endAddr = fatTools.GetClusterAddr(cluster);
+	wav.endAddr = fatTools.GetClusterAddr(cluster);
 	return true;
 }
 
@@ -322,7 +322,7 @@ bool WaveTable::GetWavInfo(Wav* wav)
 bool WaveTable::UpdateWavetableList()
 {
 	// Create a test wavetable with a couple of waveforms - also used in case of no file system
-	strncpy(wavList[0].name, "Default    ", 8);
+	strncpy(wavList[0].name, "Default ", 8);
 	wavList[0].dataFormat = 3;
 	wavList[0].channels   = 1;
 	wavList[0].byteDepth  = 4;
@@ -345,9 +345,19 @@ bool WaveTable::UpdateWavetableList()
 		changed = true;
 	}
 	for (uint32_t i = 0; i < wavetableCount; ++i) {
-		if (wavList[i].isDir) {
-			uint32_t oldWavetableCount = wavetableCount;
+		if (wavList[i].isDir && wavList[i].name[0] != '.') {
+			// Create dummy folder for back navigation
+			if (wavetableCount < maxWavetable) {
+				Wav& wav = wavList[wavetableCount++];
+				strncpy(wav.name, ".", 8);
+				strncpy(wav.lfn, "<< Back", lfnSize);
+				wav.firstWav = i;
+				wav.dir = i;
+				wav.isDir = true;
+				wav.valid = true;
+			}
 
+			uint32_t oldWavetableCount = wavetableCount;
 			if (ReadDir((FATFileInfo*)fatTools.GetClusterAddr(wavList[i].cluster), i)) {
 				changed = true;
 			}
@@ -358,8 +368,8 @@ bool WaveTable::UpdateWavetableList()
 	}
 
 	// Blank next sample (if exists) to show end of list
-	Wav* wav = &(wavList[wavetableCount + 1]);
-	wav->name[0] = 0;
+	Wav& wav = wavList[wavetableCount + 1];
+	wav.name[0] = 0;
 
 	return changed;
 }
@@ -389,28 +399,35 @@ bool WaveTable::ReadDir(FATFileInfo* dirEntry, uint32_t dirIndex)
 
 		// Valid wavetable: not LFN, not deleted, not directory, extension = WAV
 		} else if (dirEntry->name[0] != FATFileInfo::fileDeleted && (isValidWav || isValidDir)) {
-			Wav* wav = &(wavList[wavetableCount++]);
+			Wav& wav = wavList[wavetableCount];
 
 			// Check if any fields have changed
-			if (wav->cluster != dirEntry->firstClusterLow || wav->size != dirEntry->fileSize ||	strncmp(wav->name, dirEntry->name, 8) != 0 || wav->dir != dirIndex) {
+			if (wav.cluster != dirEntry->firstClusterLow || wav.size != dirEntry->fileSize ||	strncmp(wav.name, dirEntry->name, 8) != 0 || wav.dir != dirIndex) {
 
 				changed = true;
-				strncpy(wav->name, dirEntry->name, 8);
+				strncpy(wav.name, dirEntry->name, 8);
+
 				if (lfnPosition > 0) {
-					CleanLFN(wav->lfn);
+					CleanLFN(wav.lfn);
 				}
 
-				wav->dir = dirIndex;
-				wav->cluster = dirEntry->firstClusterLow;
+				wav.dir = dirIndex;
+				wav.cluster = dirEntry->firstClusterLow;
 
 				if (isValidWav) {
-					wav->size = dirEntry->fileSize;
-					wav->valid = GetWavInfo(wav);
+					wav.size = dirEntry->fileSize;
+					wav.valid = GetWavInfo(wav);
 				} else {
-					wav->isDir = true;
-					wav->valid = false;
+					wav.isDir = true;
+					wav.valid = false;
+				}
+
+				// If storing the first file in a sub directory, store the index against the directory item
+				if (dirIndex > 0 && wavList[dirIndex].firstWav == 0) {
+					wavList[dirIndex].firstWav = wavetableCount;
 				}
 			}
+			wavetableCount++;
 
 		} else {
 			lfnPosition = 0;

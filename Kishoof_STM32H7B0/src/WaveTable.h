@@ -57,7 +57,7 @@ public:
 
 private:
 	static constexpr uint32_t maxWavetable = 1000;
-	static constexpr size_t lfnSize = 20;
+	static constexpr size_t lfnSize = 12;							// Widest string that can be displayed
 	static constexpr float scaleOutput = -std::pow(2.0f, 31.0f);	// Multiple to convert -1.0 - 1.0 float to 32 bit int and invert
 	static constexpr float scaleVCAOutput = scaleOutput / 65536.0f;	// To scale when VCA is used
 
@@ -70,7 +70,10 @@ private:
 		uint32_t lastCluster;				// If file spans multiple clusters store last cluster before jump - if 0xFFFFFFFF then clusters are contiguous
 		const uint8_t* startAddr;			// Address of data section
 		const uint8_t* endAddr;				// End Address of data section
-		uint32_t dataSize;					// Size of data section in bytes
+		union {
+			uint32_t dataSize;				// Size of data section in bytes
+			uint32_t firstWav;				// For directories holds the index of the first file
+		};
 		uint32_t sampleCount;				// Number of samples (stereo samples only counted once)
 		uint32_t sampleRate;
 		uint8_t byteDepth;
@@ -88,7 +91,7 @@ private:
 	float CalcWarp();
 	void AdditiveWave();
 	int32_t ParseInt(const std::string_view cmd, const std::string_view precedingChar, const int32_t low, const int32_t high);
-	bool GetWavInfo(Wav* sample);
+	bool GetWavInfo(Wav& wav);
 	bool ReadDir(FATFileInfo* dirEntry, uint32_t dirIndex);
 	void CleanLFN(char* storeName);
 

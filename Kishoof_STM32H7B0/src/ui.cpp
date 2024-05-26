@@ -36,11 +36,12 @@ void UI::DrawWaveTable()
 		if (wavetable.wavList[activeWaveTable].lfn[0]) {
 			s = std::string_view(wavetable.wavList[activeWaveTable].lfn);
 		} else {
-			s = std::string_view(wavetable.wavList[activeWaveTable].name, 8);
+			uint32_t space = (std::string_view(wavetable.wavList[activeWaveTable].name)).find(" ");
+			s = std::string_view(wavetable.wavList[activeWaveTable].name, std::min(8UL, space));		// Replace spaces with 0 for length finding
 		}
 
 		constexpr uint32_t textLeft = 54;
-		constexpr uint32_t textWidth = LCD::width - (2 * textLeft);
+		constexpr uint32_t textWidth = LCD::width - (2 * textLeft);			// Allows for 12 chars wide
 		constexpr uint32_t textTop = 36;
 		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, pickerDir ? LCD_YELLOW : LCD_WHITE, LCD_BLACK);
 		lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
@@ -138,16 +139,22 @@ void UI::Update()
 	}
 
 	if (buttons.encoder.Pressed()) {
-		switch (displayWave) {
-		case DisplayWave::channelA:
-			displayWave = DisplayWave::channelB;
-			break;
-		case DisplayWave::channelB:
-			displayWave = DisplayWave::Both;
-			break;
-		case DisplayWave::Both:
-			displayWave = DisplayWave::channelA;
-			break;
+		// If directory selected by picker, click opens folder
+		if (pickerDir) {
+			activeWaveTable = wavetable.wavList[activeWaveTable].firstWav;
+			WavetablePicker(0);
+		} else {
+			switch (displayWave) {
+			case DisplayWave::channelA:
+				displayWave = DisplayWave::channelB;
+				break;
+			case DisplayWave::channelB:
+				displayWave = DisplayWave::Both;
+				break;
+			case DisplayWave::Both:
+				displayWave = DisplayWave::channelA;
+				break;
+			}
 		}
 	}
 
