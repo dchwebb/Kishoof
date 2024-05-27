@@ -75,8 +75,7 @@ private:
 			uint32_t firstWav;				// For directories holds the index of the first file
 		};
 		uint32_t sampleCount;				// Number of samples (stereo samples only counted once)
-		uint32_t sampleRate;
-		uint8_t byteDepth;
+		uint8_t byteDepth;					// 4 = 32 bit, 2 = 16 bit etc
 		uint16_t dataFormat;				// 1 = PCM; 3 = Float
 		uint8_t channels;					// 1 = mono, 2 = stereo
 		uint16_t tableCount;				// Number of 2048 sample wavetables in file
@@ -107,8 +106,9 @@ private:
 	float readPos[2] = {0.0f, 0.0f};			// Wavetable read position for each channel
 
 	bool stepped = false;						// Store Stepped/Smooth switch position
-	int32_t warpVal = 0;						// Used for setting hysteresis on warp type
+	int32_t warpTypeVal = 0;					// Used for setting hysteresis on warp type
 	Warp oldWarpType = Warp::count;				// To tell UI when screen update is needed
+	float warpAmt = 0.0f;						// Used for smoothing control values
 
 	char longFileName[100];						// Holds long file name as it is made from multiple fat entries
 	uint8_t lfnPosition = 0;

@@ -99,21 +99,20 @@ void CDCHandler::ProcessCommand()
 	} else if (cmd.compare("wavetables") == 0) {				// Prints wavetable list
 		uint32_t pos = 0;
 
-		printf("Num Name       Bytes    Rate Bits Channels Valid Address    Metadata Frames\r\n");
+		printf("Num Name       Bytes Bits Channels Valid Address    Metadata Frames\r\n");
 
 		for (uint32_t i = 0; i < wavetable.wavetableCount; ++i) {
-			printf("%3lu %.8s %7lu %7lu %3u%1s %8u %s     0x%08x %08lu %.1f \r\n",
+			printf("%3lu %.8s %7lu %3u%1s %8u %s     %p %08lu %3d \r\n",
 					pos,
 					wavetable.wavList[i].name,
 					wavetable.wavList[i].size,
-					wavetable.wavList[i].sampleRate,
 					wavetable.wavList[i].byteDepth * 8,
 					wavetable.wavList[i].dataFormat == 3 ? "f" : " ",	// floating point format
 					wavetable.wavList[i].channels,
 					wavetable.wavList[i].valid ? "Y" : " ",
-					(unsigned int)wavetable.wavList[i].startAddr,
+					wavetable.wavList[i].startAddr,
 					wavetable.wavList[i].metadata,
-					(float)wavetable.wavList[i].sampleCount / 2048.0f
+					wavetable.wavList[i].tableCount
 					);
 		}
 		printf("\r\n");

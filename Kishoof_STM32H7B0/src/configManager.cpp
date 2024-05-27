@@ -7,7 +7,7 @@
 bool Config::SaveConfig(bool forceSave)
 {
 	bool result = true;
-	if (forceSave || (scheduleSave && SysTickVal > saveBooked + 10000)) {			// 60 seconds between saves
+	if (forceSave || (scheduleSave && SysTickVal > saveBooked + 60000)) {			// 60 seconds between saves
 		GpioPin::SetHigh(GPIOD, 5);
 		scheduleSave = false;
 

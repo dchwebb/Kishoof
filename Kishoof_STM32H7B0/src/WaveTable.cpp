@@ -108,12 +108,12 @@ inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 inline float WaveTable::CalcWarp()
 {
 	// Set warp type from knob with hysteresis
-	if (abs(warpVal - adc.Warp_Type_Pot) > 100) {
-		warpVal = adc.Warp_Type_Pot;
-		warpType = (Warp)((uint32_t)Warp::count * warpVal  / 65536);
+	if (abs(warpTypeVal - adc.Warp_Type_Pot) > 100) {
+		warpTypeVal = adc.Warp_Type_Pot;
+		warpType = (Warp)((uint32_t)Warp::count * warpTypeVal  / 65536);
 	}
 
-	const float warpAmt = std::clamp((61000.0f + adc.Warp_Amt_Pot - adc.WarpCV), 0.0f, 65535.0f);	// Calculate warp amount from pot and cv
+	warpAmt = (0.9f * warpAmt) + (0.1f * std::clamp((61000.0f + adc.Warp_Amt_Pot - adc.WarpCV), 0.0f, 65535.0f));	// Calculate warp amount from pot and cv
 
 	float adjReadPos;					// Read position after warp applied
 	float pitchAdj;						// To adjust the pitch increment for calculating ant-aliasing filter cutoff
@@ -146,7 +146,7 @@ inline float WaveTable::CalcWarp()
 			pitchAdj = sinWarp * (32767.0f - warpAmt) * bendAmt;
 		}
 		adjReadPos = readPos[0] + pitchAdj;
-		pitchInc[0] *= 1.5f;			// adding warp offset to increment for filter calculation is very noisy - approximate an average instead
+		pitchInc[0] *= 1.5f;			// Adding pitchAdj creates odd effects around bend point - sounds better multiplying by average
 	}
 	break;
 
@@ -181,7 +181,7 @@ inline float WaveTable::CalcWarp()
 		float bendAmt = 1.0f / 48.0f;		// Increase to extend bend amount range
 		pitchAdj = outputSamples[1] * (warpAmt - 32767.0f) * bendAmt;
 		adjReadPos = readPos[0] + pitchAdj;
-		pitchInc[0] *= 1.5f;
+		pitchInc[0] *= 1.5f;			// Adding pitchAdj creates odd effects around bend point - sounds better multiplying by average
 
 		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
 		if (adjReadPos < 0) { adjReadPos += 2048; }
@@ -253,7 +253,6 @@ bool WaveTable::GetWavInfo(Wav& wav)
 	}
 
 	wav.dataFormat = *(uint16_t*)&(wavHeader[pos + 8]);			// 1 = PCM integer; 3 = float
-	wav.sampleRate = *(uint32_t*)&(wavHeader[pos + 12]);
 	wav.channels   = *(uint16_t*)&(wavHeader[pos + 10]);
 	wav.byteDepth  = *(uint16_t*)&(wavHeader[pos + 22]) / 8;
 
