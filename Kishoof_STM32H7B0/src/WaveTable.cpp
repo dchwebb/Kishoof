@@ -1,6 +1,7 @@
 #include "WaveTable.h"
 #include "Filter.h"
 #include "GpioPin.h"
+#include "Calib.h"
 
 #include <cmath>
 #include <cstring>
@@ -35,21 +36,9 @@ void WaveTable::CalcSample()
 		return;
 	}
 
-	stepped = modeSwitch.IsLow();
+	// Pitch calculations
 	const float octave = octaveUp.IsHigh() ? 2.0f : octaveDown.IsHigh() ? 0.5 : 1.0f;
-
-	// 0v = 61200; 1v = 50110; 2v = 39020; 3v = 27910; 4v = 16790; 5v = 5670
-	// C: 16.35 Hz 32.70 Hz; 65.41 Hz; 130.81 Hz; 261.63 Hz; 523.25 Hz; 1046.50 Hz; 2093.00 Hz; 4186.01 Hz
-	// 61200 > 65.41 Hz; 50110 > 130.81 Hz; 39020 > 261.63 Hz
-
-	// Increment = Hz * (2048 / 48000) = Hz * (wavetablesize / samplerate)
-	// Pitch calculations - Increase pitchBase to increase pitch; Reduce ABS(cvMult) to increase spread
-
-	// Calculations: 11090 is difference in cv between two octaves; 50110 is cv at 1v and 130.81 is desired Hz at 1v
-	//constexpr float pitchBase = (65.41f * (2048.0f / sampleRate)) / std::pow(2.0, -50120.0f / 11090.0f);
-	constexpr float pitchBase = (65.41f * (2048.0f / sampleRate)) / std::pow(2.0, -50050.0f / 11330.0f);
-	constexpr float cvMult = -1.0f / 11330.0f;
-	const float newInc = pitchBase * std::pow(2.0f, (float)adc.Pitch_CV * cvMult) * octave;			// for cycle length matching sample rate (48k)
+	const float newInc = calib.cfg.pitchBase * std::pow(2.0f, (float)adc.Pitch_CV * calib.cfg.pitchMult) * octave;			// for cycle length matching sample rate (48k)
 	smoothedInc = 0.99 * smoothedInc + 0.01 * newInc;
 
 	// Increment the read position for each channel; pitch inc will be used in filter to set anti-aliasing cutoff frequency
@@ -61,8 +50,8 @@ void WaveTable::CalcSample()
 	readPos[1] += pitchInc[1];
 	if (readPos[1] >= 2048) { readPos[1] -= 2048; }
 
-
 	// Generate channel B output first as used in TZFM to alter channel A read position
+	stepped = modeSwitch.IsLow();
 	if (stepped) {
 		OutputSample(1, readPos[1]);
 	} else {

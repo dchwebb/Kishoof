@@ -3,6 +3,7 @@
 #include "Filter.h"
 #include "WaveTable.h"
 #include "ExtFlash.h"
+#include "Calib.h"
 #include <stdio.h>
 #include <charconv>
 
@@ -29,10 +30,26 @@ void CDCHandler::ProcessCommand()
 			usb->SendString("Upgrade cancelled\r\n");
 		}
 
+	} else if (calib.calibrating) {						// Send command to calibration process
+		calib.Calibrate(cmd[0]);
 
-	} else if (cmd.compare("info") == 0) {		// Print diagnostic information
-
-		printf("Mountjoy Kishoof v1.0 - %s %s\r\n\r\n", __DATE__, __TIME__);
+	} else if (cmd.compare("info") == 0) {				// Print diagnostic information
+		extern uint32_t underrun, flashBusy;			// Diagnostics from interrupt hander and wavetable output
+		printf("\r\nMountjoy Kishoof v1.0\r\n\r\n"
+				"Build Date: %s %s\r\n"
+				"Calibration base pitch: %.2f\r\n"
+				"Calibration pitch divider: %.2f\r\n"
+				"Calibration vca normal level: %d\r\n"
+				"Sample buffer underrun: %lu\r\n"
+				"Flash busy: %lu\r\n"
+				"\r\n"
+				, __DATE__, __TIME__,
+				calib.cfg.pitchBase,
+				-1.0f / calib.cfg.pitchMult,
+				calib.cfg.vcaNormal,
+				underrun,
+				flashBusy
+				);
 
 
 	} else if (cmd.compare("help") == 0) {
@@ -40,6 +57,7 @@ void CDCHandler::ProcessCommand()
 		usb->SendString("Mountjoy Kishoof\r\n"
 				"\r\nSupported commands:\r\n"
 				"info        -  Show diagnostic information\r\n"
+				"calib       -  Start calibration\r\n"
 				"dfu         -  USB firmware upgrade\r\n"
 				"wavetables  -  Print list of wavetables\r\n"
 				"\r\n"
@@ -71,9 +89,12 @@ void CDCHandler::ProcessCommand()
 		usb->SendString("Press link button to dump output\r\n");
 #endif
 
-	} else if (cmd.compare("dfu") == 0) {					// USB DFU firmware upgrade
+	} else if (cmd.compare("dfu") == 0) {						// USB DFU firmware upgrade
 		usb->SendString("Start DFU upgrade mode? Press 'y' to confirm.\r\n");
 		state = serialState::dfuConfirm;
+
+	} else if (cmd.compare("calib") == 0) {						// Start calibration process
+		calib.Calibrate('s');
 
 	} else if (cmd.compare("wavetables") == 0) {				// Prints wavetable list
 		uint32_t pos = 0;
@@ -87,7 +108,7 @@ void CDCHandler::ProcessCommand()
 					wavetable.wavList[i].size,
 					wavetable.wavList[i].sampleRate,
 					wavetable.wavList[i].byteDepth * 8,
-					wavetable.wavList[i].dataFormat == 3 ? "f" : " ",		// floating point format
+					wavetable.wavList[i].dataFormat == 3 ? "f" : " ",	// floating point format
 					wavetable.wavList[i].channels,
 					wavetable.wavList[i].valid ? "Y" : " ",
 					(unsigned int)wavetable.wavList[i].startAddr,
@@ -97,7 +118,7 @@ void CDCHandler::ProcessCommand()
 		}
 		printf("\r\n");
 
-	} else if (cmd.compare(0, 11, "eraseblock:") == 0) {				// Erase sector
+	} else if (cmd.compare(0, 11, "eraseblock:") == 0) {		// Erase sector
 		uint32_t addr;
 		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);
 		if (res.ec == std::errc()) {

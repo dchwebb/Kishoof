@@ -1,6 +1,6 @@
 #include "stm32h7b0xx.h"
 #include "initialisation.h"
-
+#include "Calib.h"
 
 
 // Clock overview:
@@ -635,7 +635,7 @@ void CheckVCA()
 	static uint32_t vcaNormalStart = 0;
 	static uint32_t vcaNonNormalStart = 0;
 
-	if (std::abs((int32_t)adc.VcaCV - 24000) > 100) {		// VCA adc is out of 3.3V range
+	if (std::abs((int32_t)adc.VcaCV - calib.cfg.vcaNormal) > 100) {		// VCA adc is out of 3.3V range
 		if (vcaNonNormalStart > 0 && SysTickVal - vcaNonNormalStart > 2) {
 			vcaNormalStart = 0;
 			vcaConnected = true;

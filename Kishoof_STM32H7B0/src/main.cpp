@@ -3,6 +3,7 @@
 #include "USB.h"
 #include "WaveTable.h"
 #include "configManager.h"
+#include "Calib.h"
 #include "Filter.h"
 #include "lcd.h"
 #include "ExtFlash.h"
@@ -14,11 +15,9 @@ extern uint32_t SystemCoreClock;
 // Store buffers that need to live in special memory areas
 volatile ADCValues __attribute__((section (".dma_buffer"))) adc;
 
-Config config{&wavetable.configSaver};		// Construct config handler with list of configSavers
+Config config{&wavetable.configSaver, &calib.configSaver};		// Construct config handler with list of configSavers
 
 /* TODO:
-
- * Config - add calibration
  * Switch warp type on zero crossing
  * Cross-fade switching wavetables
  * Implement CV trimmers
@@ -54,6 +53,7 @@ int main(void) {
 		fatTools.CheckCache();		// Check if any outstanding cache changes need to be written to Flash
 		config.SaveConfig();		// Save any scheduled changes
 		CheckVCA();					// Bodge to check if VCA is normalled to 3.3v
+		calib.Calibrate();
 #if (USB_DEBUG)
 		if ((GPIOB->IDR & GPIO_IDR_ID4) == 0 && USBDebug) {
 			USBDebug = false;
