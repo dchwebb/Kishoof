@@ -80,6 +80,7 @@ private:
 		uint8_t channels;					// 1 = mono, 2 = stereo
 		uint16_t tableCount;				// Number of 2048 sample wavetables in file
 		uint32_t metadata;					// Serum metadata
+		SampleType sampleType;
 		bool valid;							// false if header cannot be processed
 		bool isDir;
 	} wavList[maxWavetable];
@@ -120,15 +121,26 @@ private:
 	struct {
 		volatile uint16_t& adcPot;
 		volatile uint16_t& adcCV;
+		volatile uint16_t* adcTrimmer;
 		float pos;		// Smoothed ADC value
 
 		float Val() {
 			constexpr float scaleOutput = 0.01f / 65536.0f;		// scale constant for two 16 bit values and filter
-			pos = (0.99f * pos) + std::clamp((adcPot + 61000.0f - adcCV), 0.0f, 65535.0f) * scaleOutput;	// Reduce to ensure can hit zero with noise
+			const float trimmer = adcTrimmer == nullptr ? 1.0f : NormaliseADC(*adcTrimmer);
+			pos = (0.99f * pos) + std::clamp((adcPot + trimmer * (61000.0f - adcCV)), 0.0f, 65535.0f) * scaleOutput;	// Reduce to ensure can hit zero with noise
 			return pos;
 		}
-	} wavetablePos[2] = {{adc.Wavetable_Pos_A_Pot, adc.WavetablePosA_CV, 0.0f}, {adc.Wavetable_Pos_B_Pot, adc.WavetablePosB_CV, 0.0f}};
+	} wavetablePos[2] = {{adc.Wavetable_Pos_A_Pot, adc.WavetablePosA_CV, &adc.Wavetable_Pos_A_Trm, 0.0f},
+						 {adc.Wavetable_Pos_B_Pot, adc.WavetablePosB_CV, nullptr, 0.0f}};
 
+
+
+	static inline float NormaliseADC(uint16_t adcVal)
+	{
+		static constexpr float adcDivider = 1.0f / 65300.0f;		// reduce divider slightly to ensure maximum is 1.0f
+		return std::min(adcDivider * adcVal, 1.0f);
+
+	}
 
 	GpioPin modeSwitch	{GPIOE, 2, GpioPin::Type::Input};			// PE2: Mode switch
 	GpioPin octaveUp	{GPIOD, 0, GpioPin::Type::InputPulldown};	// PD0: Octave_Up

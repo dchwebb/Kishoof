@@ -17,6 +17,8 @@ constexpr float pi = std::numbers::pi;
 static constexpr uint32_t ADC1_BUFFER_LENGTH = 6;
 static constexpr uint32_t ADC2_BUFFER_LENGTH = 6;
 
+enum class SampleType {Unsupported, Float32, PCM16};
+
 struct ADCValues {
 	uint16_t Wavetable_Pos_B_Pot;
 	uint16_t Wavetable_Pos_A_Trm;

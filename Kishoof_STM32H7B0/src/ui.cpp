@@ -43,7 +43,8 @@ void UI::DrawWaveTable()
 		constexpr uint32_t textLeft = 54;
 		constexpr uint32_t textWidth = LCD::width - (2 * textLeft);			// Allows for 12 chars wide
 		constexpr uint32_t textTop = 35;
-		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, pickerDir ? LCD_YELLOW : LCD_WHITE, LCD_BLACK);
+		const uint16_t colour = pickerDir ? LCD_YELLOW : wavetable.wavList[activeWaveTable].valid ? LCD_WHITE : LCD_GREY;
+		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, colour, LCD_BLACK);
 		lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
 	} else {
@@ -116,11 +117,11 @@ uint32_t UI::WavetablePicker(int32_t upDown)
 	auto& currentWT = wavetable.wavList[activeWaveTable];
 	auto& nextWT = wavetable.wavList[nextWavetable];
 
-	if (nextWavetable >= 0 && nextWavetable < (int32_t)wavetable.wavetableCount && nextWT.valid && nextWT.dir == currentWT.dir) {
+	if (nextWavetable >= 0 && nextWavetable < (int32_t)wavetable.wavetableCount && nextWT.dir == currentWT.dir) {
 		pickerOpened = SysTickVal;			// Store time opened to check if drawing picker
 		activeWaveTable = nextWavetable;
 		pickerDir = nextWT.isDir;
-		if (!pickerDir) {
+		if (!pickerDir && nextWT.valid) {
 			wavetable.ChangeWaveTable(nextWavetable);
 		}
 	}
@@ -130,8 +131,8 @@ uint32_t UI::WavetablePicker(int32_t upDown)
 
 void UI::Update()
 {
-	// encoders count in fours with the zero point set to 32000
-	if (std::abs((int16_t)32000 - (int16_t)TIM8->CNT) > 3) {
+	// encoders count in fours with the zero point set to 32000; test for values greater than 3 as sometimes miscounts
+	if (std::abs((int16_t)32000 - (int16_t)TIM8->CNT) > 2) {
 		int8_t v = TIM8->CNT > 32000 ? 1 : -1;
 		WavetablePicker(v);
 

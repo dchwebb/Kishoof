@@ -20,13 +20,11 @@ Config config{&wavetable.configSaver, &calib.configSaver};		// Construct config 
 /* TODO:
  * Switch warp type on zero crossing
  * Cross-fade switching wavetables
- * Implement CV trimmers
  * Implement warp type button
  * Support wavetables other than mono 32 bit floats
 
  * Check drive strength on SPI pins
  * Allow multiple flash sectors to be used for config storage
- * Adjust aliasing filters to more accurately cope with warp and tzfm
  */
 
 extern "C" {

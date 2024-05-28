@@ -120,7 +120,9 @@ void FatTools::CheckCache()
 
 		// Update the sample list to check if any meaningful data has changed (ignores Windows disk spam, assuming this occurs in the header cache)
 		if (dirtyCacheBlocks) {
+			flushCacheBusy = true;				// To block wavetable output whilst list is changed
 			wavetable.UpdateWavetableList();
+			flushCacheBusy = false;
 		}
 
 		usb.PauseEndpoint(usb.msc);				// Sends NAKs from the msc endpoint whilst the Flash device is unavailable

@@ -17,6 +17,7 @@ uint32_t flashBusy = 0;
 
 extern bool vcaConnected;			// Temporary hack as current hardware does not have VCA normalled correctly
 
+
 void WaveTable::CalcSample()
 {
 	debugMain.SetHigh();		// Debug
@@ -87,18 +88,28 @@ void WaveTable::CalcSample()
 inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 {
 	// Get location of current wavetable frame in wavetable
-	const float pos = std::clamp(wavetablePos[chn].Val() * (wavList[activeWaveTable].tableCount - 1), 0.0f, (float)(wavList[activeWaveTable].tableCount - 1));
-	const uint32_t sampleOffset = 2048 * std::floor(pos);			// get sample position of wavetable frame
+	const Wav wav = wavList[activeWaveTable];
+	float pos = std::clamp(wavetablePos[chn].Val() * (wavList[activeWaveTable].tableCount - 1), 0.0f, (float)(wavList[activeWaveTable].tableCount - 1));
+	const uint32_t sampleOffset = 2048 * (stepped ? std::round(pos) : std::floor(pos));			// get sample position of wavetable frame
 
 	// Interpolate between samples
 	const float ratio = readPos - (uint32_t)readPos;
-	outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wavList[activeWaveTable].startAddr + sampleOffset, ratio, pitchInc[chn]);
+	if (wav.sampleType == SampleType::Float32) {
+		outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wav.startAddr + sampleOffset, ratio, pitchInc[chn]);
+	} else if (wav.sampleType == SampleType::PCM16) {
+		outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, (int16_t*)wav.startAddr + sampleOffset, ratio, pitchInc[chn]) * (1.0 / 65536.0f);
+	}
 
 	// Interpolate between wavetables if channel A
 	if (!stepped && chn == 0) {
 		const float wtRatio = pos - (uint32_t)pos;
 		if (wtRatio > 0.0001f) {
-			const float outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wavList[activeWaveTable].startAddr + sampleOffset + 2048, ratio, pitchInc[chn]);
+			float outputSample2;
+			if (wav.sampleType == SampleType::Float32) {
+				outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wav.startAddr + sampleOffset + 2048, ratio, pitchInc[chn]);
+			} else {
+				outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (int16_t*)wav.startAddr + sampleOffset + 2048, ratio, pitchInc[chn]) * (1.0 / 65536.0f);
+			}
 			outputSamples[0] = std::lerp(outputSamples[0], outputSample2, wtRatio);
 		}
 	}
@@ -110,10 +121,12 @@ inline float WaveTable::CalcWarp()
 	// Set warp type from knob with hysteresis
 	if (abs(warpTypeVal - adc.Warp_Type_Pot) > 100) {
 		warpTypeVal = adc.Warp_Type_Pot;
-		warpType = (Warp)((uint32_t)Warp::count * warpTypeVal  / 65536);
+		warpType = (Warp)((uint32_t)Warp::count * warpTypeVal / 65536);
 	}
 
-	warpAmt = (0.9f * warpAmt) + (0.1f * std::clamp((61000.0f + adc.Warp_Amt_Pot - adc.WarpCV), 0.0f, 65535.0f));	// Calculate warp amount from pot and cv
+	// Calculate smoothed warp amount from pot and CV with trimmer controlling range of CV
+	warpAmt = (0.9f * warpAmt) +
+			  (0.1f * std::clamp((adc.Warp_Amt_Pot + NormaliseADC(adc.Warp_Amt_Trm) * (61000.0f - adc.WarpCV)), 0.0f, 65535.0f));
 
 	float adjReadPos;					// Read position after warp applied
 	float pitchAdj;						// To adjust the pitch increment for calculating ant-aliasing filter cutoff
@@ -278,6 +291,15 @@ bool WaveTable::GetWavInfo(Wav& wav)
 	wav.startAddr = &(wavHeader[pos + 8]);
 	wav.tableCount = wav.sampleCount / 2048;
 
+	// Currently support 32 bit floats and 16 bit PCM integer formats
+	if (wav.byteDepth == 4 && wav.dataFormat == 3) {
+		wav.sampleType = SampleType::Float32;
+	} else if (wav.byteDepth == 2 && wav.dataFormat == 1) {
+		wav.sampleType = SampleType::PCM16;
+	} else {
+		wav.sampleType = SampleType::Unsupported;
+	}
+
 	// Follow cluster chain and store last cluster if not contiguous to tell playback engine when to do a fresh address lookup
 	uint32_t cluster = wav.cluster;
 	wav.lastCluster = 0xFFFFFFFF;
@@ -289,7 +311,7 @@ bool WaveTable::GetWavInfo(Wav& wav)
 		cluster = fatTools.clusterChain[cluster];
 	}
 	wav.endAddr = fatTools.GetClusterAddr(cluster);
-	return (wav.byteDepth == 4 && wav.dataFormat == 3 && wav.channels == 1);	// FIXME - Only 1 channel 32 bit floats supported
+	return (wav.sampleType != SampleType::Unsupported && wav.channels == 1 && wav.dataSize < wav.size);
 }
 
 
@@ -317,6 +339,7 @@ void WaveTable::UpdateWavetableList()
 	wavList[0].sampleCount = 4096;
 	wavList[0].tableCount = 2;
 	wavList[0].startAddr = (uint8_t*)&defaultWavetable;
+	wavList[0].sampleType = SampleType::Float32;
 	wavList[0].valid = true;
 
 	// Generate test waves
@@ -358,17 +381,13 @@ void WaveTable::UpdateWavetableList()
 	wav.name[0] = 0;
 
 	// Attempt to locate active wavetable
-	uint32_t wtlocation = 0;
 	for (uint32_t i = 0; i < wavetableCount; ++i) {
 		if (wavList[i].valid && !wavList[i].isDir && strncmp(wavList[i].name, cfg.wavetable, 8) == 0) {
-			wtlocation = i;
+			activeWaveTable = i;
 			break;
 		}
 	}
-	if (activeWaveTable != wtlocation) {
-		activeWaveTable = wtlocation;
-		ui.SetWavetable(activeWaveTable);
-	}
+	ui.SetWavetable(activeWaveTable);
 }
 
 
