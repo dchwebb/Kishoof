@@ -22,6 +22,14 @@ void WaveTable::CalcSample()
 {
 	debugMain.SetHigh();		// Debug
 
+	// If crossfading (when switching warp type) blend from old sample to new sample
+	if (crossfade > 0.0f) {
+		debugPin2.SetHigh();		// Debug
+		outputSamples[0] = crossfade * oldOutputSamples[0] + (1.0f - crossfade) * outputSamples[0];
+		outputSamples[1] = crossfade * oldOutputSamples[1] + (1.0f - crossfade) * outputSamples[1];
+		crossfade -= 0.001f;
+	}
+
 	// Previously calculated samples output at beginning of interrupt to keep timing independent of calculation time
 	if (vcaConnected) {
 		const float vcaMult = std::max(60000.0f - adc.VcaCV, 0.0f);
@@ -67,6 +75,12 @@ void WaveTable::CalcSample()
 		outputSamples[1] = FastTanh(outputSamples[0] + outputSamples[1]);
 	} else 	if (chBRingMod.IsHigh()) {
 		outputSamples[1] = FastTanh(outputSamples[0] * outputSamples[1]);
+	}
+
+	if (crossfade <= 0.0f) {
+		debugPin2.SetLow();		// Debug
+		oldOutputSamples[0] = outputSamples[0];
+		oldOutputSamples[1] = outputSamples[1];
 	}
 
 
@@ -119,14 +133,18 @@ inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 inline float WaveTable::CalcWarp()
 {
 	// Set warp type from knob with hysteresis
-	if (abs(warpTypeVal - adc.Warp_Type_Pot) > 100) {
+	if (abs(warpTypeVal - adc.Warp_Type_Pot) > 1000) {
 		warpTypeVal = adc.Warp_Type_Pot;
-		warpType = (Warp)((uint32_t)Warp::count * warpTypeVal / 65536);
+		const Warp newWarpType = (Warp)((uint32_t)Warp::count * warpTypeVal / 65536);
+		if (newWarpType != warpType) {
+			warpType = newWarpType;
+			crossfade = 1.0f;
+		}
 	}
 
 	// Calculate smoothed warp amount from pot and CV with trimmer controlling range of CV
-	warpAmt = (0.9f * warpAmt) +
-			  (0.1f * std::clamp((adc.Warp_Amt_Pot + NormaliseADC(adc.Warp_Amt_Trm) * (61000.0f - adc.WarpCV)), 0.0f, 65535.0f));
+	warpAmt = (0.99f * warpAmt) +
+			  (0.01f * std::clamp((adc.Warp_Amt_Pot + NormaliseADC(adc.Warp_Amt_Trm) * (61000.0f - adc.WarpCV)), 0.0f, 65535.0f));
 
 	float adjReadPos;					// Read position after warp applied
 	float pitchAdj;						// To adjust the pitch increment for calculating ant-aliasing filter cutoff

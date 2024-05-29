@@ -1,13 +1,12 @@
 #include "lcd.h"
+#include <cstring>
 
 LCD  lcd {};
 
 uint16_t __attribute__((section (".dma_buffer"))) LCD::drawBuffer[2][width * height];
 uint16_t __attribute__((section (".dma_buffer"))) LCD::dmaInt16;
 uint16_t __attribute__((section (".dma_buffer"))) LCD::charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
-//uint16_t LCD::drawBuffer[2][width * height];
-//uint16_t LCD::dmaInt16;
-//uint16_t LCD::charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
+
 
 void LCD::Init()
 {
@@ -18,6 +17,7 @@ void LCD::Init()
 	ResetPin.SetHigh();
 	CSPin.SetLow();
 	Delay(100000);
+	memset(lcd.drawBuffer, 0, sizeof(lcd.drawBuffer));
 
 	Command(cmdGC9A01A::INREGEN2);
 	CommandData(0xEB, cdArgs_t {0x14});
@@ -156,33 +156,6 @@ void LCD::ColourFill(const uint16_t x0, const uint16_t y0, const uint16_t x1, co
 	while (SPI_DMA_Working);			// Workaround to prevent compiler optimisations altering dmaInt16 value during send
 	dmaInt16 = colour;
 	DMASend(x0, y0, x1, y1, &dmaInt16, false);
-/*
-	const uint32_t pixelCount = (x1 - x0 + 1) * (y1 - y0 + 1);
-
-	SetCursorPosition(x0, y0, x1, y1);
-	dmaInt16 = colour;
-
-	while (SPI_DMA_Working);
-
-	DCPin.SetHigh();
-
-	SPI3->CR1 &= ~SPI_CR1_SPE;						// Disable SPI
-	SPI3->IFCR |= SPI_IFCR_TXTFC;
-
-	DMA1_Stream0->CR &= ~DMA_SxCR_EN;				// Disable DMA
-	DMA1->LIFCR |= DMA_LIFCR_CFEIF0 | DMA_LIFCR_CHTIF0 | DMA_LIFCR_CTCIF0;
-
-	DMA1_Stream0->CR &= ~DMA_SxCR_MINC;				// Memory not in increment mode
-	DMA1_Stream0->M0AR = (uint32_t)&dmaInt16;		// Configure the memory data register address
-
-	DMA1_Stream0->NDTR = pixelCount;				// Number of data items to transfer
-	DMA1_Stream0->CR |= DMA_SxCR_EN;				// Enable DMA and wait
-
-	SPI3->CFG1 |= 15;								// Set SPI to 16 bit mode
-	SPI3->CFG1 |= SPI_CFG1_TXDMAEN;					// Tx DMA stream enable
-	SPI3->CR1 |= SPI_CR1_SPE;						// Enable SPI
-	SPI3->CR1 |= SPI_CR1_CSTART;					// Start SPI
-*/
 }
 
 

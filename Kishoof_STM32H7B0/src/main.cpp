@@ -21,7 +21,6 @@ Config config{&wavetable.configSaver, &calib.configSaver};		// Construct config 
  * Switch warp type on zero crossing
  * Cross-fade switching wavetables
  * Implement warp type button
- * Support wavetables other than mono 32 bit floats
 
  * Check drive strength on SPI pins
  * Allow multiple flash sectors to be used for config storage

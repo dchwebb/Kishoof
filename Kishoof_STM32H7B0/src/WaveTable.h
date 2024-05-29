@@ -98,6 +98,8 @@ private:
 
 	float defaultWavetable[4096];				// Built-in wavetable
 	float outputSamples[2] = {0.0f, 0.0f};		// Preprepared samples sent to DAC on interrupt
+	float oldOutputSamples[2] = {0.0f, 0.0f};	// Previous output samples used for cross-fading
+	float crossfade = 0.0f;						// Amount of cross-fade
 
 	uint32_t activeWaveTable;					// Index of active wavetable in wavList
 	uint32_t wavetableCount;					// number of wavetables and directories found in file system
@@ -151,7 +153,7 @@ private:
 	GpioPin octaveLED	{GPIOD, 14, GpioPin::Type::Output};			// PD14: LED_Oct_B
 
 	GpioPin debugMain	{GPIOD, 6, GpioPin::Type::Output};			// PD5: Debug
-	GpioPin debugDraw	{GPIOD, 5, GpioPin::Type::Output};			// PD6: Debug
+	GpioPin debugPin2	{GPIOD, 5, GpioPin::Type::Output};			// PD6: Debug
 };
 
 extern WaveTable wavetable;

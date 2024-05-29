@@ -12,9 +12,8 @@ void Filter::Init()
 
 void Filter::BuildLUT()
 {
-	// Build a lookup table
+	// Build a lookup table of coefficients
 
-	GpioPin::SetHigh(GPIOD, 6);
 	// Eg is sampling freq = 20 kHz, then Nyquist = 10 kHz. LPF with 3 dB corner at 1 kHz set omega = 0.1 (1 kHz / 10 kHz)
 	// Each LUT is for an integer pitch increment from 1 to 90 (maximum pitch increment with 5V and octave up
 	const float inc = (float)lutRange / (float)lutSize;
@@ -27,7 +26,6 @@ void Filter::BuildLUT()
 			filterLUT[i].coeff[j] = omega * Sinc(omega * arg * M_PI) * winCoeff[j];
 		}
 	}
-	GpioPin::SetLow(GPIOD, 6);
 }
 
 
