@@ -30,6 +30,7 @@ void WaveTable::CalcSample()
 		crossfade -= 0.001f;
 	}
 
+
 	// Previously calculated samples output at beginning of interrupt to keep timing independent of calculation time
 	if (vcaConnected) {
 		const float vcaMult = std::max(60000.0f - adc.VcaCV, 0.0f);
@@ -45,6 +46,7 @@ void WaveTable::CalcSample()
 		return;
 	}
 
+
 	// Pitch calculations
 	const float octave = octaveUp.IsHigh() ? 2.0f : octaveDown.IsHigh() ? 0.5 : 1.0f;
 	const float newInc = calib.cfg.pitchBase * std::pow(2.0f, (float)adc.Pitch_CV * calib.cfg.pitchMult) * octave;			// for cycle length matching sample rate (48k)
@@ -59,6 +61,7 @@ void WaveTable::CalcSample()
 	readPos[1] += pitchInc[1];
 	if (readPos[1] >= 2048) { readPos[1] -= 2048; }
 
+
 	// Generate channel B output first as used in TZFM to alter channel A read position
 	stepped = modeSwitch.IsLow();
 	if (stepped) {
@@ -69,6 +72,7 @@ void WaveTable::CalcSample()
 	const float adjReadPos = CalcWarp();
 	OutputSample(0, adjReadPos);
 	outputSamples[0] = FastTanh(outputSamples[0]);
+
 
 	// Apply mix/ring mod to channel B
 	if (chBMix.IsHigh()) {
@@ -84,9 +88,7 @@ void WaveTable::CalcSample()
 	}
 
 
-	// Enter sample in draw table to enable LCD update
-
-	// If channel A is affected by channel B (TZFM with octave down) Use channel B's position to draw waveform
+	// Enter sample in draw table to enable LCD update: If channel A is affected by channel B (TZFM with octave down) Use channel B's position to draw waveform
 	const uint32_t drawPosChn = (warpType == Warp::tzfm && cfg.octaveChnB) ? 1 : 0;
 
 	const uint8_t drawPos0 = (uint8_t)std::round(readPos[drawPosChn] * drawWidthMult);		// convert from position in 2048 sample wavetable to draw width
@@ -254,12 +256,39 @@ void WaveTable::ChangeWaveTable(int32_t index)
 	// Called by UI when changing wavetable
 	activeWaveTable = index;
 	strncpy(cfg.wavetable, wavList[activeWaveTable].name, 8);
+	crossfade = 1.0f;
 	config.ScheduleSave();
 }
 
 
 void WaveTable::Init()
 {
+	// Build list of additive waves
+	// none = 0, sine1 = 1, sine2 = 2, sine3 = 3, sine4 = 4, sine5 = 5, sine6 = 6, square = 7, saw = 8, triangle = 9
+	harmonicSets = 0;
+	for (volatile int8_t i = 7; i > -1; --i) {
+		const uint8_t additiveType = (uint8_t)((additiveWaves >> (i * 4)) & 0xF);
+
+		if (harmonicSets > 0 || (additiveType > 0 && additiveType < 10)) {
+			++harmonicSets;
+			if (additiveType > 0 && additiveType < 7) {
+				additiveHarmonics[harmonicSets - 1][additiveType - 1] = 0.9f;
+			} else if ((AdditiveType)additiveType == AdditiveType::saw) {
+				for (uint8_t h = 0; h < harmonicCount; ++h) {
+					additiveHarmonics[harmonicSets - 1][h] = 0.6f / (float)(h + 1);
+				}
+			} else if ((AdditiveType)additiveType == AdditiveType::square) {
+				for (volatile uint8_t h = 0; h < harmonicCount; h += 2) {
+					additiveHarmonics[harmonicSets - 1][h] = 0.9f / (float)(h + 1);
+				}
+			} else if ((AdditiveType)additiveType == AdditiveType::triangle) {
+				for (volatile uint8_t h = 0; h < harmonicCount; h += 2) {
+					additiveHarmonics[harmonicSets - 1][h] = 0.9f / (float)std::pow(h + 1, 2);
+				}
+			}
+		}
+	}
+
 	wavetable.UpdateWavetableList();							// Updated list of samples on flash
 }
 
