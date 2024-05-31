@@ -18,6 +18,7 @@ public:
 	// STM32H7B0 has 128k Flash in 16 sectors of 8192k
 	static constexpr uint32_t flashConfigSector = 14;		// Allow 3 sectors for config giving a config size of 24k before erase needed
 	static constexpr uint32_t flashSectorSize = 8192;
+	static constexpr uint32_t configSectorCount = 3;		// Number of sectors after base sector used for config
 	uint32_t* const flashConfigAddr = reinterpret_cast<uint32_t* const>(FLASH_BASE + flashSectorSize * (flashConfigSector - 1));
 
 	bool scheduleSave = false;
@@ -45,6 +46,12 @@ private:
 
 	const char ConfigHeader[4] = {'C', 'F', 'G', configVersion};
 	int32_t currentSettingsOffset = -1;	// Offset within flash page to block containing active/latest settings
+
+	uint32_t currentIndex = 0;			// Each config gets a new index to track across multiple sectors
+	struct {
+		uint32_t sector;
+		bool dirty;
+	} sectors[configSectorCount];
 
 	void FlashUnlock();
 	void FlashLock();

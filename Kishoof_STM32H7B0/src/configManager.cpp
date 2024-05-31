@@ -64,6 +64,15 @@ bool Config::SaveConfig(bool forceSave)
 
 void Config::RestoreConfig()
 {
+	// Initialise sector array
+	for (uint32_t i = 0; i < configSectorCount; ++i) {
+		sectors[i].sector = flashConfigSector + i;
+		uint32_t* const addr = flashConfigAddr + i * (flashSectorSize / 4);
+
+		// Check if sector is dirty
+
+	}
+
 	// Locate latest (active) config block
 	uint32_t pos = 0;
 	while (pos < flashSectorSize - settingsSize) {

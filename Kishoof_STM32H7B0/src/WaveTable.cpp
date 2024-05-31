@@ -233,7 +233,7 @@ inline float WaveTable::CalcWarp()
 inline void WaveTable::AdditiveWave()
 {
 	// Calculate which pair of harmonic sets to interpolate between
-	const float harmonicPos = (float)((harmonicSets - 1) * adc.Wavetable_Pos_B_Pot) / 65536.0f;
+	const float harmonicPos = wavetablePos[1].Val() * (harmonicSets - 1);
 	const uint32_t harmonicLow = (uint32_t)harmonicPos;
 	const float ratio = harmonicPos - harmonicLow;
 
@@ -263,7 +263,7 @@ void WaveTable::CalcAdditive()
 	// none = 0, sine1 = 1, sine2 = 2, sine3 = 3, sine4 = 4, sine5 = 5, sine6 = 6, square = 7, saw = 8, triangle = 9
 	harmonicSets = 0;
 	memset(additiveHarmonics, 0, sizeof(additiveHarmonics));
-	for (volatile int8_t i = 7; i > -1; --i) {
+	for (int8_t i = 7; i > -1; --i) {
 		const uint8_t additiveType = (uint8_t)((cfg.additiveWaves >> (i * 4)) & 0xF);
 
 		if (harmonicSets > 0 || (additiveType > 0 && additiveType < 10)) {
@@ -272,16 +272,16 @@ void WaveTable::CalcAdditive()
 				additiveHarmonics[harmonicSets - 1][additiveType - 1] = 0.9f;
 			} else if ((AdditiveType)additiveType == AdditiveType::saw) {
 				for (uint8_t h = 0; h < harmonicCount; ++h) {
-					additiveHarmonics[harmonicSets - 1][h] = 0.6f / (float)(h + 1);
+					additiveHarmonics[harmonicSets - 1][h] = 0.6f / (h + 1);
 				}
 			} else if ((AdditiveType)additiveType == AdditiveType::square) {
-				for (volatile uint8_t h = 0; h < harmonicCount; h += 2) {
-					additiveHarmonics[harmonicSets - 1][h] = 0.9f / (float)(h + 1);
+				for (uint8_t h = 0; h < harmonicCount; h += 2) {
+					additiveHarmonics[harmonicSets - 1][h] = 0.9f / (h + 1);
 				}
 			} else if ((AdditiveType)additiveType == AdditiveType::triangle) {
 				float mult = 0.8f;
-				for (volatile uint8_t h = 0; h < harmonicCount; h += 2) {
-					additiveHarmonics[harmonicSets - 1][h] = mult / (float)std::pow(h + 1, 2);
+				for (uint8_t h = 0; h < harmonicCount; h += 2) {
+					additiveHarmonics[harmonicSets - 1][h] = mult / std::pow(h + 1, 2);
 					mult *= -1.0f;
 				}
 			}
