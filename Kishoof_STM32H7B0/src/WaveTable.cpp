@@ -239,11 +239,17 @@ inline void WaveTable::AdditiveWave()
 
 	float sample = 0.0f;
 	float pos = 0.0f;
+	float revPos = 0.0f;
 	for (uint32_t i = 0; i < harmonicCount; ++i) {
 		pos += readPos[1];
+		revPos -= readPos[1];
 		while (pos >= 2048.0f) {
 			pos -= 2048.0f;
 		}
+		while (revPos < 0.0f) {
+			revPos += 2048.0f;
+		}
+
 		float harmonicLevel = std::lerp(additiveHarmonics[harmonicLow][i], additiveHarmonics[harmonicLow + 1][i], ratio);
 		sample += harmonicLevel * sineLUT[(uint32_t)pos];
 	}
@@ -251,23 +257,14 @@ inline void WaveTable::AdditiveWave()
 }
 
 
-void WaveTable::ChangeWaveTable(int32_t index)
-{
-	// Called by UI when changing wavetable
-	activeWaveTable = index;
-	strncpy(cfg.wavetable, wavList[activeWaveTable].name, 8);
-	crossfade = 1.0f;
-	config.ScheduleSave();
-}
-
-
-void WaveTable::Init()
+void WaveTable::CalcAdditive()
 {
 	// Build list of additive waves
 	// none = 0, sine1 = 1, sine2 = 2, sine3 = 3, sine4 = 4, sine5 = 5, sine6 = 6, square = 7, saw = 8, triangle = 9
 	harmonicSets = 0;
+	memset(additiveHarmonics, 0, sizeof(additiveHarmonics));
 	for (volatile int8_t i = 7; i > -1; --i) {
-		const uint8_t additiveType = (uint8_t)((additiveWaves >> (i * 4)) & 0xF);
+		const uint8_t additiveType = (uint8_t)((cfg.additiveWaves >> (i * 4)) & 0xF);
 
 		if (harmonicSets > 0 || (additiveType > 0 && additiveType < 10)) {
 			++harmonicSets;
@@ -282,14 +279,36 @@ void WaveTable::Init()
 					additiveHarmonics[harmonicSets - 1][h] = 0.9f / (float)(h + 1);
 				}
 			} else if ((AdditiveType)additiveType == AdditiveType::triangle) {
+				float mult = 0.8f;
 				for (volatile uint8_t h = 0; h < harmonicCount; h += 2) {
-					additiveHarmonics[harmonicSets - 1][h] = 0.9f / (float)std::pow(h + 1, 2);
+					additiveHarmonics[harmonicSets - 1][h] = mult / (float)std::pow(h + 1, 2);
+					mult *= -1.0f;
 				}
 			}
 		}
 	}
 
+	if (harmonicSets == 0) {			// If no harmonics configured  create a single sine wave
+		harmonicSets = 1;
+		additiveHarmonics[0][0] = 0.9f;
+	}
+}
+
+
+void WaveTable::Init()
+{
+	CalcAdditive();
 	wavetable.UpdateWavetableList();							// Updated list of samples on flash
+}
+
+
+void WaveTable::ChangeWaveTable(int32_t index)
+{
+	// Called by UI when changing wavetable
+	activeWaveTable = index;
+	strncpy(cfg.wavetable, wavList[activeWaveTable].name, 8);
+	crossfade = 1.0f;
+	config.ScheduleSave();
 }
 
 

@@ -40,6 +40,7 @@ void CDCHandler::ProcessCommand()
 				"Calibration base pitch: %.2f\r\n"
 				"Calibration pitch divider: %.2f\r\n"
 				"Calibration vca normal level: %d\r\n"
+				"Additive wave config: %lx\r\n"
 				"Sample buffer underrun: %lu\r\n"
 				"Flash busy: %lu\r\n"
 				"\r\n"
@@ -47,6 +48,7 @@ void CDCHandler::ProcessCommand()
 				calib.cfg.pitchBase,
 				-1.0f / calib.cfg.pitchMult,
 				calib.cfg.vcaNormal,
+				wavetable.cfg.additiveWaves,
 				underrun,
 				flashBusy
 				);
@@ -60,6 +62,8 @@ void CDCHandler::ProcessCommand()
 				"calib       -  Start calibration\r\n"
 				"dfu         -  USB firmware upgrade\r\n"
 				"wavetables  -  Print list of wavetables\r\n"
+				"add:XXXXXXXX   Channel B additive waves. Type 'help add' for details"
+				"clearconfig -  Erase configuration and restart\r\n"
 				"\r\n"
 				"Flash Tools:\r\n"
 				"------------\r\n"
@@ -81,6 +85,22 @@ void CDCHandler::ProcessCommand()
 				"\r\n"
 #endif
 		);
+
+	} else if (cmd.compare("help add") == 0) {
+
+		usb->SendString("Configure channel B additive waves\r\n"
+				"syntax add:XXXXXXXX where X = 0 to 9:\r\n"
+				" 0 = none\r\n"
+				" 1 = fundamental sine\r\n"
+				" 2 = 2nd harmonic sine\r\n"
+				" 3 = 3rd harmonic sine\r\n"
+				" 4 = 4th harmonic sine\r\n"
+				" 5 = 5th harmonic sine\r\n"
+				" 6 = 6th harmonic sine\r\n"
+				" 7 = square\r\n"
+				" 8 = saw tooth\r\n"
+				" 9 = triangle\r\n");
+
 
 #if (USB_DEBUG)
 	} else if (cmd.compare("usbdebug") == 0) {				// Configure gate LED
@@ -118,6 +138,24 @@ void CDCHandler::ProcessCommand()
 		}
 		printf("\r\n");
 
+	} else if (cmd.compare("clearconfig") == 0) {				// Erase config from internal flash
+		printf("Clearing config and restarting ...\r\n");
+		config.EraseConfig();
+		DelayMS(10);
+		Reboot();
+
+	} else if (cmd.compare(0, 4, "add:") == 0) {				// configure channel B additive waves
+		uint32_t val;
+		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), val, 16);
+		if (res.ec == std::errc()) {
+			wavetable.cfg.additiveWaves = val;
+			wavetable.CalcAdditive();
+			config.ScheduleSave();
+		} else {
+			usb->SendString("Invalid data\r\n");
+		}
+
+
 	} else if (cmd.compare(0, 11, "eraseblock:") == 0) {		// Erase sector
 		uint32_t addr;
 		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);
@@ -127,7 +165,6 @@ void CDCHandler::ProcessCommand()
 		} else {
 			usb->SendString("Invalid address\r\n");
 		}
-
 
 
 	} else if (cmd.compare("eraseflash") == 0) {				// Erase all flash memory

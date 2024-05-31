@@ -627,6 +627,14 @@ void JumpToBootloader()
 }
 
 
+void Reboot()
+{
+	__disable_irq();
+	__DSB();
+	NVIC_SystemReset();
+}
+
+
 bool vcaConnected = true;
 
 void CheckVCA()

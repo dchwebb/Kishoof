@@ -64,7 +64,7 @@ void Calib::Calibrate(char key)
 			cfg.vcaNormal = (uint16_t)std::round(adcVCA / 2000.0f);
 
 			printf("Calibration saved\r\n");
-			config.ScheduleSave();
+			config.SaveConfig(true);
 			calibrating = false;
 			}
 			break;

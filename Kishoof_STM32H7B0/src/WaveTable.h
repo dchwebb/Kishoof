@@ -17,6 +17,7 @@ struct WaveTable {
 public:
 	void CalcSample();							// Called by interrupt handler to generate next sample
 	void Init();								// Initialise caches, buffers etc
+	void CalcAdditive();
 	bool LoadWaveTable(uint32_t* startAddr);
 	void Draw();
 	void UpdateWavetableList();
@@ -27,6 +28,7 @@ public:
 	struct {
 		char wavetable[8];
 		bool octaveChnB = false;
+		uint32_t additiveWaves = 0x12346789;
 	} cfg;
 
 	ConfigSaver configSaver = {
@@ -40,7 +42,6 @@ public:
 	static constexpr uint32_t harmonicCount = 10;
 
 	enum class AdditiveType : uint8_t {none = 0, sine1 = 1, sine2 = 2, sine3 = 3, sine4 = 4, sine5 = 5, sine6 = 6, square = 7, saw = 8, triangle = 9};
-	uint32_t additiveWaves = 0x01246789;
 	uint32_t harmonicSets;
 	float additiveHarmonics[8][harmonicCount];
 
