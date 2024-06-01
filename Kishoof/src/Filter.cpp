@@ -5,102 +5,33 @@ Filter filter;
 
 void Filter::Init()
 {
-	filter.FIRFilterWindow();
-	currentCutoff = (float)adc.FilterPot / 65536.0f;
-	cutoff = currentCutoff;
-	filter.Update(true);
+	FIRFilterWindow();
+	BuildLUT();
 }
 
 
-void Filter::Update(bool reset)
+void Filter::BuildLUT()
 {
-	//cutoff = 0.999f * cutoff + 0.001 * (float)adc.FilterPot / 65536.0f;
+	// Build a lookup table of coefficients
 
-	if (reset || std::abs(cutoff - currentCutoff) > 0.001) {
-		debugFilter.SetHigh();
-
-		// round cutoff to 3dp
-		float omega = std::round(cutoff * 1000.0f) / 1000.0f;
-		InitFIRFilter(omega);
-		activeFilter = !activeFilter;
-
-		debugFilter.SetLow();
-	}
-
-}
-
-
-
-// Rectangular FIR
-void Filter::InitFIRFilter(float omega)
-{
 	// Eg is sampling freq = 20 kHz, then Nyquist = 10 kHz. LPF with 3 dB corner at 1 kHz set omega = 0.1 (1 kHz / 10 kHz)
-
-	// cycle between two sets of coefficients so one can be changed without affecting the other
-	const bool inactiveFilter = !activeFilter;
-
-	for (int8_t j = 0; j < firTaps / 2 + 1; ++j) {
-		int8_t  arg = j - (firTaps - 1) / 2;
-		firCoeff[inactiveFilter][j] = omega * Sinc(omega * arg * M_PI) * winCoeff[j];
+	// Each LUT is for an integer pitch increment from 1 to 90 (maximum pitch increment with 5V and octave up
+	const float inc = (float)lutRange / (float)lutSize;
+	for (uint32_t i = 0; i < lutSize; ++i) {
+		float pitchInc = std::pow(2.0f, inc * i);
+		const float omega = 1.0f / pitchInc;
+		filterLUT[i].inc = pitchInc;
+		for (int8_t j = 0; j < (int8_t)foldedFirTaps; ++j) {
+			const int8_t  arg = j - (firTaps - 1) / 2;
+			filterLUT[i].coeff[j] = omega * Sinc(omega * arg * M_PI) * winCoeff[j];
+		}
 	}
-
-	currentCutoff = omega;
 }
 
 
-float Filter::CalcInterpolatedFilter(int32_t pos, float* waveTable, float ratio)
-{
-	// FIR Convolution routine using folded FIR structure.
-	// Samples are interpolated according to ratio and filtering is carried out to minimise multiplications
-
-	if (ratio < 0.00001f) {								// To avoid a divide by zero and for better performance
-		return CalcFilter(pos, waveTable);
-	}
-
-	float outputSample = 0.0f;
-
-	const float invertedRatio = 1.0f / ratio - 1.0f;	// half the samples are interpolated during filtering, and then the total normalised
-
-	// pos = position of sample N, N-1, N-2 etc
-	int32_t revpos = (pos - firTaps + 1) & 0x7FF;		// position of sample 1, 2, 3 etc
-
-	for (uint8_t i = 0; i < firTaps / 2; ++i) {
-		// Folded FIR structure - as coefficients are symmetrical we can multiple the sample 1 + sample N by the 1st coefficient, sample 2 + sample N - 1 by 2nd coefficient etc
-		const int32_t pos2 = (pos + 1) & 0x7FF;
-		const int32_t revpos2 = (revpos + 1) & 0x7FF;
-
-		outputSample += firCoeff[activeFilter][i] * ((invertedRatio * (waveTable[revpos] + waveTable[pos]) +
-				(waveTable[revpos2] + waveTable[pos2])));
-
-		revpos = revpos2;
-		pos = (pos - 1) & 0x7FF;
-	}
-
-	outputSample += firCoeff[activeFilter][firTaps / 2] * (invertedRatio * waveTable[revpos] + waveTable[(revpos + 1) & 0x7FF]);
-
-	return outputSample * ratio;
-}
 
 
-float Filter::CalcFilter(int32_t pos, float* waveTable)
-{
-	// FIR Convolution routine using folded FIR structure
-	float outputSample = 0.0f;
 
-	// pos = position of sample N, N-1, N-2 etc
-	int32_t revpos = (pos - firTaps + 1) & 0x7FF;		// position of sample 1, 2, 3 etc
-
-	for (uint8_t i = 0; i < firTaps / 2; ++i) {
-		// Folded FIR structure - as coefficients are symmetrical we can multiple the sample 1 + sample N by the 1st coefficient, sample 2 + sample N - 1 by 2nd coefficient etc
-		outputSample += firCoeff[activeFilter][i] * (waveTable[revpos] + waveTable[pos]);
-		revpos = (revpos + 1) & 0x7FF;
-		pos = (pos - 1) & 0x7FF;
-	}
-
-	outputSample += firCoeff[activeFilter][firTaps / 2] * waveTable[revpos];
-
-	return outputSample;
-}
 
 
 float Filter::Sinc(float x)
@@ -116,7 +47,7 @@ void Filter::FIRFilterWindow()
 {
 	// Kaiser window
 	for (uint8_t j = 0; j < firTaps; j++) {
-		float arg = windowBeta * sqrt(1.0f - pow( (static_cast<float>(2 * j) + 1 - firTaps) / (firTaps + 1), 2.0) );
+		const float arg = windowBeta * sqrt(1.0f - pow( (static_cast<float>(2 * j) + 1 - firTaps) / (firTaps + 1), 2.0) );
 		winCoeff[j] = Bessel(arg) / Bessel(windowBeta);
 	}
 }

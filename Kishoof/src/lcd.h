@@ -120,7 +120,7 @@ public:
 	void DrawCharMem(uint16_t x, uint16_t y, uint16_t memWidth, uint16_t* memBuffer, char c, const FontData *font, const uint16_t foreground, const uint16_t background);
 	void DrawString(uint16_t x0, const uint16_t y0, std::string_view s, const FontData *font, const uint16_t foreground, const uint16_t background);
 	void DrawStringMem(uint16_t x0, const uint16_t y0, uint16_t memWidth, uint16_t* memBuffer, std::string_view s, const FontData *font, const uint16_t foreground, const uint16_t background);
-
+	void DrawStringMemCenter(uint16_t x0, const uint16_t y0, const size_t width, uint16_t* memBuffer, std::string_view s, const FontData *font, const uint16_t foreground, const uint16_t background);
 private:
 	enum LCD_Orientation_t { LCD_Portrait, LCD_Portrait_Flipped, LCD_Landscape, LCD_Landscape_Flipped } ;
 	enum SPIDataSize_t { SPIDataSize_8b, SPIDataSize_16b };			// SPI in 8-bits mode/16-bits mode
@@ -145,8 +145,9 @@ private:
 	void SPISetDataSize(const SPIDataSize_t& Mode);
 	void DMASend(const uint16_t x0, const uint16_t y0, const uint16_t x1, const uint16_t y1, const uint16_t* pixelData, bool memInc);
 
-	GpioPin DCPin {GPIOC, 11, GpioPin::Type::Output, 0, GpioPin::DriveStrength::VeryHigh};
-	//GpioPin CSPin {GPIOE, 3, GpioPin::Type::Output};
+	GpioPin DCPin {GPIOB, 6, GpioPin::Type::Output, 0, GpioPin::DriveStrength::High};
+	GpioPin ResetPin {GPIOB, 7, GpioPin::Type::Output};
+	GpioPin CSPin {GPIOA, 15, GpioPin::Type::Output};
 };
 
 

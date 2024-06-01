@@ -1,94 +1,37 @@
-#include <WaveTable.h>
-#include "stm32h743xx.h"
+#include "stm32h7b0xx.h"
 #include "initialisation.h"
-#include "GpioPin.h"
+#include "Calib.h"
 
 
 // Clock overview:
-// Main clock 4MHz: 8MHz (HSE) / 2 (M) * 200 (N) / 2 (P) = 400MHz
-// SDRAM: 200MHz: Defaulted to D1 domain AHB prescaler (RCC_D1CFGR_HPRE_3) ie main clock /2 = 200MHz (AKA HCLK3)
-// I2S: Peripheral Clock (AKA per_ck) set to HSI = 64MHz
-// ADC: Peripheral Clock (AKA per_ck) set to HSI = 64MHz
+// I2S 				PLL2 P 				61.44 MHz
+// SPI3 Display		PLL2 P
+// ADC		 		Peripheral Clock 	8 MHz
+// OCTOSPI			PPL2 R				153.6 MHz
 
-#if CPUCLOCK == 400
-// 8MHz (HSE) / 2 (M) * 200 (N) / 2 (P) = 400MHz
-#define PLL_M1 2
-#define PLL_N1 200
-#define PLL_P1 1			// 0000001: pll1_p_ck = vco1_ck / 2
-#define PLL_Q1 4			// This is used for I2S clock: 8MHz (HSE) / 2 (M) * 200 (N) / 4 (Q) = 200MHz
-#define PLL_R1 2
-#elif CPUCLOCK == 320
-// 8MHz (HSE) / 2 (M) * 160 (N) / 2 (P) = 320MHz
-#define PLL_M1 2
-#define PLL_N1 160
-#define PLL_P1 1			// 0000001: pll1_p_ck = vco1_ck / 2
-#define PLL_Q1 2			// This is used for I2S clock: 8MHz (HSE) / 2 (M) * 160 (N) / 2 (Q) = 320MHz
-#define PLL_R1 2
-
-#elif CPUCLOCK == 280
-// 8MHz (HSE) / 2 (M) * 140 (N) / 2 (P) = 280MHz
+// Main clock 8MHz (HSE) / 2 (M) * 140 (N) / 2 (P) = 280MHz
 #define PLL_M1 2
 #define PLL_N1 140
-#define PLL_P1 1			// 0000001: pll1_p_ck = vco1_ck / 2
-#define PLL_Q1 2			// This is used for I2S clock: 8MHz (HSE) / 2 (M) * 140 (N) / 2 (Q) = 280MHz
-#define PLL_R1 2
-#elif CPUCLOCK == 240
-// 8MHz (HSE) / 2 (M) * 120 (N) / 2 (P) = 240MHz
-#define PLL_M1 2
-#define PLL_N1 120
-#define PLL_P1 1			// 0000001: pll1_p_ck = vco1_ck / 2
-#define PLL_Q1 2			// This is used for I2S clock: 8MHz (HSE) / 2 (M) * 120 (N) / 2 (Q) = 240MHz
-#define PLL_R1 2
-#elif CPUCLOCK == 200
-// 8MHz (HSE) / 2 (M) * 100 (N) / 2 (P) = 200MHz
-#define PLL_M1 2
-#define PLL_N1 100
-#define PLL_P1 1			// 0000001: pll1_p_ck = vco1_ck / 2
-#define PLL_Q1 2			// This is used for I2S clock: 8MHz (HSE) / 2 (M) * 100 (N) / 2 (Q) = 200MHz FIXME - problems using this PLL divider and FMC
-#define PLL_R1 2
-#else
-// 8MHz (HSE) / 2 (M) * 240 (N) / 2 (P) = 480MHz
-#define PLL_M1 2
-#define PLL_N1 240
-#define PLL_P1 1			// 0000001: pll1_p_ck = vco1_ck / 2
-#define PLL_Q1 4			// This is used for I2S clock: 8MHz (HSE) / 2 (M) * 240 (N) / 4 (Q) = 240MHz
-#define PLL_R1 2
-#endif
+#define PLL_P1 2
 
-#ifdef PLL2ON
-// PLL2R used for SDRAM clock - not currently used as was interfering with timing on I2S
-// 8MHz (HSE) / 4 (M) * 200 (N) / 2 (R) = 200MHz (Maximum speed successfully tested 230MHz)
-// PPL2P used for ADC: 8MHz / 4 (M) * 200 (N) / 5 (P) = 80MHz
-#define PLL_M2 4
-#define PLL_N2 200
-#define PLL_R2 1			// 0000001: pll2_r_ck = vco2_ck / 2
-#define PLL_P2 4			// 0000100: pll2_p_ck = vco2_ck / 5
-#endif
+// PPL2P used for I2S: 		8MHz / 5 (M) * 192 (N) / 5 (P) = 61.44 MHz
+// PPL2R used for OctoSPI: 	8MHz / 5 (M) * 192 (N) / 3 (P) = 102.4 MHz
+#define PLL_M2 5
+#define PLL_N2 192
+#define PLL_P2 5
+#define PLL_R2 2
+
 
 void InitClocks()
 {
-
 	RCC->APB4ENR |= RCC_APB4ENR_SYSCFGEN;			// Enable System configuration controller clock
 
-	// Voltage scaling - see Datasheet page 113. VOS1 > 300MHz; VOS2 > 200MHz; VOS3 < 200MHz
-	PWR->CR3 &= ~PWR_CR3_SCUEN;						// Supply configuration update enable - this must be deactivated or VOS ready does not come on
-#if CPUCLOCK <= 200
-	PWR->D3CR |= PWR_D3CR_VOS_0;					// Configure voltage scaling level 2 (0b10 = VOS2)
-	PWR->D3CR &= ~PWR_D3CR_VOS_1;
-#elif CPUCLOCK <= 280
-	PWR->D3CR |= PWR_D3CR_VOS_1;					// Configure voltage scaling level 2 (0b10 = VOS2)
-	PWR->D3CR &= ~PWR_D3CR_VOS_0;
-#else
-	PWR->D3CR |= PWR_D3CR_VOS;						// Configure voltage scaling level 1 before engaging overdrive (0b11 = VOS1)
-#endif
-	while ((PWR->CSR1 & PWR_CSR1_ACTVOSRDY) == 0);	// Check Voltage ready 1= Ready, voltage level at or above VOS selected level
+	// Voltage scaling - see Datasheet page 78. VOS0 > 225MHz; VOS1 > 160MHz; VOS2 > 88MHz; VOS3 < 88MHz
+	//PWR->CR3 &= ~PWR_CR3_SCUEN;						// Supply configuration update enable - this must be deactivated or VOS ready does not come on
+	PWR->CR3 |= PWR_CR3_BYPASS;						// power management unit bypassed: Must be set before changing VOS
 
-#if CPUCLOCK > 400
-	// Activate the LDO regulator overdrive mode. Must be written only in VOS1 voltage scaling mode.
-	// This activates VSO0 mode for use in clock speeds from 400MHz to 480MHz
-	SYSCFG->PWRCR |= SYSCFG_PWRCR_ODEN;
-	while ((SYSCFG->PWRCR & SYSCFG_PWRCR_ODEN) == 0);
-#endif
+	PWR->SRDCR |= PWR_SRDCR_VOS;					// Configure voltage scaling level 0 (Highest)
+	while ((PWR->CSR1 & PWR_CSR1_ACTVOSRDY) == 0);	// Check Voltage ready 1= Ready, voltage level at or above VOS selected level
 
 	RCC->CR |= RCC_CR_HSEON;						// Turn on external oscillator
 	while ((RCC->CR & RCC_CR_HSERDY) == 0);			// Wait till HSE is ready
@@ -99,51 +42,47 @@ void InitClocks()
 
 	// PLL 1 dividers
 	RCC->PLL1DIVR = (PLL_N1 - 1) << RCC_PLL1DIVR_N1_Pos |
-			        PLL_P1 << RCC_PLL1DIVR_P1_Pos |
-			        (PLL_Q1 - 1) << RCC_PLL1DIVR_Q1_Pos |
-			        (PLL_R1 - 1) << RCC_PLL1DIVR_R1_Pos;
+			        (PLL_P1 - 1) << RCC_PLL1DIVR_P1_Pos;
 
-	RCC->PLLCFGR |= RCC_PLLCFGR_PLL1RGE_2;			// 10: The PLL1 input (ref1_ck) clock range frequency is between 4 and 8 MHz (Will be 4MHz for 8MHz clock divided by 2)
-	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLL1VCOSEL;		// 0: Wide VCO range:192 to 836 MHz (default after reset)	1: Medium VCO range:150 to 420 MHz
-	RCC->PLLCFGR |= RCC_PLLCFGR_DIVP1EN | RCC_PLLCFGR_DIVQ1EN;		// Enable divider outputs
+	RCC->PLLCFGR |= RCC_PLLCFGR_PLL1RGE_1;			// 10: The PLL1 input (ref1_ck) clock range frequency is between 4 and 8 MHz (Will be 4MHz for 8MHz clock divided by 2)
+	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLL1VCOSEL;		// 0: Wide VCO range:128 to 560 MHz (default); 1: Medium VCO range: 150 to 420 MHz
+	RCC->PLLCFGR |= RCC_PLLCFGR_DIVP1EN;			// Enable P divider output
 
 	RCC->CR |= RCC_CR_PLL1ON;						// Turn on main PLL
 	while ((RCC->CR & RCC_CR_PLL1RDY) == 0);		// Wait till PLL is ready
 
-#ifdef PLL2ON
+	// PLL 2 dividers
 	RCC->PLLCKSELR |= PLL_M2 << RCC_PLLCKSELR_DIVM2_Pos;
 
-	// PLL 2 dividers
 	RCC->PLL2DIVR = (PLL_N2 - 1) << RCC_PLL2DIVR_N2_Pos |
-			        PLL_R2 << RCC_PLL2DIVR_R2_Pos |
-					PLL_P2 << RCC_PLL2DIVR_P2_Pos;
+					(PLL_P2 - 1) << RCC_PLL2DIVR_P2_Pos |
+					(PLL_R2 - 1) << RCC_PLL2DIVR_R2_Pos;
 
-	RCC->PLLCFGR |= RCC_PLLCFGR_PLL2RGE_1;			// 01: The PLL2 input (ref1_ck) clock range frequency is between 2 and 4 MHz (Will be 2MHz for 8MHz clock divided by 4)
-	RCC->PLLCFGR |= RCC_PLLCFGR_PLL2VCOSEL;			// 1: Medium VCO range:150 to 420 MHz
-	RCC->PLLCFGR |= RCC_PLLCFGR_DIVR2EN;			// Enable R divider output for SDRAM clock
-	RCC->PLLCFGR |= RCC_PLLCFGR_DIVP2EN;			// Enable P divider output for ADC clock
+	RCC->PLLCFGR |= RCC_PLLCFGR_PLL2RGE_1 |			// 01: The PLL2 input (ref1_ck) clock range frequency is between 4 and 8 MHz
+					RCC_PLLCFGR_PLL2VCOSEL |		// 1: Medium VCO range:150 to 420 MHz
+					RCC_PLLCFGR_DIVP2EN |			// Enable P divider output
+					RCC_PLLCFGR_DIVR2EN;			// Enable R divider output
 
 	RCC->CR |= RCC_CR_PLL2ON;						// Turn on PLL 2
 	while ((RCC->CR & RCC_CR_PLL2RDY) == 0);		// Wait till PLL is ready
-#endif
 
 	// Peripheral scalers
-	RCC->D1CFGR |= RCC_D1CFGR_HPRE_3;				// D1 domain AHB prescaler - divide 400MHz by 2 for 200MHz - this is then divided for all APB clocks below
-	RCC->D1CFGR |= RCC_D1CFGR_D1PPRE_2; 			// Clock divider for APB3 clocks - set to 4 for 100MHz: 100: hclk / 2
-	RCC->D2CFGR |= RCC_D2CFGR_D2PPRE1_2;			// Clock divider for APB1 clocks - set to 4 for 100MHz: 100: hclk / 2
-	RCC->D2CFGR |= RCC_D2CFGR_D2PPRE2_2;			// Clock divider for APB2 clocks - set to 4 for 100MHz: 100: hclk / 2
-	RCC->D3CFGR |= RCC_D3CFGR_D3PPRE_2;				// Clock divider for APB4 clocks - set to 4 for 100MHz: 100: hclk / 2
+	RCC->CDCCIPR |= RCC_CDCCIPR_CKPERSEL_1;			// Peripheral clock to HSE (8MHz)
+	RCC->CDCFGR1 |= RCC_CDCFGR1_CDPPRE_DIV2;		// APB3 Clocks
+	RCC->CDCFGR2 |= RCC_CDCFGR2_CDPPRE1_DIV2;		// APB1 Clocks
+	RCC->CDCFGR2 |= RCC_CDCFGR2_CDPPRE2_DIV2;		// APB2 Clocks
+	RCC->SRDCFGR |= RCC_SRDCFGR_SRDPPRE_DIV2;		// APB4 Clocks
 
+	// By default Flash latency is set to 6 wait states - See page 161
+	FLASH->ACR = FLASH_ACR_WRHIGHFREQ |
+				(FLASH->ACR & ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY_6WS;
+	while ((FLASH->ACR & FLASH_ACR_LATENCY_Msk) != FLASH_ACR_LATENCY_6WS);
 
 	RCC->CFGR |= RCC_CFGR_SW_PLL1;					// System clock switch: 011: PLL1 selected as system clock
 	while ((RCC->CFGR & RCC_CFGR_SWS_Msk) != (RCC_CFGR_SW_PLL1 << RCC_CFGR_SWS_Pos));		// Wait until PLL has been selected as system clock source
 
-	// By default Flash latency is set to 7 wait states - set to 4 for now but may need to increase
-	FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY_4WS;
-	while ((FLASH->ACR & FLASH_ACR_LATENCY_Msk) != FLASH_ACR_LATENCY_4WS);
 
 	SystemCoreClockUpdate();						// Update SystemCoreClock (system clock frequency) derived from settings of oscillators, prescalers and PLL
-
 }
 
 
@@ -153,14 +92,12 @@ void InitHardware()
 	InitCache();
 	InitIO();										// Initialise switches and LEDs
 	InitMDMA();
-	InitDAC();			// Only needed on prototype hardware to activate VCA
 	InitADC();
 	InitDebugTimer();
 	InitI2STimer();
 	InitDisplaySPI();
-
-	RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;
-	RNG->CR |= RNG_CR_RNGEN;
+	InitEncoders();
+	InitOctoSPI();
 }
 
 
@@ -168,14 +105,15 @@ void InitCache()
 {
 	// Use the Memory Protection Unit (MPU) to set up a region of memory with data caching disabled for use with DMA buffers
 	MPU->RNR = 0;									// Memory region number
-	MPU->RBAR = reinterpret_cast<uint32_t>(&adc);	// Store the address of the ADC_array into the region base address register
+	extern uint32_t _dma_addr;						// Get the start of the dma buffer from the linker
+	MPU->RBAR = reinterpret_cast<uint32_t>(&_dma_addr);	// Store the address of the ADC_array into the region base address register
 
 	MPU->RASR = (0b11  << MPU_RASR_AP_Pos)   |		// All access permitted
 				(0b001 << MPU_RASR_TEX_Pos)  |		// Type Extension field: See truth table on p228 of Cortex M7 programming manual
 				(1     << MPU_RASR_S_Pos)    |		// Shareable: provides data synchronization between bus masters. Eg a processor with a DMA controller
 				(0     << MPU_RASR_C_Pos)    |		// Cacheable
 				(0     << MPU_RASR_B_Pos)    |		// Bufferable (ignored for non-cacheable configuration)
-				(17    << MPU_RASR_SIZE_Pos) |		// 256KB - D2 is actually 288K (size is log 2(mem size) - 1 ie 2^18 = 256k)
+				(17    << MPU_RASR_SIZE_Pos) |		// 256KB - (size is log 2(mem size) - 1 ie 2^18 = 256k)
 				(1     << MPU_RASR_ENABLE_Pos);		// Enable MPU region
 
 
@@ -190,25 +128,27 @@ void InitCache()
 
 void InitSysTick()
 {
-	SysTick_Config(SystemCoreClock / SYSTICK);		// gives 1ms
+	SysTick_Config(SystemCoreClock / sysTickInterval);		// gives 1ms
 	NVIC_SetPriority(SysTick_IRQn, 0);
 }
 
 
 void InitDisplaySPI()
 {
-	// SPI123 uses per_ck by default; per_ck configured in CKPERSEL in RCC_D1CCIPR (64MHz HSI RC clock by default)
+	// SPI123 configured to use PLL2P 61.44 MHz (for I2S)
+	// Maximum frequency should be 100MHz - see GC9A01 manual p. 189
 	RCC->APB1LENR |= RCC_APB1LENR_SPI3EN;
 
-	GpioPin::Init(GPIOC, 10, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::VeryHigh);		// PC10: SPI3_SCK AF6
-	GpioPin::Init(GPIOC, 12, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::VeryHigh);		// PC12: SPI3_MOSI AF6
+	GpioPin::Init(GPIOC, 10, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::High);		// PC10: SPI3_SCK AF6
+	GpioPin::Init(GPIOC, 12, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::High);		// PC12: SPI3_MOSI AF6
+	//GpioPin::Init(GPIOA, 15, GpioPin::Type::AlternateFunction, 6, GpioPin::DriveStrength::High);			// PA15: SPI3_SS AF6
 
 	// Configure SPI
 	SPI3->CFG2 |= SPI_CFG2_COMM_0;					// 00: full-duplex, *01: simplex transmitter, 10: simplex receiver, 11: half-duplex
 	SPI3->CFG2 |= SPI_CFG2_SSM;						// Software slave management: When SSM bit is set, NSS pin input is replaced with the value from the SSI bit
 	SPI3->CR1 |= SPI_CR1_SSI;						// Internal slave select
 	SPI3->CFG2 |= SPI_CFG2_SSOM;					// SS output management in master mode
-	SPI3->CFG1 |= SPI_CFG1_MBR_1;					// Master Baud rate p2238: 010: ck/8; *011: ck/16; 100: ck/32; 101: ck/64
+	SPI3->CFG1 |= SPI_CFG1_MBR_0;					// Master Baud rate p2138: 001: ck/4; 010: ck/8; 011: ck/16; 100: ck/32; 101: ck/64
 	SPI3->CFG2 |= SPI_CFG2_MASTER;					// Master selection
 	SPI3->CR1 |= SPI_CR1_SPE;						// Enable SPI
 
@@ -222,27 +162,13 @@ void InitDisplaySPI()
 	DMA1_Stream0->CR |= DMA_SxCR_MINC;				// Memory in increment mode
 	DMA1_Stream0->PAR = (uint32_t)(&(SPI3->TXDR));	// Configure the peripheral data register address
 
-	DMAMUX1_Channel0->CCR |= 62; 					// DMA request MUX input 62 = spi3_tx_dma (See p.695)
+	DMAMUX1_Channel0->CCR |= 62; 					// DMA request MUX input 62 = SPI3_TX (See p.653)
 	DMAMUX1_ChannelStatus->CFR |= DMAMUX_CFR_CSOF0; // Clear synchronization overrun event flag
 }
 
 
-// Only needed on prototype hardware to activate VCA
-void InitDAC()
+void InitAdcPins(ADC_TypeDef* ADC_No, std::initializer_list<uint8_t> channels)
 {
-	// DAC1_OUT2 on PA5
-	RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN;			// GPIO port clock
-	RCC->APB1LENR |= RCC_APB1LENR_DAC12EN;			// Enable DAC Clock
-
-	DAC1->CR |= DAC_CR_EN1;							// Enable DAC using PA4 (DAC_OUT1)
-	DAC1->MCR &= DAC_MCR_MODE1_Msk;					// Mode = 0 means Buffer activated, Connected to external pin
-
-	DAC1->CR |= DAC_CR_EN2;							// Enable DAC using PA5 (DAC_OUT2)
-	DAC1->MCR &= DAC_MCR_MODE2_Msk;					// Mode = 0 means Buffer activated, Connected to external pin
-}
-
-
-void InitAdcPins(ADC_TypeDef* ADC_No, std::initializer_list<uint8_t> channels) {
 	uint8_t sequence = 1;
 
 	for (auto channel: channels) {
@@ -270,9 +196,11 @@ void InitAdcPins(ADC_TypeDef* ADC_No, std::initializer_list<uint8_t> channels) {
 	}
 }
 
-// Settings used for both ADC1 and ADC2
+
 void InitADC()
 {
+	// Settings used for both ADC1 and ADC2
+
 	// Configure clocks
 	RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN;			// GPIO port clock
 	RCC->AHB4ENR |= RCC_AHB4ENR_GPIOBEN;
@@ -280,11 +208,10 @@ void InitADC()
 
 	RCC->AHB1ENR |= RCC_AHB1ENR_ADC12EN;
 
-	// 00: pll2_p_ck default, 01: pll3_r_ck clock, 10: per_ck clock*
-	RCC->D3CCIPR |= RCC_D3CCIPR_ADCSEL_1;			// ADC clock selection: 10: per_ck clock (hse_ck, hsi_ker_ck or csi_ker_ck according to CKPERSEL in RCC->D1CCIPR p.353)
+	RCC->SRDCCIPR |= RCC_SRDCCIPR_ADCSEL_1;			// ADC clock selection: 10: per_ck clock (HSE 8MHz)
 	RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
 
-	ADC12_COMMON->CCR |= ADC_CCR_PRESC_0;			// Set prescaler to ADC clock divided by 2 (if 64MHz = 32MHz)
+	ADC12_COMMON->CCR |= ADC_CCR_PRESC_0;			// Set prescaler to ADC clock divided by 2 (if 8MHz = 4MHz)
 
 	InitADC1();
 	InitADC2();
@@ -292,27 +219,27 @@ void InitADC()
 
 
 /*-----------------------------------------------------------------------------------------------------------------
-ADC Channels are distributed across ADC1 and ADC2 for faster conversions. Audio channels on ADC1 for better quality.
-Both insert data into ADC_array at different offsets.
- ADC1:
-	0	PA3 ADC12_INP15		AUDIO_IN_R
-	1	PA2 ADC12_INP14		AUDIO_IN_L
-	2	PA1 ADC1_INP17		DELAY_POT_R
-	3	PA0 ADC1_INP16		DELAY_CV_SCALED_L
+ADC1:
+	PA0 ADC1_INP16 Wavetable_Pos_B_Pot
+	PA1 ADC1_INP17 Wavetable_Pos_A_Trm
+	PA2 ADC1_INP14 AudioIn
+	PA3 ADC1_INP15 WarpCV
+	PA4 ADC1_INP18 Pitch_CV_Scaled
+	PA5 ADC1_INP19 WavetablePosB_CV
 ADC2:
-	0	PC5 ADC12_INP8		WET_DRY_MIX
-	1	PB1 ADC12_INP5		DELAY_POT_L
-	2	PA6 ADC12_INP3 		DELAY_CV_SCALED_R
-	3	PB0 ADC12_INP9		FEEDBACK_POT
-	4	PC4 ADC12_INP4		FEEDBACK_CV_SCALED
-	5	PC1 ADC123_INP11 	FILTER_POT
+	PA6 ADC12_INP3 VcaCV
+	PA7 ADC12_INP7 WavetablePosA_CV
+	PB0 ADC12_INP9 Warp_Type_Pot
+	PB1 ADC12_INP5 Wavetable_Pos_A_Pot
+	PC0 ADC12_INP10 Warp_Amt_Trm
+	PC1	ADC12_INP11	Warp_Amt_Pot
 */
 
 void InitADC1()
 {
 	// Initialize ADC peripheral
 	DMA1_Stream1->CR &= ~DMA_SxCR_EN;
-//	DMA1_Stream1->CR |= DMA_SxCR_CIRC;				// Circular mode to keep refilling buffer
+	DMA1_Stream1->CR |= DMA_SxCR_CIRC;				// Circular mode to keep refilling buffer
 	DMA1_Stream1->CR |= DMA_SxCR_MINC;				// Memory in increment mode
 	DMA1_Stream1->CR |= DMA_SxCR_PSIZE_0;			// Peripheral size: 8 bit; 01 = 16 bit; 10 = 32 bit
 	DMA1_Stream1->CR |= DMA_SxCR_MSIZE_0;			// Memory size: 8 bit; 01 = 16 bit; 10 = 32 bit
@@ -321,7 +248,7 @@ void InitADC1()
 	DMA1_Stream1->FCR &= ~DMA_SxFCR_FTH;			// Disable FIFO Threshold selection
 	DMA1->LIFCR = 0x3F << DMA_LIFCR_CFEIF1_Pos;		// clear all five interrupts for this stream
 
-	DMAMUX1_Channel1->CCR |= 9; 					// DMA request MUX input 9 = adc1_dma (See p.695)
+	DMAMUX1_Channel1->CCR |= 9; 					// DMA request MUX input 9 = adc1_dma (See p.653)
 	DMAMUX1_ChannelStatus->CFR |= DMAMUX_CFR_CSOF1; // Channel 1 Clear synchronization overrun event flag
 
 	ADC1->CR &= ~ADC_CR_DEEPPWD;					// Deep powDMA1_Stream2own: 0: ADC not in deep-power down	1: ADC in deep-power-down (default reset state)
@@ -336,13 +263,11 @@ void InitADC1()
 
 	ADC1->CFGR |= ADC_CFGR_CONT;					// 1: Continuous conversion mode for regular conversions
 	ADC1->CFGR |= ADC_CFGR_OVRMOD;					// Overrun Mode 1: ADC_DR register is overwritten with the last conversion result when an overrun is detected.
-	ADC1->CFGR |= ADC_CFGR_DMNGT_0;					// Data Management configuration 01: DMA One Shot Mode selected, 11: DMA Circular Mode selected
+	ADC1->CFGR |= ADC_CFGR_DMNGT;					// Data Management configuration 01: DMA One Shot Mode selected, 11: DMA Circular Mode selected
 
-	// Boost mode 1: Boost mode on. Must be used when ADC clock > 20 MHz.
-	ADC1->CR |= ADC_CR_BOOST_1;						// Note this sets reserved bit according to SFR - HAL has notes about silicon revision
-
-	// For scan mode: set number of channels to be converted
-	ADC1->SQR1 |= (ADC1_BUFFER_LENGTH - 1);
+	//00: ADC clock ≤ 6.25 MHz; 01: 6.25 MHz < clk ≤ 12.5 MHz; 10: 12.5 MHz < clk ≤ 25.0 MHz; 11: 25.0 MHz < clock ≤ 50.0 MHz
+	ADC1->CR |= ADC_CR_BOOST_0;
+	ADC1->SQR1 |= (ADC1_BUFFER_LENGTH - 1);			// For scan mode: set number of channels to be converted
 
 	// Start calibration
 	ADC1->CR |= ADC_CR_ADCALLIN;					// Activate linearity calibration (as well as offset calibration)
@@ -352,13 +277,14 @@ void InitADC1()
 
 	/*--------------------------------------------------------------------------------------------
 	Configure ADC Channels to be converted:
-	0	PA3 ADC12_INP15		AUDIO_IN_L
-	1	PA2 ADC12_INP14		AUDIO_IN_R
-	2	PA1 ADC1_INP17		DELAY_POT_R
-	3	PA0 ADC1_INP16		DELAY_CV_SCALED_R
+	PA0 ADC1_INP16 Wavetable_Pos_B_Pot
+	PA1 ADC1_INP17 Wavetable_Pos_A_Trm
+	PA2 ADC1_INP14 AudioIn
+	PA3 ADC1_INP15 WarpCV
+	PA4 ADC1_INP18 Pitch_CV_Scaled
+	PA5 ADC1_INP19 WavetablePosB_CV
 	*/
-	InitAdcPins(ADC1, {15, 14, 17, 16});
-
+	InitAdcPins(ADC1, {16, 17, 14, 15, 18, 19});
 
 	// Enable ADC
 	ADC1->CR |= ADC_CR_ADEN;
@@ -381,15 +307,6 @@ void InitADC1()
 }
 
 
-
-void TriggerADC1()
-{
-	ADC1->CR |= ADC_CR_ADSTART;
-	DMA1->LIFCR |= DMA_LIFCR_CTCIF1 | DMA_LIFCR_CHTIF1;
-	DMA1_Stream1->CR |= DMA_SxCR_EN;
-}
-
-
 void InitADC2()
 {
 	// Initialize ADC peripheral
@@ -403,7 +320,7 @@ void InitADC2()
 	DMA1_Stream2->FCR &= ~DMA_SxFCR_FTH;			// Disable FIFO Threshold selection
 	DMA1->LIFCR = 0x3F << DMA_LIFCR_CFEIF2_Pos;		// clear all five interrupts for this stream
 
-	DMAMUX1_Channel2->CCR |= 10; 					// DMA request MUX input 10 = adc2_dma (See p.695)
+	DMAMUX1_Channel2->CCR |= 10; 					// DMA request MUX input 10 = adc2_dma (See p.653)
 	DMAMUX1_ChannelStatus->CFR |= DMAMUX_CFR_CSOF2; // Channel 2 Clear synchronization overrun event flag
 
 	ADC2->CR &= ~ADC_CR_DEEPPWD;					// Deep power down: 0: ADC not in deep-power down	1: ADC in deep-power-down (default reset state)
@@ -421,7 +338,7 @@ void InitADC2()
 	ADC2->CFGR |= ADC_CFGR_DMNGT;					// Data Management configuration 11: DMA Circular Mode selected
 
 	// Boost mode 1: Boost mode on. Must be used when ADC clock > 20 MHz.
-	ADC2->CR |= ADC_CR_BOOST_1;						// Note this sets reserved bit according to SFR - HAL has notes about silicon revision
+	ADC2->CR |= ADC_CR_BOOST_0;						// Note this sets reserved bit according to SFR - HAL has notes about silicon revision
 	ADC2->SQR1 |= (ADC2_BUFFER_LENGTH - 1);			// For scan mode: set number of channels to be converted
 
 	// Start calibration
@@ -430,14 +347,14 @@ void InitADC2()
 	while ((ADC2->CR & ADC_CR_ADCAL) == ADC_CR_ADCAL) {};
 
 	/* Configure ADC Channels to be converted:
-	0	PC5 ADC12_INP8		WET_DRY_MIX
-	1	PB1 ADC12_INP5		DELAY_POT_L
-	2	PA6 ADC12_INP3 		DELAY_CV_SCALED_R
-	3	PB0 ADC12_INP9		FEEDBACK_POT
-	4	PC4 ADC12_INP4		FEEDBACK_CV_SCALED
-	5	PC1 ADC123_INP11 	FILTER_POT
+	PA6 ADC12_INP3 VcaCV
+	PA7 ADC12_INP7 WavetablePosA_CV
+	PB0 ADC12_INP9 Warp_Type_Pot
+	PB1 ADC12_INP5 Wavetable_Pos_A_Pot
+	PC0 ADC12_INP10 Warp_Amt_Trm
+	PC1	ADC12_INP11	Warp_Amt_Pot
 	*/
-	InitAdcPins(ADC2, {8, 5, 3, 9, 4, 11});
+	InitAdcPins(ADC2, {3, 7, 9, 5, 10, 11});
 
 	// Enable ADC
 	ADC2->CR |= ADC_CR_ADEN;
@@ -448,7 +365,7 @@ void InitADC2()
 
 	DMA1_Stream2->NDTR |= ADC2_BUFFER_LENGTH;		// Number of data items to transfer (ie size of ADC buffer)
 	DMA1_Stream2->PAR = reinterpret_cast<uint32_t>(&(ADC2->DR));	// Configure the peripheral data register address 0x40022040
-	DMA1_Stream2->M0AR = reinterpret_cast<uint32_t>(&adc.Mix);		// Configure the memory address (note that M1AR is used for double-buffer mode) 0x24000040
+	DMA1_Stream2->M0AR = reinterpret_cast<uint32_t>(&adc.VcaCV);		// Configure the memory address (note that M1AR is used for double-buffer mode) 0x24000040
 
 	DMA1_Stream2->CR |= DMA_SxCR_EN;				// Enable DMA and wait
 	wait_loop_index = (SystemCoreClock / (100000UL * 2UL));
@@ -461,19 +378,13 @@ void InitADC2()
 
 
 
-
-void InitI2S() {
-	/* Available I2S2 pins on AF5
-	PB9  I2S2_WS
-	PC3  I2S2_SDO
-	PD3  I2S2_CK
-	*/
-
+void InitI2S()
+{
 	RCC->APB1LENR |= RCC_APB1LENR_SPI2EN;			//	Enable SPI clocks
 
-	GpioPin::Init(GPIOB, 9, GpioPin::Type::AlternateFunction, 5);		// PB9: I2S2_WS [alternate function AF5]
-	GpioPin::Init(GPIOD, 3, GpioPin::Type::AlternateFunction, 5);		// PD3 I2S2_CK [alternate function AF5]
-	GpioPin::Init(GPIOC, 3, GpioPin::Type::AlternateFunction, 5);		// PC3 I2S2_SDO [alternate function AF5]
+	GpioPin::Init(GPIOB, 12, GpioPin::Type::AlternateFunction, 5);		// PB12: I2S2_WS [alternate function AF5]
+	GpioPin::Init(GPIOB, 13, GpioPin::Type::AlternateFunction, 5);		// PB13: I2S2_CK [alternate function AF5]
+	GpioPin::Init(GPIOB, 15, GpioPin::Type::AlternateFunction, 5);		// PB15: I2S2_SDO [alternate function AF5]
 
 	// Configure SPI (Shown as SPI2->CGFR in SFR)
 	SPI2->I2SCFGR |= SPI_I2SCFGR_I2SMOD;			// I2S Mode
@@ -484,55 +395,16 @@ void InitI2S() {
 
 	SPI2->CFG1 |= SPI_CFG1_UDRCFG_1;				// In the event of underrun resend last transmitted data frame
 	SPI2->CFG1 |= 0x1f << SPI_CFG1_DSIZE_Pos;		// Data size to 32 bits (FIFO holds 16 bytes = 4 x 32 bit words)
-	SPI2->CFG1 |= 3 << SPI_CFG1_FTHLV_Pos;			// FIFO threshold level. 0001: 2-data; 0010: 3 data; 0011: 4 data
+	SPI2->CFG1 |= 1 << SPI_CFG1_FTHLV_Pos;			// FIFO threshold level. 0001: 2-data; 0010: 3 data; 0011: 4 data
 
 	/* I2S Clock
-	000: pll1_q_ck clock selected as SPI/I2S1,2 and 3 kernel clock (default after reset)
-	001: pll2_p_ck clock selected as SPI/I2S1,2 and 3 kernel clock
-	010: pll3_p_ck clock selected as SPI/I2S1,2 and 3 kernel clock
-	011: I2S_CKIN clock selected as SPI/I2S1,2 and 3 kernel clock
-	100: per_ck clock selected as SPI/I2S1,2 and 3 kernel clock
-	//RCC->D2CCIP1R |= RCC_D2CCIP1R_SPI123SEL;
-
-	I2S Prescaler Clock calculations:
-	FS = I2SxCLK / [(32*2)*((2*I2SDIV)+ODD))]
-
-	I2S Clock = 200MHz:			200000000 / (32*2  * ((2 * 32) + 1)) = 48076.92
-	I2S Clock = 240MHz:			240000000 / (32*2  * ((2 * 39) + 0)) = 48076.92
-	I2S Clock = 300MHz:			280000000 / (32*2  * ((2 * 45) + 1)) = 48076.92
-	I2S Clock = 320MHz: 		320000000 / (32*2  * ((2 * 52) + 0)) = 48076.92
-	PER_CLK = 64MHz				64000000  / (32*2  * ((2 * 10) + 1)) = 47619.05
-
-	Note timing problems experienced using both pll1_q_ck and pll2_p_ck when FMC controller is using PLL2
+		PLL2: ((8MHz / 5) * 192 / 5) = 61.44 MHz
+		I2S Clock: 61.44 MHz / (64  * ((2 * 10) + 0)) = 48 KHz
 	*/
-#define I2S_PER_CLK
-#ifdef I2S_PLL2P_CLK
-	// Use PLL2 clock - configured to 200MHz
-	RCC->D2CCIP1R |= RCC_D2CCIP1R_SPI123SEL_0;
-	SPI2->I2SCFGR |= (32 << SPI_I2SCFGR_I2SDIV_Pos);// Set I2SDIV to 45 with Odd factor prescaler
-	SPI2->I2SCFGR |= SPI_I2SCFGR_ODD;
-#endif
 
-#ifdef I2S_PER_CLK
-	// Use peripheral clock - configured to internal HSI at 64MHz
-	RCC->D2CCIP1R |= RCC_D2CCIP1R_SPI123SEL_2;
-	SPI2->I2SCFGR |= (10 << SPI_I2SCFGR_I2SDIV_Pos);// Set I2SDIV to 45 with Odd factor prescaler
-	SPI2->I2SCFGR |= SPI_I2SCFGR_ODD;
-#endif
-
-#ifdef I2S_DEFAULT
-#if CPUCLOCK == 200 | CPUCLOCK == 400
-	SPI2->I2SCFGR |= (32 << SPI_I2SCFGR_I2SDIV_Pos);// Set I2SDIV to 32 with Odd factor prescaler
-	SPI2->I2SCFGR |= SPI_I2SCFGR_ODD;
-#elif CPUCLOCK == 280
-	SPI2->I2SCFGR |= (45 << SPI_I2SCFGR_I2SDIV_Pos);// Set I2SDIV to 45 with Odd factor prescaler
-	SPI2->I2SCFGR |= SPI_I2SCFGR_ODD;
-#elif CPUCLOCK == 320
-	SPI2->I2SCFGR |= (52 << SPI_I2SCFGR_I2SDIV_Pos);// Set I2SDIV to 52 with no Odd factor prescaler
-#else
-	SPI2->I2SCFGR |= (39 << SPI_I2SCFGR_I2SDIV_Pos);// Set I2SDIV to 39 with no Odd factor prescaler
-#endif
-#endif
+	RCC->CDCCIP1R |= RCC_CDCCIP1R_SPI123SEL_0;		// 001: pll2_p_ck clock selected as SPI/I2S1,2 and 3 kernel clock
+	SPI2->I2SCFGR |= (10 << SPI_I2SCFGR_I2SDIV_Pos);	// Set I2SDIV to 2 with Odd factor prescaler
+	//SPI2->I2SCFGR |= SPI_I2SCFGR_ODD;
 
 	SPI2->IER |= (SPI_IER_TXPIE | SPI_IER_UDRIE);	// Enable interrupt when FIFO has free slot or underrun occurs
 	NVIC_SetPriority(SPI2_IRQn, 2);					// Lower is higher priority
@@ -547,7 +419,6 @@ void InitI2S() {
 
 	SPI2->CR1 |= SPI_CR1_CSTART;					// Start I2S
 }
-
 
 
 void InitI2STimer()
@@ -572,14 +443,14 @@ uint32_t ReadI2STimer()
 	return TIM4->CNT;
 }
 
+
 void InitDebugTimer()
 {
-	// Configure timer to use in internal debug timing - uses APB1 timer clock which is Main Clock / 2 [400MHz / 2 = 200MHz]
-	// Each tick is 5ns with PSC 10nS - full range is 655.350 uS
+	// Configure timer to use in internal debug timing - uses APB1 timer clock which is Main Clock [280MHz]
+	// Each tick is 4ns with PSC 12nS - full range is 786.42 uS
 	RCC->APB1LENR |= RCC_APB1LENR_TIM3EN;
 	TIM3->ARR = 65535;
-	TIM3->PSC = 1;
-
+	TIM3->PSC = 2;
 }
 
 
@@ -595,19 +466,14 @@ float StopDebugTimer()
 	// Return time running in microseconds
 	const uint32_t count = TIM3->CNT;
 	TIM3->CR1 &= ~TIM_CR1_CEN;
-	return 0.01f * count;
+	return 0.0012 * count;
 }
 
 
 
 void InitIO()
 {
-	GpioPin::Init(GPIOA, 7, GpioPin::Type::Input);				// PA7: tempo clock
-
-	GpioPin::Init(GPIOC, 10, GpioPin::Type::Output);			// PC10: SCLK [ex LED1]
-	GpioPin::Init(GPIOC, 12, GpioPin::Type::Output);			// PC12: MOSI [ex Delay Chorus]
-	GpioPin::Init(GPIOC, 11, GpioPin::Type::Output);			// PC11: DC [ex LED2]
-
+	GpioPin::Init(GPIOE, 3, GpioPin::Type::Input);				// PE3: Warp_Polarity_Btn
 
 }
 
@@ -620,9 +486,6 @@ void DelayMS(uint32_t ms)
 }
 
 
-uint32_t __attribute__((section (".ram_d1_data"))) blankData;
-
-
 void InitMDMA()
 {
 	// Initialises MDMA to background transfers of data to draw buffers for off-cpu blanking
@@ -633,34 +496,172 @@ void InitMDMA()
 	MDMA_Channel0->CTCR |= MDMA_CTCR_DSIZE_1;		// Destination data size - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
 	MDMA_Channel0->CTCR |= MDMA_CTCR_SSIZE_1;		// Source data size - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
 	MDMA_Channel0->CTCR |= MDMA_CTCR_DINC_1;		// 10: Destination address pointer is incremented after each data transfer
-	//MDMA_Channel0->CTCR |= MDMA_CTCR_SINC_1;		// 10: Source address pointer is incremented after each data transfer
 	MDMA_Channel0->CTCR |= MDMA_CTCR_DINCOS_1;		// Destination increment - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
-	//MDMA_Channel0->CTCR |= MDMA_CTCR_SINCOS_1;		// Source increment - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
 	MDMA_Channel0->CTCR |= MDMA_CTCR_BWM;			// Bufferable Write Mode
 	MDMA_Channel0->CTCR |= MDMA_CTCR_SWRM;			// Software Request Mode
 	MDMA_Channel0->CTCR |= MDMA_CTCR_TRGM;			// 01: Each MDMA request triggers a block transfer
 
-	MDMA_Channel0->CTBR &= ~MDMA_CTBR_SBUS;			// Source: AXI Bus used for SRAM
-	//MDMA_Channel0->CTBR |= MDMA_CTBR_DBUS;			// Destination: AHB Bus used for addresses starting 0x20xxxxxx (DTCMRAM)
-
-	blankData = 0;
-	MDMA_Channel0->CSAR = (uint32_t)&blankData;		// Configure the source address
+	// See p. 131: Main RAM is on AXI Bus
+	MDMA_Channel0->CTBR &= ~MDMA_CTBR_SBUS;			// Source: 0* System/AXI bus; 1 AHB bus/TCM
+	MDMA_Channel0->CTBR &= ~MDMA_CTBR_DBUS;			// Destination: 0* System/AXI bus; 1 AHB bus/TCM
 
 	MDMA_Channel0->CCR |= MDMA_CCR_BTIE;			// Enable Block Transfer complete interrupt
+
+	// Channel 1:  Uses MDMA to background transfers of data from octoSPI Flash to RAM
+	MDMA_Channel1->CCR &= ~MDMA_CCR_EN;
+	MDMA_Channel1->CCR |= MDMA_CCR_PL_0;			// Priority: 00 = low; 01 = Medium; 10 = High; 11 = Very High
+
+	MDMA_Channel1->CTCR |= MDMA_CTCR_DSIZE_1;		// Destination data size - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
+	MDMA_Channel1->CTCR |= MDMA_CTCR_SSIZE_1;		// Source data size - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
+	MDMA_Channel1->CTCR |= MDMA_CTCR_DINC_1;		// 10: Destination address pointer is incremented after each data transfer
+	MDMA_Channel1->CTCR |= MDMA_CTCR_SINC_1;		// 10: Source address pointer is incremented after each data transfer
+	MDMA_Channel1->CTCR |= MDMA_CTCR_DINCOS_1;		// Destination increment - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
+	MDMA_Channel1->CTCR |= MDMA_CTCR_SINCOS_1;		// Source increment - 00: 8-bit, 01: 16-bit, *10: 32-bit, 11: 64-bit
+	MDMA_Channel1->CTCR |= MDMA_CTCR_BWM;			// Bufferable Write Mode
+	MDMA_Channel1->CTCR |= MDMA_CTCR_SWRM;			// Software Request Mode
+	MDMA_Channel1->CTCR |= MDMA_CTCR_TRGM;			// 01: Each MDMA request triggers a block transfer
+
+	MDMA_Channel1->CTBR &= ~MDMA_CTBR_SBUS;			// Source: 0* System/AXI bus; 1 AHB bus/TCM
+	MDMA_Channel1->CTBR &= ~MDMA_CTBR_DBUS;			// Destination: 0* System/AXI bus; 1 AHB bus/TCM
+
+	MDMA_Channel1->CCR |= MDMA_CCR_BTIE;			// Enable Block Transfer complete interrupt
+
 
 	NVIC_SetPriority(MDMA_IRQn, 0x3);				// Lower is higher priority
 	NVIC_EnableIRQ(MDMA_IRQn);
 }
 
 
-void MDMATransfer(const uint16_t* destAddr, const uint32_t bytes)
+void MDMATransfer(MDMA_Channel_TypeDef* channel, const uint8_t* srcAddr, const uint8_t* destAddr, const uint32_t bytes)
 {
-	MDMA_Channel0->CTCR |= ((bytes - 1) << MDMA_CTCR_TLEN_Pos);	// Transfer length in bytes - 1
-	MDMA_Channel0->CBNDTR |= (bytes << MDMA_CBNDTR_BNDT_Pos);	// Number of bytes in a block
+	channel->CTCR |= ((bytes - 1) << MDMA_CTCR_TLEN_Pos);	// Transfer length in bytes - 1
+	channel->CBNDTR |= (bytes << MDMA_CBNDTR_BNDT_Pos);	// Number of bytes in a block
 
-	MDMA_Channel0->CDAR = (uint32_t)destAddr;		// Configure the destination address
+	channel->CSAR = (uint32_t)srcAddr;				// Configure the source address
+	channel->CDAR = (uint32_t)destAddr;				// Configure the destination address
 
-	MDMA_Channel0->CCR |= MDMA_CCR_EN;				// Enable DMA
-	MDMA_Channel0->CCR |= MDMA_CCR_SWRQ;			// Software Activate the request (fires interrupt when complete)
+	channel->CCR |= MDMA_CCR_EN;					// Enable DMA
+	channel->CCR |= MDMA_CCR_SWRQ;					// Software Activate the request (fires interrupt when complete)
 }
+
+
+void InitEncoders()
+{
+	// Encoder: button on PE4, up/down on PC6 and PC7
+	GpioPin::Init(GPIOE, 4, GpioPin::Type::InputPullup);				// PE4: Button
+	GpioPin::Init(GPIOC, 6, GpioPin::Type::AlternateFunction, 3);		// PC6: TIM8_CH1 AF3
+	GpioPin::Init(GPIOC, 7, GpioPin::Type::AlternateFunction, 3);		// PC7: TIM8_CH2 AF3
+
+	RCC->APB4ENR |= RCC_APB4ENR_SYSCFGEN;			// Enable system configuration clock: used to manage external interrupt line connection to GPIOs
+	// Encoder using timer functionality - PC6 and PC7
+	GPIOC->PUPDR |= GPIO_PUPDR_PUPD6_0 |			// Set encoder pins to pull up
+					GPIO_PUPDR_PUPD7_0;
+
+	RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;				// Enable Timer 8
+	TIM8->PSC = 0;									// Set prescaler
+	TIM8->ARR = 0xFFFF; 							// Set auto reload register to max
+	TIM8->SMCR |= TIM_SMCR_SMS_0 |TIM_SMCR_SMS_1;	// SMS=011 for counting on both TI1 and TI2 edges
+	TIM8->SMCR |= TIM_SMCR_ETF;						// Enable digital filter
+	TIM8->CNT = 32000;								// Start counter at mid way point
+	TIM8->CR1 |= TIM_CR1_CEN;
+
+}
+
+
+void InitOctoSPI()
+{
+	GpioPin::Init(GPIOB, 2, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);		// PB2  OCTOSPI_CLK AF9
+	GpioPin::Init(GPIOC, 9, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);		// PC9  OCTOSPI_IO0 AF9
+	GpioPin::Init(GPIOD, 12, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);	// PD12 OCTOSPI_IO1 AF9
+	GpioPin::Init(GPIOC, 2, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);		// PC2  OCTOSPI_IO2 AF9
+	GpioPin::Init(GPIOD, 13, GpioPin::Type::AlternateFunction, 9, GpioPin::DriveStrength::VeryHigh);	// PD13 OCTOSPI_IO3 AF9
+	GpioPin::Init(GPIOE, 7, GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh); 	// PE7  OCTOSPI_IO4 AF10
+	GpioPin::Init(GPIOE, 8, GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh); 	// PE8  OCTOSPI_IO5 AF10
+	GpioPin::Init(GPIOE, 9, GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh);	// PE9  OCTOSPI_IO6 AF10
+	GpioPin::Init(GPIOE, 10, GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh);	// PE10 OCTOSPI_IO7 AF10
+	GpioPin::Init(GPIOE, 11, GpioPin::Type::AlternateFunction, 11, GpioPin::DriveStrength::VeryHigh);	// PE11 OCTOSPI_NCS AF11
+	GpioPin::Init(GPIOC, 5, GpioPin::Type::AlternateFunction, 10, GpioPin::DriveStrength::VeryHigh);	// PC5  OCTOSPI_DQS AF10
+
+	RCC->AHB3ENR |= RCC_AHB3ENR_OSPI1EN;
+	RCC->CDCCIPR |= RCC_CDCCIPR_OCTOSPISEL_1;				// kernel clock 100MHz: 00 rcc_hclk3; 01 pll1_q_ck; *10 pll2_r_ck; 11 per_ck
+
+	// Various settings below taken from AN5050
+	OCTOSPI1->CR |= OCTOSPI_CR_FMODE_0;						// Mode: 00: Indirect-write; 01: Indirect-read; 10: Automatic status-polling; 11: Memory-mapped
+	OCTOSPI1->DCR1 |= (28 << OCTOSPI_DCR1_DEVSIZE_Pos);		// No. of bytes = 2^(DEVSIZE+1): 512Mb = 2^29 bytes
+	OCTOSPI1->DCR1 |= (0b01 << OCTOSPI_DCR1_MTYP_Pos);		// 001: Macronix mode; 100: HyperBus memory mode; 101: HyperBus register mode
+	OCTOSPI1->DCR1 |= (3 << OCTOSPI_DCR1_CSHT_Pos);			// CSHT + 1: min no CLK cycles where NCS must stay high between commands (Min 10ns for reads 40ns for writes)
+	OCTOSPI1->DCR1 &= ~OCTOSPI_DCR1_CKMODE;					// Clock mode 0: CLK is low when NCS high
+
+	OCTOSPI1->DCR2 |= (1 << OCTOSPI_DCR2_PRESCALER_Pos);	// Set prescaler to n + 1 => 153.6 MHz / (n + 1) - tested to 76.8MHz
+
+}
+
+
+void JumpToBootloader()
+{
+	volatile uint32_t bootAddr = 0x1FF0A000;	// Set the address of the entry point to bootloader
+	__disable_irq();							// Disable all interrupts
+	SysTick->CTRL = 0;							// Disable Systick timer
+
+	// Disable all peripheral clocks
+	RCC->APB1LENR = 0;
+	RCC->APB4ENR = 0;
+	RCC->AHB1ENR = 0;
+	RCC->APB2ENR = 0;
+	RCC->AHB3ENR = 0;
+	RCC->AHB4ENR = 0;
+
+	for (uint32_t i = 0; i < 5; ++i) {			// Clear Interrupt Enable Register & Interrupt Pending Register
+		NVIC->ICER[i] = 0xFFFFFFFF;
+		NVIC->ICPR[i] = 0xFFFFFFFF;
+	}
+
+	__enable_irq();								// Re-enable all interrupts
+	void (*SysMemBootJump)() = (void(*)()) (*((uint32_t *) (bootAddr + 4)));	// Set up the jump to booloader address + 4
+	__set_MSP(*(uint32_t *)bootAddr);			// Set the main stack pointer to the bootloader stack
+	SysMemBootJump(); 							// Call the function to jump to bootloader location
+
+	while (1) {
+		// Code should never reach this loop
+	}
+}
+
+
+void Reboot()
+{
+	__disable_irq();
+	__DSB();
+	NVIC_SystemReset();
+}
+
+
+bool vcaConnected = true;
+
+void CheckVCA()
+{
+	// Routine to check if VCA is normalled to 3.3V (ie value of 3.3V measured for 10 ms)
+	static uint32_t vcaNormalStart = 0;
+	static uint32_t vcaNonNormalStart = 0;
+
+	if (std::abs((int32_t)adc.VcaCV - calib.cfg.vcaNormal) > 100) {		// VCA adc is out of 3.3V range
+		if (vcaNonNormalStart > 0 && SysTickVal - vcaNonNormalStart > 2) {
+			vcaNormalStart = 0;
+			vcaConnected = true;
+		}
+		if (vcaNonNormalStart == 0) {
+			vcaNonNormalStart = SysTickVal;
+		}
+	} else  {
+		if (vcaNormalStart > 0 && SysTickVal - vcaNormalStart > 10) {
+			vcaNonNormalStart = 0;
+			vcaConnected = false;
+		}
+		if (vcaNormalStart == 0) {
+			vcaNormalStart = SysTickVal;
+		}
+	}
+}
+
+
+
 

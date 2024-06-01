@@ -9,7 +9,9 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include src/usb/subdir.mk
 -include src/subdir.mk
+-include Drivers/FatFs/src/subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -76,14 +78,15 @@ Kishoof.list \
 
 
 # All Target
-all: main-build
+all:
+	+@$(MAKE) --no-print-directory pre-build && $(MAKE) --no-print-directory main-build
 
 # Main-build Target
 main-build: Kishoof.elf secondary-outputs
 
 # Tool invocations
-Kishoof.elf Kishoof.map: $(OBJS) $(USER_OBJS) D:\Eurorack\Kishoof\Kishoof\STM32H743ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "Kishoof.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\Eurorack\Kishoof\Kishoof\STM32H743ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Kishoof.map" -Wl,--gc-sections -static -Wl,--no-warn-rwx-segment --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Kishoof.elf Kishoof.map: $(OBJS) $(USER_OBJS) D:\Eurorack\Kishoof\Kishoof\STM32H7B0VBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "Kishoof.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\Eurorack\Kishoof\Kishoof\STM32H7B0VBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Kishoof.map" -Wl,--gc-sections -static -Wl,--no-warn-rwx-segment --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -102,6 +105,10 @@ clean:
 	-$(RM) Kishoof.elf Kishoof.list Kishoof.map default.size.stdout
 	-@echo ' '
 
+pre-build:
+	rm -f D:\Eurorack\Kishoof\Kishoof\Debug\src\usb\CDCHandler.o
+	-@echo ' '
+
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
 
 fail-specified-linker-script-missing:
@@ -111,6 +118,6 @@ fail-specified-linker-script-missing:
 warn-no-linker-script-specified:
 	@echo 'Warning: No linker script specified. Check the linker settings in the build configuration.'
 
-.PHONY: all clean dependents main-build fail-specified-linker-script-missing warn-no-linker-script-specified
+.PHONY: all clean dependents main-build fail-specified-linker-script-missing warn-no-linker-script-specified pre-build
 
 -include ../makefile.targets

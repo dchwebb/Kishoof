@@ -2,6 +2,7 @@
 
 #include "initialisation.h"
 #include <vector>
+#include <array>
 
 // Struct added to classes that need settings saved
 struct ConfigSaver {
@@ -12,14 +13,15 @@ struct ConfigSaver {
 
 
 class Config {
+	friend class CDCHandler;					// Allow the serial handler access to private data for debug printing
 public:
-	static constexpr uint8_t configVersion = 3;
+	static constexpr uint8_t configVersion = 5;
 	
 	// STM32H7B0 has 128k Flash in 16 sectors of 8192k
 	static constexpr uint32_t flashConfigSector = 14;		// Allow 3 sectors for config giving a config size of 24k before erase needed
 	static constexpr uint32_t flashSectorSize = 8192;
 	static constexpr uint32_t configSectorCount = 3;		// Number of sectors after base sector used for config
-	uint32_t* const flashConfigAddr = reinterpret_cast<uint32_t* const>(FLASH_BASE + flashSectorSize * (flashConfigSector - 1));
+	uint32_t* flashConfigAddr = reinterpret_cast<uint32_t* const>(FLASH_BASE + flashSectorSize * (flashConfigSector - 1));;
 
 	bool scheduleSave = false;
 	uint32_t saveBooked = false;
@@ -29,8 +31,8 @@ public:
 		for (auto saver : configSavers) {
 			settingsSize += saver->settingsSize;
 		}
-		// Ensure config size (plus 4 byte header) is aligned to 8 byte boundary
-		settingsSize = AlignTo16Bytes(settingsSize + sizeof(ConfigHeader));
+		// Ensure config size (+ 4 byte header + 1 byte index) is aligned to 8 byte boundary
+		settingsSize = AlignTo16Bytes(settingsSize + headerSize);
 	}
 
 	void ScheduleSave();				// called whenever a config setting is changed to schedule a save after waiting to see if any more changes are being made
@@ -45,14 +47,21 @@ private:
 	uint32_t settingsSize = 0;			// Size of all settings from each config saver module + size of config header
 
 	const char ConfigHeader[4] = {'C', 'F', 'G', configVersion};
+	static constexpr uint32_t headerSize = sizeof(ConfigHeader) + 1;
 	int32_t currentSettingsOffset = -1;	// Offset within flash page to block containing active/latest settings
 
 	uint32_t currentIndex = 0;			// Each config gets a new index to track across multiple sectors
-	struct {
+	uint32_t currentSector = flashConfigSector;			// Sector containing current config
+	struct CfgSector {
 		uint32_t sector;
+		uint8_t index;
 		bool dirty;
-	} sectors[configSectorCount];
+	};
+	std::array<CfgSector, configSectorCount> sectors;
 
+	void SetCurrentConfigAddr() {
+		flashConfigAddr = reinterpret_cast<uint32_t* const>(FLASH_BASE + flashSectorSize * (currentSector - 1));
+	}
 	void FlashUnlock();
 	void FlashLock();
 	void FlashEraseSector(uint8_t Sector);

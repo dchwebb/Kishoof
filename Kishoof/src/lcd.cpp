@@ -1,14 +1,23 @@
 #include "lcd.h"
+#include <cstring>
 
 LCD  lcd {};
+
 uint16_t __attribute__((section (".dma_buffer"))) LCD::drawBuffer[2][width * height];
 uint16_t __attribute__((section (".dma_buffer"))) LCD::dmaInt16;
-uint16_t  __attribute__((section (".dma_buffer"))) LCD::charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
+uint16_t __attribute__((section (".dma_buffer"))) LCD::charBuffer[2][Font_XLarge.Width * Font_XLarge.Height];
+
 
 void LCD::Init()
 {
-	Command(cmdGC9A01A::SWRESET);			// Software reset
+	CSPin.SetHigh();
+	ResetPin.SetLow();
+	//Command(cmdGC9A01A::SWRESET);			// Software reset
 	Delay(100000);
+	ResetPin.SetHigh();
+	CSPin.SetLow();
+	Delay(100000);
+	memset(lcd.drawBuffer, 0, sizeof(lcd.drawBuffer));
 
 	Command(cmdGC9A01A::INREGEN2);
 	CommandData(0xEB, cdArgs_t {0x14});
@@ -66,7 +75,7 @@ void LCD::Init()
 
 	ScreenFill(LCD_BLACK);
 
-	Rotate(LCD_Portrait_Flipped);
+	Rotate(LCD_Portrait);
 
 
 //	ColourFill(50, 50, 57, 57, LCD_YELLOW);
@@ -147,33 +156,6 @@ void LCD::ColourFill(const uint16_t x0, const uint16_t y0, const uint16_t x1, co
 	while (SPI_DMA_Working);			// Workaround to prevent compiler optimisations altering dmaInt16 value during send
 	dmaInt16 = colour;
 	DMASend(x0, y0, x1, y1, &dmaInt16, false);
-/*
-	const uint32_t pixelCount = (x1 - x0 + 1) * (y1 - y0 + 1);
-
-	SetCursorPosition(x0, y0, x1, y1);
-	dmaInt16 = colour;
-
-	while (SPI_DMA_Working);
-
-	DCPin.SetHigh();
-
-	SPI3->CR1 &= ~SPI_CR1_SPE;						// Disable SPI
-	SPI3->IFCR |= SPI_IFCR_TXTFC;
-
-	DMA1_Stream0->CR &= ~DMA_SxCR_EN;				// Disable DMA
-	DMA1->LIFCR |= DMA_LIFCR_CFEIF0 | DMA_LIFCR_CHTIF0 | DMA_LIFCR_CTCIF0;
-
-	DMA1_Stream0->CR &= ~DMA_SxCR_MINC;				// Memory not in increment mode
-	DMA1_Stream0->M0AR = (uint32_t)&dmaInt16;		// Configure the memory data register address
-
-	DMA1_Stream0->NDTR = pixelCount;				// Number of data items to transfer
-	DMA1_Stream0->CR |= DMA_SxCR_EN;				// Enable DMA and wait
-
-	SPI3->CFG1 |= 15;								// Set SPI to 16 bit mode
-	SPI3->CFG1 |= SPI_CFG1_TXDMAEN;					// Tx DMA stream enable
-	SPI3->CR1 |= SPI_CR1_SPE;						// Enable SPI
-	SPI3->CR1 |= SPI_CR1_CSTART;					// Start SPI
-*/
 }
 
 
@@ -256,7 +238,7 @@ void LCD::DrawRect(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, const uin
 }
 
 
-void LCD::DrawChar(uint16_t x, uint16_t y, char c, const FontData *font, const uint32_t& foreground, const uint16_t background)
+void LCD::DrawChar(uint16_t x, uint16_t y, char c, const FontData* font, const uint32_t& foreground, const uint16_t background)
 {
 	// If at the end of a line of display, go to new line and set x to 0 position
 	if ((x + font->Width) > width) {
@@ -288,7 +270,7 @@ void LCD::DrawChar(uint16_t x, uint16_t y, char c, const FontData *font, const u
 
 
 // writes a character to an existing display array
-void LCD::DrawCharMem(const uint16_t x, const uint16_t y, const uint16_t memWidth, uint16_t* memBuffer, char c, const FontData *font, const uint16_t foreground, const uint16_t background)
+void LCD::DrawCharMem(const uint16_t x, const uint16_t y, const uint16_t memWidth, uint16_t* memBuffer, char c, const FontData* font, const uint16_t foreground, const uint16_t background)
 {
 	// Write character colour data to array
 	uint16_t px, py, i;
@@ -309,7 +291,7 @@ void LCD::DrawCharMem(const uint16_t x, const uint16_t y, const uint16_t memWidt
 }
 
 
-void LCD::DrawString(uint16_t x0, const uint16_t y0, const std::string_view s, const FontData *font, const uint16_t foreground, const uint16_t background)
+void LCD::DrawString(uint16_t x0, const uint16_t y0, const std::string_view s, const FontData* font, const uint16_t foreground, const uint16_t background)
 {
 	for (const char& c : s) {
 		DrawChar(x0, y0, c, font, foreground, background);
@@ -318,10 +300,27 @@ void LCD::DrawString(uint16_t x0, const uint16_t y0, const std::string_view s, c
 }
 
 
-void LCD::DrawStringMem(uint16_t x0, const uint16_t y0, uint16_t const memWidth, uint16_t* memBuffer, std::string_view s, const FontData *font, const uint16_t foreground, const uint16_t background) {
+void LCD::DrawStringMem(uint16_t x0, const uint16_t y0, uint16_t const memWidth, uint16_t* memBuffer, std::string_view s, const FontData* font, const uint16_t foreground, const uint16_t background) {
 	for (const char& c : s) {
 		DrawCharMem(x0, y0, memWidth, memBuffer, c, font, foreground, background);
 		x0 += font->Width;
+	}
+}
+
+
+void LCD::DrawStringMemCenter(uint16_t x0, const uint16_t y0, const size_t width, uint16_t* memBuffer, std::string_view s, const FontData* font, const uint16_t foreground, const uint16_t background) {
+	// If string width is less than width of draw buffer move x0 so that text will be centered
+	const uint32_t strWidth = std::min(font->Width * s.length(), width);
+	if (strWidth < width) {
+		x0 = (width - strWidth) / 2;
+	}
+
+	for (const char& c : s) {
+		DrawCharMem(x0, y0, width, memBuffer, c, font, foreground, background);
+		x0 += font->Width;
+		if (x0 > width - font->Width) {
+			break;
+		}
 	}
 }
 

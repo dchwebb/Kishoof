@@ -29,6 +29,7 @@ public:
 		char wavetable[8];
 		bool octaveChnB = false;
 		uint32_t additiveWaves = 0x12346789;
+		uint32_t dummy[200];			// FIXME - dummy data to test config saving
 	} cfg;
 
 	ConfigSaver configSaver = {
