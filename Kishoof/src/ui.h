@@ -57,7 +57,10 @@ private:
 	struct {
 		Btn encoder;
 		Btn octave;
-	} buttons = {{{GPIOE, 4, GpioPin::Type::InputPullup}, 0, 0}, {{GPIOD, 10, GpioPin::Type::InputPullup}, 0, 0}};
+		Btn warp;
+	} buttons = {{{GPIOE, 4, GpioPin::Type::InputPullup}, 0, 0},
+				 {{GPIOD, 10, GpioPin::Type::InputPullup}, 0, 0},
+				 {{GPIOE, 3, GpioPin::Type::InputPullup}, 0, 0}};
 
 
 };

@@ -54,11 +54,12 @@ void WaveTable::CalcSample()
 	// Increment the read position for each channel; pitch inc will be used in filter to set anti-aliasing cutoff frequency
 	pitchInc[0] = smoothedInc;
 	readPos[0] += smoothedInc;
-	if (readPos[0] >= 2048) { readPos[0] -= 2048; }
+	if (readPos[0] >= 2048.0f) { readPos[0] -= 2048.0f; }
 
-	pitchInc[1] = smoothedInc * (cfg.octaveChnB ? 0.5f : 1.0f);
+	pitchInc[1] = smoothedInc * (cfg.octaveChnB ? 0.5f : 1.0f) * (cfg.warpButton ? -1.0f : 1.0f);
 	readPos[1] += pitchInc[1];
-	if (readPos[1] >= 2048) { readPos[1] -= 2048; }
+	if (readPos[1] >= 2048.0f) { readPos[1] -= 2048.0f; }
+	if (readPos[1] < 0.0f) { readPos[1] += 2048.0f; }
 
 
 	// Generate channel B output first as used in TZFM to alter channel A read position
@@ -93,7 +94,10 @@ void WaveTable::CalcSample()
 	const uint8_t drawPos0 = (uint8_t)std::round(readPos[drawPosChn] * drawWidthMult);		// convert from position in 2048 sample wavetable to draw width
 	drawData[0][drawPos0] = (uint8_t)((1.0f - outputSamples[0]) * drawHeightMult);
 
-	const uint8_t drawPos1 = (uint8_t)std::round(readPos[1] * drawWidthMult);
+	uint8_t drawPos1 = (uint8_t)std::round(readPos[1] * drawWidthMult);
+	if (cfg.warpButton) {
+		drawPos1 = 200 - drawPos1;				// Invert channel B
+	}
 	drawData[1][drawPos1] = (uint8_t)((1.0f - outputSamples[1]) * drawHeightMult);
 
 	debugMain.SetLow();			// Debug off
@@ -564,4 +568,14 @@ void WaveTable::ChannelBOctave(bool change)
 		octaveLED.SetLow();
 	}
 
+}
+
+
+void WaveTable::WarpButton(bool change)
+{
+	if (change) {
+		cfg.warpButton = !cfg.warpButton;
+		config.ScheduleSave();
+	}
+	crossfade = 1.0f;
 }

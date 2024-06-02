@@ -20,8 +20,7 @@ Config config{&wavetable.configSaver, &calib.configSaver};		// Construct config 
 /* TODO:
  * Implement warp type button
  * Check drive strength on SPI pins
- * Allow multiple flash sectors to be used for config storage
- */
+*/
 
 extern "C" {
 #include "interrupts.h"

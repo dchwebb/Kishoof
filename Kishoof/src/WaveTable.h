@@ -23,11 +23,13 @@ public:
 	void UpdateWavetableList();
 	void ChangeWaveTable(int32_t index);
 	void ChannelBOctave(bool change = false);	// Called when channel B octave button is pressed
+	void WarpButton(bool change);				// Called when warp button is pressed
 	static void UpdateConfig();
 
 	struct {
 		char wavetable[8];
 		bool octaveChnB = false;
+		bool warpButton = false;
 		uint32_t additiveWaves = 0x12346789;
 	} cfg;
 

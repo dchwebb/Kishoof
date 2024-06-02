@@ -102,6 +102,7 @@ void UI::DrawWaveTable()
 
 }
 
+
 void UI::SetWavetable(int32_t index)
 {
 	// Allows wavetable class to set current wavetable at Init
@@ -109,6 +110,7 @@ void UI::SetWavetable(int32_t index)
 	pickerDir = wavetable.wavList[index].isDir;
 
 }
+
 
 uint32_t UI::WavetablePicker(int32_t upDown)
 {
@@ -161,6 +163,10 @@ void UI::Update()
 
 	if (buttons.octave.Pressed()) {
 		wavetable.ChannelBOctave(true);
+	}
+
+	if (buttons.warp.Pressed()) {
+		wavetable.WarpButton(true);
 	}
 
 	if (!(SPI_DMA_Working)) {
