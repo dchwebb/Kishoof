@@ -119,7 +119,7 @@ private:
 	uint8_t lfnPosition = 0;
 
 	uint8_t drawData[2][UI::waveDrawWidth];		// Holds scaled output samples from both channels for use in wavetable display
-	static constexpr float drawWidthMult = (float)UI::waveDrawWidth / 2048.0f;		// Scale to width of the LCD draw area
+	static constexpr float drawWidthMult = (float)(UI::waveDrawWidth - 1.0f) / 2048.0f;		// Scale to width of the LCD draw area
 	static constexpr float drawHeightMult = (float)UI::waveDrawHeight / 2.0f;		// Scale to height of the LCD draw area
 
 	struct {
