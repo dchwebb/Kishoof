@@ -261,7 +261,6 @@ void LCD::DrawChar(uint16_t x, uint16_t y, char c, const FontData* font, const u
 	}
 
 	// Send array of data to SPI/DMA to draw
-	while (SPI_DMA_Working);
 	PatternFill(x, y, x + font->Width - 1, y + font->Height - 1, charBuffer[currentCharBuffer]);
 
 	// alternate between the two character buffers so that the next character can be prepared whilst the last one is being copied to the LCD

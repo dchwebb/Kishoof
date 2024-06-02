@@ -18,7 +18,6 @@ volatile ADCValues __attribute__((section (".dma_buffer"))) adc;
 Config config{&wavetable.configSaver, &calib.configSaver};		// Construct config handler with list of configSavers
 
 /* TODO:
- * Implement warp type button
  * Check drive strength on SPI pins
 */
 

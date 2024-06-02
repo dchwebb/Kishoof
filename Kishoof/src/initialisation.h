@@ -45,7 +45,6 @@ void InitADC();
 void InitADC1();
 void InitADC2();
 void InitI2S();
-void InitIO();
 void StartI2STimer();
 uint32_t ReadI2STimer();
 void InitI2STimer();

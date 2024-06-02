@@ -90,7 +90,6 @@ void InitHardware()
 {
 	InitSysTick();
 	InitCache();
-	InitIO();										// Initialise switches and LEDs
 	InitMDMA();
 	InitADC();
 	InitDebugTimer();
@@ -467,14 +466,6 @@ float StopDebugTimer()
 	const uint32_t count = TIM3->CNT;
 	TIM3->CR1 &= ~TIM_CR1_CEN;
 	return 0.0012 * count;
-}
-
-
-
-void InitIO()
-{
-	GpioPin::Init(GPIOE, 3, GpioPin::Type::Input);				// PE3: Warp_Polarity_Btn
-
 }
 
 

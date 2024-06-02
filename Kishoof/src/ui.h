@@ -7,7 +7,6 @@
 
 class UI {
 public:
-	void DrawUI();
 	void Update();
 	void SetWavetable(int32_t index);
 
@@ -30,6 +29,8 @@ private:
 	uint32_t activeWaveTable = 0;
 	uint32_t pickerOpened = 0;
 	bool pickerDir = false;			// True if picker is currently selecting a directory
+
+	bool oldWarpBtn = false;
 
 	char charBuff[100];
 	bool activeDrawBuffer = true;

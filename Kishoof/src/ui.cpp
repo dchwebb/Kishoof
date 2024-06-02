@@ -7,13 +7,6 @@
 UI ui;
 uint32_t blankData;			// Used to transfer zeros into frame buffer by MDMA
 
-void UI::DrawUI()
-{
-
-
-}
-
-
 
 void UI::DrawWaveTable()
 {
@@ -46,6 +39,11 @@ void UI::DrawWaveTable()
 		const uint16_t colour = pickerDir ? LCD_YELLOW : wavetable.wavList[activeWaveTable].valid ? LCD_WHITE : LCD_GREY;
 		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, colour, LCD_BLACK);
 		lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
+
+	} else if (wavetable.cfg.warpButton != oldWarpBtn) {
+		oldWarpBtn = wavetable.cfg.warpButton;
+		lcd.DrawChar(55, 192, oldWarpBtn ? '<' : ' ', &lcd.Font_Large, LCD_ORANGE, LCD_BLACK);
+		lcd.DrawChar(172, 192, oldWarpBtn ? '<' : ' ', &lcd.Font_Large, LCD_ORANGE, LCD_BLACK);
 
 	} else {
 		if (displayWave == DisplayWave::Both) {

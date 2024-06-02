@@ -39,8 +39,8 @@ public:
 		.validateSettings = &WaveTable::UpdateConfig
 	};
 
-	enum class Warp {none, squeeze, bend, mirror, reverse, tzfm, count} warpType = Warp::none;
-	static constexpr std::string_view warpNames[] = {"No Warp", "Squeeze", "Bend", "Mirror", "Reverse", "TZFM"};
+	enum class Warp {none, squeeze, bend, mirror, tzfm, count} warpType = Warp::none;		//, reverse
+	static constexpr std::string_view warpNames[] = {"No Warp", "Squeeze", "Bend", "Mirror", "TZFM"};		// "Reverse",
 	static constexpr uint32_t harmonicCount = 10;
 
 	enum class AdditiveType : uint8_t {none = 0, sine1 = 1, sine2 = 2, sine3 = 3, sine4 = 4, sine5 = 5, sine6 = 6, square = 7, saw = 8, triangle = 9};

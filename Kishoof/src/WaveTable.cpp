@@ -206,11 +206,12 @@ inline float WaveTable::CalcWarp()
 	}
 	break;
 
+	/*
 	case Warp::reverse: {
 		adjReadPos = 2048.0f - readPos[0];
 	}
 	break;
-
+*/
 
 	case Warp::tzfm: {
 		// Through Zero FM: Phase distorts channel A using scaled bipolar version of channel B's waveform
