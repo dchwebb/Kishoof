@@ -65,7 +65,7 @@ void CDCHandler::ProcessCommand()
 				"calib       -  Start calibration\r\n"
 				"dfu         -  USB firmware upgrade\r\n"
 				"wavetables  -  Print list of wavetables\r\n"
-				"add:XXXXXXXX   Channel B additive waves. Type 'help add' for details"
+				"add:XXXXXXXX   Channel B additive waves. Type 'help add' for details\r\n"
 				"clearconfig -  Erase configuration and restart\r\n"
 				"\r\n"
 				"Flash Tools:\r\n"

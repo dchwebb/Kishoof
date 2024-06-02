@@ -29,7 +29,6 @@ public:
 		char wavetable[8];
 		bool octaveChnB = false;
 		uint32_t additiveWaves = 0x12346789;
-		uint32_t dummy[200];			// FIXME - dummy data to test config saving
 	} cfg;
 
 	ConfigSaver configSaver = {
@@ -45,12 +44,6 @@ public:
 	enum class AdditiveType : uint8_t {none = 0, sine1 = 1, sine2 = 2, sine3 = 3, sine4 = 4, sine5 = 5, sine6 = 6, square = 7, saw = 8, triangle = 9};
 	uint32_t harmonicSets;
 	float additiveHarmonics[8][harmonicCount];
-
-//	float additiveHarmonics[8][harmonicCount] = {
-//		{ 0.9f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },								// Sine
-//		{ 0.9f, 0.0f, 0.9f / 3.0f, 0.0f, 0.9f / 5.0f, 0.0f, 0.9f / 7.0f, 0.0f, 0.9f / 9.0f, 0.0f },	// Square
-//		{ 0.6f, -0.6f / 2.0f, 0.6f / 3.0f, -0.6f / 4.0f, 0.6f / 5.0f, -0.6f / 6.0f, 0.6f / 7.0f, -0.6f / 8.0f, 0.6f / 9.0f, -0.6f / 10.0f } 		// Sawtooth
-//	};
 
 	static constexpr uint32_t sinLUTSize = 2048;
 	constexpr auto CreateSinLUT()		// constexpr function to generate LUT in Flash

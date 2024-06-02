@@ -7,7 +7,7 @@
 bool Config::SaveConfig(bool forceSave)
 {
 	bool result = true;
-	if (forceSave || (scheduleSave && SysTickVal > saveBooked + 1000)) {			// 60 seconds between saves FIXME
+	if (forceSave || (scheduleSave && SysTickVal > saveBooked + 60000)) {			// 60 seconds between saves
 		GpioPin::SetHigh(GPIOD, 5);
 		scheduleSave = false;
 
@@ -31,6 +31,7 @@ bool Config::SaveConfig(bool forceSave)
 					}
 				}
 				if (currentSettingsOffset != 0) {				// No free configurations slots found - abort save
+					printf("Error saving config - no space\r\n");
 					return false;
 				}
 			}
@@ -62,7 +63,7 @@ bool Config::SaveConfig(bool forceSave)
 	return result;
 }
 
-volatile uint32_t debugVar = 0;
+
 void Config::RestoreConfig()
 {
 	// Initialise sector array - used to manage which sector contains current config, and which sectors are available for writing when current sector full
@@ -81,8 +82,6 @@ void Config::RestoreConfig()
 		// Check if there is a config block at the start of the sector and read the index number if so
 		sectors[i].index = (addr[0] == *(uint32_t*)ConfigHeader) ? (uint8_t)addr[1] : 255;
 	}
-
-	++debugVar;
 
 	// Work out which is the active config sector: will be the highest index from the bottom before the sequence jumps
 	std::sort(sectors.begin(), sectors.end(), [](const CfgSector& l, const CfgSector& r) { return l.index < r.index; });
@@ -107,9 +106,7 @@ void Config::RestoreConfig()
 	// Erase any dirty sectors that are not the current one, or do not contain config data
 	for (auto& sector : sectors) {
 		if (sector.dirty && (sector.sector != currentSector || sector.index == 255)) {
-			FlashUnlock();
 			FlashEraseSector(sector.sector);
-			FlashLock();
 			sector.index = 255;
 			sector.dirty = false;
 		}
@@ -118,7 +115,7 @@ void Config::RestoreConfig()
 
 	// Locate latest (active) config block
 	uint32_t pos = 0;
-	while (pos < flashSectorSize - settingsSize) {
+	while (pos <= flashSectorSize - settingsSize) {
 		if (*(flashConfigAddr + pos / 4) == *(uint32_t*)ConfigHeader) {
 			currentSettingsOffset = pos;
 			pos += settingsSize;
@@ -145,14 +142,12 @@ void Config::RestoreConfig()
 
 void Config::EraseConfig()
 {
-	__disable_irq();									// Disable Interrupts
-	FlashUnlock();										// Unlock Flash memory for writing
-	FLASH->SR1 = flashAllErrors;						// Clear error flags in Status Register
+	for (uint32_t i = 0; i < configSectorCount; ++i) {
+		FlashEraseSector(flashConfigSector + i);
+		sectors[i].dirty = false;
+		sectors[i].index = 255;
+	}
 
-	FlashEraseSector(flashConfigSector);
-
-	FlashLock();										// Lock Flash
-	__enable_irq();
 	printf("Config Erased\r\n");
 }
 
@@ -183,12 +178,17 @@ void Config::FlashLock()
 
 void Config::FlashEraseSector(uint8_t sector)
 {
+	FlashUnlock();										// Unlock Flash memory for writing
+	FLASH->SR1 = flashAllErrors;						// Clear error flags in Status Register
+
 	FLASH->CR1 &= ~FLASH_CR_SNB_Msk;
 	FLASH->CR1 |= (sector - 1) << FLASH_CR_SNB_Pos;		// Sector number selection
 	FLASH->CR1 |= FLASH_CR_SER;							// Sector erase
 	FLASH->CR1 |= FLASH_CR_START;
 	FlashWaitForLastOperation();
-	FLASH->CR1 &= ~FLASH_CR_SER;		// Unless this bit is cleared programming flash later throws a Programming Sequence error
+	FLASH->CR1 &= ~FLASH_CR_SER;
+
+	FlashLock();										// Lock Flash
 }
 
 
