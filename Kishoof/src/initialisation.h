@@ -35,6 +35,8 @@ struct ADCValues {
 };
 
 extern volatile ADCValues adc;
+extern GpioPin debugPin1;			// PD5: Debug
+extern GpioPin debugPin2;			// PD6: Debug
 
 void InitClocks();
 void InitHardware();

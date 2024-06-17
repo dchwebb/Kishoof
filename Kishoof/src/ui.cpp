@@ -3,6 +3,7 @@
 //#include "config.h"
 #include "WaveTable.h"
 #include  <cstdio>
+#include <cstring>
 
 UI ui;
 uint32_t blankData;			// Used to transfer zeros into frame buffer by MDMA
@@ -11,7 +12,7 @@ uint32_t blankData;			// Used to transfer zeros into frame buffer by MDMA
 void UI::DrawWaveTable()
 {
 	// Populate a frame buffer to display the wavetable values (full screen refresh)
-	//debugDraw.SetHigh();			// Debug
+	debugPin2.SetHigh();			// Debug
 
 	if (wavetable.warpType != wavetable.oldWarpType) {
 		wavetable.oldWarpType = wavetable.warpType;
@@ -46,7 +47,7 @@ void UI::DrawWaveTable()
 		lcd.DrawChar(172, 192, oldWarpBtn ? '<' : ' ', &lcd.Font_Large, LCD_ORANGE, LCD_BLACK);
 
 	} else {
-		if (displayWave == DisplayWave::Both) {
+		if (cfg.displayWave == DisplayWave::Both) {
 
 			for (uint32_t channel = 0; channel < 2; ++channel) {
 				uint8_t oldHeight = (channel ? 60 : 0) + wavetable.drawData[channel][0] / 2;
@@ -65,15 +66,21 @@ void UI::DrawWaveTable()
 			}
 
 		} else {
-			const uint32_t channel = (displayWave == DisplayWave::channelA ? 0 : 1);
+			const uint32_t channel = (cfg.displayWave == DisplayWave::channelA ? 0 : 1);
+			const uint32_t wavetablePos = wavetable.CurrentWavetable(channel);
+			const uint16_t drawColour = (cfg.displayWave == DisplayWave::channelA) ? LCD_LIGHTBLUE : LCD_ORANGE;
+
+			// Draw a line representing the quantised wavetable position
+			const wchar_t colour = (cfg.displayWave == DisplayWave::channelA) ? (LCD_DULLBLUE << 16) + LCD_DULLBLUE : (LCD_DULLORANGE << 16) + LCD_DULLORANGE;
+			wmemset((wchar_t*)lcd.drawBuffer[activeDrawBuffer], colour, wavetablePos / 2);
+
 			uint8_t oldHeight = wavetable.drawData[channel][0];
 			for (uint8_t i = 0; i < waveDrawWidth; ++i) {
-
 				// do while loop needed to draw vertical lines where adjacent samples are vertically spaced by more than a pixel
 				uint8_t currHeight = wavetable.drawData[channel][i];
 				do {
 					const uint32_t pos = currHeight * waveDrawWidth + i;		// Pixel order is across then down
-					lcd.drawBuffer[activeDrawBuffer][pos] = (displayWave == DisplayWave::channelA) ? LCD_LIGHTBLUE : LCD_ORANGE;
+					lcd.drawBuffer[activeDrawBuffer][pos] = drawColour;
 					currHeight += currHeight > oldHeight ? -1 : 1;
 				} while (currHeight != oldHeight);
 
@@ -96,7 +103,7 @@ void UI::DrawWaveTable()
 	bufferClear = false;
 
 
-	//debugDraw.SetLow();			// Debug off
+	debugPin2.SetLow();			// Debug off
 
 }
 
@@ -145,17 +152,18 @@ void UI::Update()
 			activeWaveTable = wavetable.wavList[activeWaveTable].firstWav;
 			WavetablePicker(0);
 		} else {
-			switch (displayWave) {
+			switch (cfg.displayWave) {
 			case DisplayWave::channelA:
-				displayWave = DisplayWave::channelB;
+				cfg.displayWave = DisplayWave::channelB;
 				break;
 			case DisplayWave::channelB:
-				displayWave = DisplayWave::Both;
+				cfg.displayWave = DisplayWave::Both;
 				break;
 			case DisplayWave::Both:
-				displayWave = DisplayWave::channelA;
+				cfg.displayWave = DisplayWave::channelA;
 				break;
 			}
+			config.ScheduleSave();
 		}
 	}
 

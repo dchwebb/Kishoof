@@ -24,6 +24,7 @@ public:
 	void ChangeWaveTable(int32_t index);
 	void ChannelBOctave(bool change = false);	// Called when channel B octave button is pressed
 	void WarpButton(bool change);				// Called when warp button is pressed
+	uint32_t CurrentWavetable(uint8_t chn);		// For drawing: return quantised wavetable position
 	static void UpdateConfig();
 
 	struct {
@@ -48,9 +49,9 @@ public:
 	float additiveHarmonics[8][harmonicCount];
 
 	static constexpr uint32_t sinLUTSize = 2048;
-	constexpr auto CreateSinLUT()		// constexpr function to generate LUT in Flash
+	constexpr auto CreateSinLUT()									// constexpr function to generate LUT in Flash
 	{
-		std::array<float, sinLUTSize + 1> array {};		// Create one extra entry to simplify interpolation
+		std::array<float, sinLUTSize + 1> array {};					// Create one extra entry to simplify interpolation
 		for (uint32_t s = 0; s < sinLUTSize + 1; ++s){
 			array[s] = std::sin(s * 2.0f * std::numbers::pi / sinLUTSize);
 		}
@@ -129,21 +130,20 @@ private:
 		float pos;		// Smoothed ADC value
 
 		float Val() {
-			constexpr float scaleOutput = 0.01f / 65536.0f;		// scale constant for two 16 bit values and filter
-			const float trimmer = adcTrimmer == nullptr ? 1.0f : NormaliseADC(*adcTrimmer);
-			pos = (0.99f * pos) + std::clamp((adcPot + trimmer * (61000.0f - adcCV)), 0.0f, 65535.0f) * scaleOutput;	// Reduce to ensure can hit zero with noise
+			constexpr float scaleOutput = 0.01f / 65536.0f;			// scale constant for two 16 bit values and filter
+			const float trimmer = (adcTrimmer == nullptr) ? 1.0f : NormaliseADC(*adcTrimmer);
+			const float cv = std::max(61300.0f - adcCV, 0.0f);		// Reduce to ensure can hit zero with noise
+			pos = (0.99f * pos) + std::clamp((adcPot + trimmer * cv), 0.0f, 65535.0f) * scaleOutput;
 			return pos;
 		}
 	} wavetablePos[2] = {{adc.Wavetable_Pos_A_Pot, adc.WavetablePosA_CV, &adc.Wavetable_Pos_A_Trm, 0.0f},
 						 {adc.Wavetable_Pos_B_Pot, adc.WavetablePosB_CV, nullptr, 0.0f}};
 
 
-
 	static inline float NormaliseADC(uint16_t adcVal)
 	{
-		static constexpr float adcDivider = 1.0f / 65300.0f;		// reduce divider slightly to ensure maximum is 1.0f
-		return std::min(adcDivider * adcVal, 1.0f);
-
+		static constexpr float adcDivider = 1.0f / 55000.0f;		// reduce divider to allow maximum of slightly over 1.0f
+		return adcDivider * adcVal;
 	}
 
 	GpioPin modeSwitch	{GPIOE, 2, GpioPin::Type::Input};			// PE2: Mode switch
@@ -154,8 +154,6 @@ private:
 
 	GpioPin octaveLED	{GPIOD, 14, GpioPin::Type::Output};			// PD14: LED_Oct_B
 
-	GpioPin debugMain	{GPIOD, 6, GpioPin::Type::Output};			// PD5: Debug
-	GpioPin debugPin2	{GPIOD, 5, GpioPin::Type::Output};			// PD6: Debug
 };
 
 extern WaveTable wavetable;

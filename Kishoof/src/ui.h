@@ -2,6 +2,7 @@
 
 #include "initialisation.h"
 #include "GpioPin.h"
+#include "configManager.h"
 #include <vector>
 #include <string_view>
 
@@ -18,12 +19,23 @@ public:
 	static constexpr uint16_t waveDrawWidth = 200;
 	static constexpr uint16_t waveDrawHeight = 120;
 
+	enum class DisplayWave {channelA, channelB, Both};
+	struct {
+		DisplayWave displayWave = DisplayWave::Both;
+	} cfg;
+
+	ConfigSaver configSaver = {
+		.settingsAddress = &cfg,
+		.settingsSize = sizeof(cfg),
+		.validateSettings = nullptr
+	};
+
 private:
 	uint32_t WavetablePicker(int32_t upDown);
 	void DrawWaveTable();
 
-	enum class DisplayWave {channelA, channelB, Both};
-	DisplayWave displayWave = DisplayWave::Both;
+
+//	DisplayWave displayWave = DisplayWave::Both;
 
 	uint32_t oldWavetable = 0xFFFFFFFF;
 	uint32_t activeWaveTable = 0;

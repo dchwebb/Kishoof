@@ -12,7 +12,7 @@
 #include <array>
 
 struct Filter {
-	friend class SerialHandler;				// Allow the serial handler access to private data for debug printing
+	friend class SerialHandler;				// Allow the serial handler access to private data for printing
 	friend class Config;					// Allow access to config to store values
 public:
 

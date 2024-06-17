@@ -19,11 +19,10 @@ extern bool vcaConnected;			// Temporary hack as current hardware does not have 
 
 void WaveTable::CalcSample()
 {
-	debugMain.SetHigh();		// Debug
+	debugPin1.SetHigh();		// Debug
 
 	// If crossfading (when switching warp type) blend from old sample to new sample
 	if (crossfade > 0.0f) {
-		debugPin2.SetHigh();		// Debug
 		outputSamples[0] = crossfade * oldOutputSamples[0] + (1.0f - crossfade) * outputSamples[0];
 		outputSamples[1] = crossfade * oldOutputSamples[1] + (1.0f - crossfade) * outputSamples[1];
 		crossfade -= 0.001f;
@@ -82,7 +81,6 @@ void WaveTable::CalcSample()
 	}
 
 	if (crossfade <= 0.0f) {
-		debugPin2.SetLow();		// Debug
 		oldOutputSamples[0] = outputSamples[0];
 		oldOutputSamples[1] = outputSamples[1];
 	}
@@ -100,7 +98,14 @@ void WaveTable::CalcSample()
 	}
 	drawData[1][drawPos1] = (uint8_t)((1.0f - outputSamples[1]) * drawHeightMult);
 
-	debugMain.SetLow();			// Debug off
+	debugPin1.SetLow();			// Debug off
+}
+
+
+uint32_t WaveTable::CurrentWavetable(uint8_t chn)
+{
+	// For drawing wavetable position: return quantised x position of current wavetable
+	return UI::waveDrawWidth * (std::round(wavetablePos[chn].pos * wavList[activeWaveTable].tableCount) / (float)wavList[activeWaveTable].tableCount);
 }
 
 
@@ -148,8 +153,9 @@ inline float WaveTable::CalcWarp()
 	}
 
 	// Calculate smoothed warp amount from pot and CV with trimmer controlling range of CV
+	const float cv = std::max(61300.0f - adc.WarpCV, 0.0f);		// Reduce to ensure can hit zero with noise
 	warpAmt = (0.99f * warpAmt) +
-			  (0.01f * std::clamp((adc.Warp_Amt_Pot + NormaliseADC(adc.Warp_Amt_Trm) * (61000.0f - adc.WarpCV)), 0.0f, 65535.0f));
+			  (0.01f * std::clamp((adc.Warp_Amt_Pot + NormaliseADC(adc.Warp_Amt_Trm) * cv), 0.0f, 65535.0f));
 
 	float adjReadPos;					// Read position after warp applied
 	float pitchAdj;						// To adjust the pitch increment for calculating ant-aliasing filter cutoff

@@ -2,6 +2,8 @@
 #include "initialisation.h"
 #include "Calib.h"
 
+GpioPin debugPin1	{GPIOD, 6, GpioPin::Type::Output};			// PD5: Debug
+GpioPin debugPin2	{GPIOD, 5, GpioPin::Type::Output};			// PD6: Debug
 
 // Clock overview:
 // I2S 				PLL2 P 				61.44 MHz
@@ -84,6 +86,8 @@ void InitClocks()
 
 	SystemCoreClockUpdate();						// Update SystemCoreClock (system clock frequency) derived from settings of oscillators, prescalers and PLL
 }
+
+
 
 
 void InitHardware()

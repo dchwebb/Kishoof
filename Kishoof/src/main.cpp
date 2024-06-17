@@ -15,10 +15,11 @@ extern uint32_t SystemCoreClock;
 // Store buffers that need to live in special memory areas
 volatile ADCValues __attribute__((section (".dma_buffer"))) adc;
 
-Config config{&wavetable.configSaver, &calib.configSaver};		// Construct config handler with list of configSavers
+Config config{&wavetable.configSaver, &calib.configSaver, &ui.configSaver};		// Construct config handler with list of configSavers
 
 /* TODO:
  * Check drive strength on SPI pins
+ * Save display option in config
 */
 
 extern "C" {
