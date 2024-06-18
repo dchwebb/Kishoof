@@ -94,7 +94,7 @@ void WaveTable::CalcSample()
 
 	uint8_t drawPos1 = (uint8_t)std::round(readPos[1] * drawWidthMult);
 	if (cfg.warpButton) {
-		drawPos1 = 200 - drawPos1;				// Invert channel B
+		drawPos1 = 199 - drawPos1;				// Invert channel B
 	}
 	drawData[1][drawPos1] = (uint8_t)((1.0f - outputSamples[1]) * drawHeightMult);
 
@@ -225,9 +225,6 @@ inline float WaveTable::CalcWarp()
 		pitchAdj = outputSamples[1] * (warpAmt - 32767.0f) * bendAmt;
 		adjReadPos = readPos[0] + pitchAdj;
 		pitchInc[0] *= 1.5f;			// Adding pitchAdj creates odd effects around bend point - sounds better multiplying by average
-
-		if (adjReadPos >= 2048) { adjReadPos -= 2048; }
-		if (adjReadPos < 0) { adjReadPos += 2048; }
 	}
 	break;
 
@@ -235,6 +232,9 @@ inline float WaveTable::CalcWarp()
 		adjReadPos = readPos[0];
 		break;
 	}
+
+	if (adjReadPos >= 2048) { adjReadPos -= 2048; }
+	if (adjReadPos < 0) { adjReadPos += 2048; }
 
 	return adjReadPos;
 }
