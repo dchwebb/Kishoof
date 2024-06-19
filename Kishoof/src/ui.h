@@ -37,12 +37,10 @@ private:
 	uint32_t WavetablePicker(int32_t upDown);
 	void DrawWaveTable();
 
-
-//	DisplayWave displayWave = DisplayWave::Both;
-
 	uint32_t oldWavetable = 0xFFFFFFFF;
 	uint32_t activeWaveTable = 0;
-	uint32_t pickerOpened = 0;
+	uint32_t fileinfoStart = 0;		// Timer to allow file info to be temporarily displayed on opening new wavetable
+	bool fileinfo = false;			// Set to true to tell draw routine show/clear file info
 	bool pickerDir = false;			// True if picker is currently selecting a directory
 
 	bool oldWarpBtn = false;

@@ -12,7 +12,30 @@ void UI::DrawWaveTable()
 	// Populate a frame buffer to display the wavetable values (full screen refresh)
 	debugPin2.SetHigh();			// Debug
 
-	if (wavetable.warpType != wavetable.oldWarpType) {
+	if (fileinfo || (fileinfoStart > 0 && SysTickVal > fileinfoStart + 3000)) {
+		constexpr uint32_t textLeft = 54;
+		constexpr uint32_t textWidth = LCD::width - (2 * textLeft);			// Allows for 12 chars wide
+		constexpr uint32_t textTop = 192;
+
+		if (fileinfo) {			// Display file info
+			fileinfo = false;
+
+			char buff[11];
+			snprintf(buff, 11, "Frames %d", wavetable.wavList[activeWaveTable].tableCount);
+
+			lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], buff, &lcd.Font_Large, RGBColour::LightGrey, RGBColour::Black);
+			lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
+
+		} else {
+			wavetable.oldWarpType = WaveTable::Warp::count;			// Force redraw
+			oldWarpBtn = !oldWarpBtn;
+			fileinfoStart = 0;
+
+			// Will just blank the screen
+			lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
+		}
+
+	} else if (wavetable.warpType != wavetable.oldWarpType) {
 		wavetable.oldWarpType = wavetable.warpType;
 		std::string_view s = wavetable.warpNames[(uint8_t)wavetable.warpType];
 
@@ -24,6 +47,9 @@ void UI::DrawWaveTable()
 
 	} else if (activeWaveTable != oldWavetable) {
 		oldWavetable = activeWaveTable;
+		fileinfoStart = SysTickVal;											// Store time opened to display file info
+		fileinfo = true;
+
 		std::string_view s;
 		if (wavetable.wavList[activeWaveTable].lfn[0]) {
 			s = std::string_view(wavetable.wavList[activeWaveTable].lfn);
@@ -38,6 +64,8 @@ void UI::DrawWaveTable()
 		const uint16_t colour = pickerDir ? RGBColour::Yellow : wavetable.wavList[activeWaveTable].valid ? RGBColour::White : RGBColour::Grey;
 		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, colour, RGBColour::Black);
 		lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
+
+
 
 	} else if (wavetable.cfg.warpButton != oldWarpBtn) {
 		oldWarpBtn = wavetable.cfg.warpButton;
@@ -66,12 +94,18 @@ void UI::DrawWaveTable()
 		} else {
 			const uint32_t channel = (cfg.displayWave == DisplayWave::channelA ? 0 : 1);
 			const uint32_t wavetablePos = waveDrawWidth * wavetable.QuantisedWavetablePos(channel);
+			const uint32_t warpPos = waveDrawWidth * ((float)wavetable.warpAmt * (1.0f / 65535.0f));
+			const uint32_t bottomLine = (waveDrawHeight - 1) * waveDrawWidth;		// Pixel order is across then down
 			const RGBColour drawColour = (channel == 0) ? RGBColour::LightBlue : RGBColour::Orange;
-			const RGBColour darkColour = drawColour.DarkenColour(30);
+			//const RGBColour darkColour = drawColour.DarkenColour(30);
 
-			// Draw a gradient line representing the quantised wavetable position
+			// Draw gradient lines representing the quantised wavetable position and warp amount
 			for (uint8_t i = 0; i < wavetablePos; ++i) {
-				lcd.drawBuffer[activeDrawBuffer][i] = RGBColour::InterpolateColour(darkColour, drawColour, (float)i / wavetablePos).colour;
+				//lcd.drawBuffer[activeDrawBuffer][i] = RGBColour::InterpolateColour(darkColour, drawColour, (float)i / wavetablePos).colour;
+				lcd.drawBuffer[activeDrawBuffer][i] = RGBColour::InterpolateColour(RGBColour::Black, drawColour, (float)i / wavetablePos).colour;
+			}
+			for (uint8_t i = 0; i < warpPos; ++i) {
+				lcd.drawBuffer[activeDrawBuffer][bottomLine + i] = RGBColour::InterpolateColour(RGBColour::Black, RGBColour::Grey, (float)i / warpPos).colour;
 			}
 
 			uint8_t oldHeight = wavetable.drawData[channel][0];
@@ -111,6 +145,7 @@ void UI::DrawWaveTable()
 void UI::SetWavetable(int32_t index)
 {
 	// Allows wavetable class to set current wavetable at Init
+	oldWavetable = 0xFFFFFFFF;
 	activeWaveTable = index;
 	pickerDir = wavetable.wavList[index].isDir;
 
@@ -125,7 +160,6 @@ uint32_t UI::WavetablePicker(int32_t upDown)
 	auto& nextWT = wavetable.wavList[nextWavetable];
 
 	if (nextWavetable >= 0 && nextWavetable < (int32_t)wavetable.wavetableCount && nextWT.dir == currentWT.dir) {
-		pickerOpened = SysTickVal;			// Store time opened to check if drawing picker
 		activeWaveTable = nextWavetable;
 		pickerDir = nextWT.isDir;
 		if (!pickerDir && nextWT.valid) {

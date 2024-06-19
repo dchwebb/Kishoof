@@ -63,7 +63,7 @@ bool Config::SaveConfig(bool forceSave)
 	return result;
 }
 
-
+volatile int susp = 0;
 void Config::RestoreConfig()
 {
 	// Initialise sector array - used to manage which sector contains current config, and which sectors are available for writing when current sector full
@@ -82,7 +82,7 @@ void Config::RestoreConfig()
 		// Check if there is a config block at the start of the sector and read the index number if so
 		sectors[i].index = (addr[0] == *(uint32_t*)ConfigHeader) ? (uint8_t)addr[1] : 255;
 	}
-
+++susp;
 	// Work out which is the active config sector: will be the highest index from the bottom before the sequence jumps
 	std::sort(sectors.begin(), sectors.end(), [](const CfgSector& l, const CfgSector& r) { return l.index < r.index; });
 	uint32_t index = sectors[0].index;

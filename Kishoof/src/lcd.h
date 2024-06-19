@@ -44,6 +44,7 @@ union RGBColour  {
 		White = 0xFFFF,
 		Black = 0x0000,
 		Grey = 0x528A,
+		LightGrey = 0x8C71,
 		Red = 0xF800,
 		Green = 0x07E0,
 		DullGreen = 0x02E0,
