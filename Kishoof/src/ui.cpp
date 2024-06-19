@@ -1,8 +1,6 @@
 #include "ui.h"
-#include "lcd.h"
-//#include "config.h"
 #include "WaveTable.h"
-#include  <cstdio>
+#include <cstdio>
 #include <cstring>
 
 UI ui;
@@ -67,12 +65,14 @@ void UI::DrawWaveTable()
 
 		} else {
 			const uint32_t channel = (cfg.displayWave == DisplayWave::channelA ? 0 : 1);
-			const uint32_t wavetablePos = wavetable.CurrentWavetable(channel);
-			const uint16_t drawColour = (cfg.displayWave == DisplayWave::channelA) ? LCD_LIGHTBLUE : LCD_ORANGE;
+			const uint32_t wavetablePos = waveDrawWidth * wavetable.QuantisedWavetablePos(channel);
+			const RGBColour drawColour = (cfg.displayWave == DisplayWave::channelA) ? RGBColour::lightBlue : RGBColour::orange;
+			const RGBColour darkColour = drawColour.DarkenColour(30);
 
-			// Draw a line representing the quantised wavetable position
-			const wchar_t colour = (cfg.displayWave == DisplayWave::channelA) ? (LCD_DULLBLUE << 16) + LCD_DULLBLUE : (LCD_DULLORANGE << 16) + LCD_DULLORANGE;
-			wmemset((wchar_t*)lcd.drawBuffer[activeDrawBuffer], colour, wavetablePos / 2);
+			// Draw a gradient line representing the quantised wavetable position
+			for (uint8_t i = 0; i < wavetablePos; ++i) {
+				lcd.drawBuffer[activeDrawBuffer][i] = RGBColour::InterpolateColour(darkColour, drawColour, (float)i / wavetablePos).colour;
+			}
 
 			uint8_t oldHeight = wavetable.drawData[channel][0];
 			for (uint8_t i = 0; i < waveDrawWidth; ++i) {
@@ -80,7 +80,7 @@ void UI::DrawWaveTable()
 				uint8_t currHeight = wavetable.drawData[channel][i];
 				do {
 					const uint32_t pos = currHeight * waveDrawWidth + i;		// Pixel order is across then down
-					lcd.drawBuffer[activeDrawBuffer][pos] = drawColour;
+					lcd.drawBuffer[activeDrawBuffer][pos] = drawColour.colour;
 					currHeight += currHeight > oldHeight ? -1 : 1;
 				} while (currHeight != oldHeight);
 
@@ -201,30 +201,21 @@ std::string_view UI::IntToString(const int32_t v)
 }
 
 
-//	Takes an RGB colour and darkens by the specified amount
-uint16_t UI::DarkenColour(const uint16_t& colour, uint16_t amount) {
-	uint16_t r = (colour >> 11) << 1;
-	uint16_t g = (colour >> 5) & 0b111111;
-	uint16_t b = (colour & 0b11111) << 1;
-	r -= std::min(amount, r);
-	g -= std::min(amount, g);
-	b -= std::min(amount, b);;
-	return ((r >> 1) << 11) + (g << 5) + (b >> 1);
-}
-
-/*
-uint32_t UI::SerialiseConfig(uint8_t** buff)
+RGBColour UI::InterpolateColour(const RGBColour colour1, const RGBColour colour2, const float ratio)
 {
-	*buff = reinterpret_cast<uint8_t*>(&config);
-	return sizeof(config);
+	//	Interpolate between two RGB 565 colours
+	const uint8_t r = std::lerp(colour1.red, colour2.red, ratio);
+	const uint8_t g = std::lerp(colour1.green, colour2.green, ratio);
+	const uint8_t b = std::lerp(colour1.blue, colour2.blue, ratio);
+	return RGBColour{r, g, b};
 }
 
 
-uint32_t UI::StoreConfig(uint8_t* buff)
+RGBColour UI::DarkenColour(const RGBColour colour, const uint16_t amount)
 {
-	if (buff != nullptr) {
-		memcpy(&config, buff, sizeof(config));
-	}
-	return sizeof(config);
+	//	Darken an RGB colour by the specified amount (apply bit offset so that all colours are treated as 6 bit values)
+	uint8_t r = (colour.red << 1) - std::min(amount, colour.red);
+	uint8_t g = colour.green - std::min(amount, colour.green);
+	uint8_t b = (colour.blue << 1) - std::min(amount, colour.blue);
+	return RGBColour{uint8_t(r >> 1), g, uint8_t(b >> 1)};
 }
-*/

@@ -24,7 +24,7 @@ public:
 	void ChangeWaveTable(int32_t index);
 	void ChannelBOctave(bool change = false);	// Called when channel B octave button is pressed
 	void WarpButton(bool change);				// Called when warp button is pressed
-	uint32_t CurrentWavetable(uint8_t chn);		// For drawing: return quantised wavetable position
+	float QuantisedWavetablePos(uint8_t chn);	// For drawing: return quantised wavetable position
 	static void UpdateConfig();
 
 	struct {

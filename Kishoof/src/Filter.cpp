@@ -29,11 +29,6 @@ void Filter::BuildLUT()
 }
 
 
-
-
-
-
-
 float Filter::Sinc(float x)
 {
 	if (x > -1.0E-5 && x < 1.0E-5) {

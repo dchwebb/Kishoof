@@ -3,8 +3,10 @@
 #include "initialisation.h"
 #include "GpioPin.h"
 #include "configManager.h"
+#include "lcd.h"
 #include <vector>
 #include <string_view>
+
 
 class UI {
 public:
@@ -13,7 +15,8 @@ public:
 
 	std::string_view FloatToString(float f, bool smartFormat);
 	std::string_view IntToString(const int32_t v);
-	uint16_t DarkenColour(const uint16_t& colour, uint16_t amount);
+	RGBColour DarkenColour(const RGBColour colour, uint16_t amount);
+	RGBColour InterpolateColour(const RGBColour colour1, const RGBColour colour2, const float ratio);
 
 	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
 	static constexpr uint16_t waveDrawWidth = 200;

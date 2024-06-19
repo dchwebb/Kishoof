@@ -7,7 +7,46 @@
 #include <vector>
 
 
+union RGBColour  {
+	uint16_t colour;
+	struct __attribute__((packed)) {
+		uint16_t blue : 5;
+		uint16_t green : 6;
+		uint16_t red : 5;
+	};
+
+
+	RGBColour(uint8_t r, uint8_t g, uint8_t b) {
+		colour = (r << 11) + (g << 5) + b;
+	}
+	constexpr RGBColour(int col) : colour {static_cast<uint16_t>(col)} {};
+
+	static RGBColour InterpolateColour(const RGBColour colour1, const RGBColour colour2, const float ratio)
+	{
+		//	Interpolate between two RGB 565 colours
+		const uint8_t r = std::lerp(colour1.red, colour2.red, ratio);
+		const uint8_t g = std::lerp(colour1.green, colour2.green, ratio);
+		const uint8_t b = std::lerp(colour1.blue, colour2.blue, ratio);
+		return RGBColour{r, g, b};
+	}
+
+
+	RGBColour DarkenColour(const uint16_t amount) const
+	{
+		//	Darken an RGB colour by the specified amount (apply bit offset so that all colours are treated as 6 bit values)
+		uint8_t r = (red << 1) - std::min(amount, red);
+		uint8_t g = green - std::min(amount, green);
+		uint8_t b = (blue << 1) - std::min(amount, blue);
+		return RGBColour{uint8_t(r >> 1), g, uint8_t(b >> 1)};
+	}
+
+	enum colours : uint16_t {white = 0xFFFF, lightBlue = 0x051D, orange = 0xFB44};
+};
+
+
 // RGB565 colours
+//enum colours : RGBColour {white = RGBColour(0xFFFF).colour};
+static constexpr RGBColour white = RGBColour(0xFFFF);
 #define LCD_WHITE		0xFFFF
 #define LCD_BLACK		0x0000
 #define LCD_GREY		0x528A
@@ -17,6 +56,7 @@
 #define LCD_BLUE		0x001F
 #define LCD_LIGHTBLUE	0x051D
 #define LCD_DULLBLUE	0x0293
+#define LCD_DARKBLUE	0x01cd
 #define LCD_YELLOW		0xFFE0
 #define LCD_ORANGE		0xFB44
 #define LCD_DULLORANGE	0xA960

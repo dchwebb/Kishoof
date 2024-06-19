@@ -70,7 +70,6 @@ void WaveTable::CalcSample()
 	}
 	const float adjReadPos = CalcWarp();
 	OutputSample(0, adjReadPos);
-	outputSamples[0] = FastTanh(outputSamples[0]);
 
 
 	// Apply mix/ring mod to channel B
@@ -81,8 +80,8 @@ void WaveTable::CalcSample()
 	}
 
 	if (crossfade <= 0.0f) {
-		oldOutputSamples[0] = outputSamples[0];
-		oldOutputSamples[1] = outputSamples[1];
+		oldOutputSamples[0] = FastTanh(outputSamples[0]);
+		oldOutputSamples[1] = FastTanh(outputSamples[1]);
 	}
 
 
@@ -102,10 +101,14 @@ void WaveTable::CalcSample()
 }
 
 
-uint32_t WaveTable::CurrentWavetable(uint8_t chn)
+float WaveTable::QuantisedWavetablePos(uint8_t chn)
 {
 	// For drawing wavetable position: return quantised x position of current wavetable
-	return UI::waveDrawWidth * (std::round(wavetablePos[chn].pos * wavList[activeWaveTable].tableCount) / (float)wavList[activeWaveTable].tableCount);
+	if (chn == 1 && !stepped) {
+		return std::round(wavetablePos[chn].pos * harmonicSets) / (float)harmonicSets;
+	} else {
+		return std::round(wavetablePos[chn].pos * wavList[activeWaveTable].tableCount) / (float)wavList[activeWaveTable].tableCount;
+	}
 }
 
 
@@ -121,7 +124,7 @@ inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 	if (wav.sampleType == SampleType::Float32) {
 		outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wav.startAddr + sampleOffset, ratio, pitchInc[chn]);
 	} else if (wav.sampleType == SampleType::PCM16) {
-		outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, (int16_t*)wav.startAddr + sampleOffset, ratio, pitchInc[chn]) * (1.0 / 65536.0f);
+		outputSamples[chn] = filter.CalcInterpolatedFilter((uint32_t)readPos, (int16_t*)wav.startAddr + sampleOffset, ratio, pitchInc[chn]) * (1.0 / 32768.0f);
 	}
 
 	// Interpolate between wavetables if channel A
@@ -132,7 +135,7 @@ inline void WaveTable::OutputSample(uint8_t chn, float readPos)
 			if (wav.sampleType == SampleType::Float32) {
 				outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (float*)wav.startAddr + sampleOffset + 2048, ratio, pitchInc[chn]);
 			} else {
-				outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (int16_t*)wav.startAddr + sampleOffset + 2048, ratio, pitchInc[chn]) * (1.0 / 65536.0f);
+				outputSample2 = filter.CalcInterpolatedFilter((uint32_t)readPos, (int16_t*)wav.startAddr + sampleOffset + 2048, ratio, pitchInc[chn]) * (1.0 / 32768.0f);
 			}
 			outputSamples[0] = std::lerp(outputSamples[0], outputSample2, wtRatio);
 		}
@@ -362,9 +365,18 @@ bool WaveTable::GetWavInfo(Wav& wav)
 		}
 	}
 
+	const uint32_t startOffset = pos + 8;
 	wav.dataSize = *(uint32_t*)&(wavHeader[pos + 4]);			// Num Samples * Num Channels * Bits per Sample / 8
+
+	// Handle issue where dataSize is incorrectly reported (seems to be when exporting 16 bit wavetables from Serum)
+	if (wav.dataSize > wav.size) {
+		if (wav.size - startOffset == wav.dataSize / 2) {
+			wav.dataSize = wav.dataSize / 2;
+		}
+	}
+
 	wav.sampleCount = wav.dataSize / (wav.channels * wav.byteDepth);
-	wav.startAddr = &(wavHeader[pos + 8]);
+	wav.startAddr = &(wavHeader[startOffset]);
 	wav.tableCount = wav.sampleCount / 2048;
 
 	// Currently support 32 bit floats and 16 bit PCM integer formats
@@ -379,7 +391,6 @@ bool WaveTable::GetWavInfo(Wav& wav)
 	// Follow cluster chain and store last cluster if not contiguous to tell playback engine when to do a fresh address lookup
 	uint32_t cluster = wav.cluster;
 	wav.lastCluster = 0xFFFFFFFF;
-
 	while (fatTools.clusterChain[cluster] != 0xFFFF) {
 		if (fatTools.clusterChain[cluster] != cluster + 1 && wav.lastCluster == 0xFFFFFFFF) {		// Store cluster at first discontinuity of chain
 			wav.lastCluster = cluster;
@@ -387,6 +398,9 @@ bool WaveTable::GetWavInfo(Wav& wav)
 		cluster = fatTools.clusterChain[cluster];
 	}
 	wav.endAddr = fatTools.GetClusterAddr(cluster);
+
+
+
 	return (wav.sampleType != SampleType::Unsupported && wav.channels == 1 && wav.dataSize < wav.size);
 }
 
