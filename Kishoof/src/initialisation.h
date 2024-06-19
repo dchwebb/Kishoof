@@ -7,6 +7,7 @@
 #include "GpioPin.h"
 
 extern volatile uint32_t SysTickVal;
+extern bool SafeMode;
 
 static constexpr uint32_t sysTickInterval = 1000;					// Set in uS so 1000uS = 1ms
 constexpr uint32_t sampleRate = 48000;

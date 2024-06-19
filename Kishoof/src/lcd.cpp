@@ -73,7 +73,7 @@ void LCD::Init()
 	Command(cmdGC9A01A::DISPON);		// Display on
 	Delay(10000);
 
-	ScreenFill(LCD_BLACK);
+	ScreenFill(RGBColour::Black);
 
 	Rotate(LCD_Portrait);
 

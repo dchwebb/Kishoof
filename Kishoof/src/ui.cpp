@@ -19,7 +19,7 @@ void UI::DrawWaveTable()
 		constexpr uint32_t textLeft = 80;
 		constexpr uint32_t textWidth = LCD::width - (2 * textLeft);			// Allows for 12 chars wide
 		constexpr uint32_t textTop = 192;
-		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, wavetable.warpType == WaveTable::Warp::none ? LCD_GREY : LCD_WHITE, LCD_BLACK);
+		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, wavetable.warpType == WaveTable::Warp::none ? RGBColour::Grey : RGBColour::White, RGBColour::Black);
 		lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
 	} else if (activeWaveTable != oldWavetable) {
@@ -35,14 +35,14 @@ void UI::DrawWaveTable()
 		constexpr uint32_t textLeft = 54;
 		constexpr uint32_t textWidth = LCD::width - (2 * textLeft);			// Allows for 12 chars wide
 		constexpr uint32_t textTop = 35;
-		const uint16_t colour = pickerDir ? LCD_YELLOW : wavetable.wavList[activeWaveTable].valid ? LCD_WHITE : LCD_GREY;
-		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, colour, LCD_BLACK);
+		const uint16_t colour = pickerDir ? RGBColour::Yellow : wavetable.wavList[activeWaveTable].valid ? RGBColour::White : RGBColour::Grey;
+		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, colour, RGBColour::Black);
 		lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
 	} else if (wavetable.cfg.warpButton != oldWarpBtn) {
 		oldWarpBtn = wavetable.cfg.warpButton;
-		lcd.DrawChar(55, 192, oldWarpBtn ? '<' : ' ', &lcd.Font_Large, LCD_ORANGE, LCD_BLACK);
-		lcd.DrawChar(172, 192, oldWarpBtn ? '<' : ' ', &lcd.Font_Large, LCD_ORANGE, LCD_BLACK);
+		lcd.DrawChar(55, 192, oldWarpBtn ? '<' : ' ', &lcd.Font_Large, RGBColour::Orange, RGBColour::Black);
+		lcd.DrawChar(172, 192, oldWarpBtn ? '<' : ' ', &lcd.Font_Large, RGBColour::Orange, RGBColour::Black);
 
 	} else {
 		if (cfg.displayWave == DisplayWave::Both) {
@@ -55,7 +55,7 @@ void UI::DrawWaveTable()
 					uint8_t currHeight = (channel ? 60 : 0) + wavetable.drawData[channel][i] / 2;
 					do {
 						const uint32_t pos = currHeight * waveDrawWidth + i;		// Pixel order is across then down
-						lcd.drawBuffer[activeDrawBuffer][pos] = channel ? LCD_ORANGE : LCD_LIGHTBLUE;
+						lcd.drawBuffer[activeDrawBuffer][pos] = channel ? RGBColour::Orange : RGBColour::LightBlue;
 						currHeight += currHeight > oldHeight ? -1 : 1;
 					} while (currHeight != oldHeight);
 
@@ -66,7 +66,7 @@ void UI::DrawWaveTable()
 		} else {
 			const uint32_t channel = (cfg.displayWave == DisplayWave::channelA ? 0 : 1);
 			const uint32_t wavetablePos = waveDrawWidth * wavetable.QuantisedWavetablePos(channel);
-			const RGBColour drawColour = (cfg.displayWave == DisplayWave::channelA) ? RGBColour::lightBlue : RGBColour::orange;
+			const RGBColour drawColour = (channel == 0) ? RGBColour::LightBlue : RGBColour::Orange;
 			const RGBColour darkColour = drawColour.DarkenColour(30);
 
 			// Draw a gradient line representing the quantised wavetable position

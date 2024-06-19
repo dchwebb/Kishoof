@@ -467,7 +467,7 @@ void WaveTable::UpdateWavetableList()
 	}
 
 	// Blank next sample (if exists) to show end of list
-	Wav& wav = wavList[wavetableCount + 1];
+	Wav& wav = wavList[wavetableCount];
 	wav.name[0] = 0;
 
 	// Attempt to locate active wavetable
@@ -483,6 +483,10 @@ void WaveTable::UpdateWavetableList()
 
 void WaveTable::ReadDir(FATFileInfo* dirEntry, uint32_t dirIndex)
 {
+	if (fatTools.noFileSystem) {
+		return;
+	}
+
 	// Store contents of a directory into the wavetable and directory lists
 	while (dirEntry->name[0] != 0 && wavetableCount < maxWavetable) {
 		const bool isValidDir = dirEntry->name[0] != '.' &&	(dirEntry->attr & AM_DIR) && (dirEntry->attr & AM_HID) == 0 && (dirEntry->attr & AM_SYS) == 0;

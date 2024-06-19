@@ -11,6 +11,7 @@
 
 volatile uint32_t SysTickVal;
 extern uint32_t SystemCoreClock;
+bool SafeMode = false;
 
 // Store buffers that need to live in special memory areas
 volatile ADCValues __attribute__((section (".dma_buffer"))) adc;
@@ -19,7 +20,6 @@ Config config{&wavetable.configSaver, &calib.configSaver, &ui.configSaver};		// 
 
 /* TODO:
  * Check drive strength on SPI pins
- * Save display option in config
 */
 
 extern "C" {
@@ -32,10 +32,18 @@ int main(void) {
 
 	InitClocks();					// Configure the clock and PLL
 	InitHardware();
+
+	// Check if encoder button is pressed and enter 'safe-mode' if so
+	if (GpioPin::IsLow(GPIOE, 4)) {
+		SafeMode = true;
+	}
+
 	lcd.Init();
 	extFlash.Init();
 	filter.Init();					// Initialise filter coefficients, windows etc
-	config.RestoreConfig();
+	if (!SafeMode) {
+		config.RestoreConfig();
+	}
 	wavetable.Init();
 	usb.Init(false);
 	InitI2S();						// Initialise I2S which will start main sample interrupts

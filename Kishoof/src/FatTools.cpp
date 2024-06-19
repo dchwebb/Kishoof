@@ -8,7 +8,7 @@ FatTools fatTools;
 
 bool FatTools::InitFatFS()
 {
-	if (extFlash.flashCorrupt) {
+	if (extFlash.flashCorrupt || SafeMode) {
 		return false;
 	}
 

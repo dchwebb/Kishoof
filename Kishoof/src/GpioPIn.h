@@ -46,8 +46,16 @@ public:
 	}
 
 
+	static bool IsHigh(GPIO_TypeDef* port, uint32_t pin) {
+		return (port->IDR & (1 << pin));
+	}
+
 	bool IsHigh() {
 		return (port->IDR & (1 << pin));
+	}
+
+	static bool IsLow(GPIO_TypeDef* port, uint32_t pin) {
+		return ((port->IDR & (1 << pin)) == 0);
 	}
 
 	bool IsLow() {

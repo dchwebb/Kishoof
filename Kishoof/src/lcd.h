@@ -16,7 +16,7 @@ union RGBColour  {
 	};
 
 
-	RGBColour(uint8_t r, uint8_t g, uint8_t b) {
+	constexpr RGBColour(uint8_t r, uint8_t g, uint8_t b) {
 		colour = (r << 11) + (g << 5) + b;
 	}
 	constexpr RGBColour(int col) : colour {static_cast<uint16_t>(col)} {};
@@ -40,30 +40,25 @@ union RGBColour  {
 		return RGBColour{uint8_t(r >> 1), g, uint8_t(b >> 1)};
 	}
 
-	enum colours : uint16_t {white = 0xFFFF, lightBlue = 0x051D, orange = 0xFB44};
+	enum colours : uint16_t {
+		White = 0xFFFF,
+		Black = 0x0000,
+		Grey = 0x528A,
+		Red = 0xF800,
+		Green = 0x07E0,
+		DullGreen = 0x02E0,
+		Blue = 0x001F,
+		LightBlue = 0x051D,
+		DullBlue = 0x0293,
+		DarkBlue = 0x01cd,
+		Yellow = 0xFFE0,
+		Orange = 0xFB44,
+		DullOrange = 0xA960,
+		Cyan = 0x07FF,
+		Magenta = 0xA254,
+		Gray = 0x7BEF,
+		Brown = 0xBBCA};
 };
-
-
-// RGB565 colours
-//enum colours : RGBColour {white = RGBColour(0xFFFF).colour};
-static constexpr RGBColour white = RGBColour(0xFFFF);
-#define LCD_WHITE		0xFFFF
-#define LCD_BLACK		0x0000
-#define LCD_GREY		0x528A
-#define LCD_RED			0xF800
-#define LCD_GREEN		0x07E0
-#define LCD_DULLGREEN	0x02E0
-#define LCD_BLUE		0x001F
-#define LCD_LIGHTBLUE	0x051D
-#define LCD_DULLBLUE	0x0293
-#define LCD_DARKBLUE	0x01cd
-#define LCD_YELLOW		0xFFE0
-#define LCD_ORANGE		0xFB44
-#define LCD_DULLORANGE	0xA960
-#define LCD_CYAN		0x07FF
-#define LCD_MAGENTA		0xA254
-#define LCD_GRAY		0x7BEF
-#define LCD_BROWN		0xBBCA
 
 
 #define MADCTL_MY 0x80 				// Bottom to top
