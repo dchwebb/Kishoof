@@ -401,8 +401,6 @@ bool WaveTable::GetWavInfo(Wav& wav)
 	}
 	wav.endAddr = fatTools.GetClusterAddr(cluster);
 
-
-
 	return (wav.sampleType != SampleType::Unsupported && wav.channels == 1 && wav.dataSize < wav.size);
 }
 
@@ -442,7 +440,7 @@ void WaveTable::UpdateWavetableList()
 
 	// Updates list of wavetables from FAT root directory
 	wavetableCount = 1;
-	ReadDir(fatTools.rootDirectory, 0);
+	ReadDir(fatTools.rootDirectory, 0);				// Reads all wavetables in file system and stores metadata in wavList
 	std::sort(&wavList[1], &wavList[wavetableCount], &WavetableSorter);
 
 	for (uint32_t i = 0; i < wavetableCount; ++i) {
@@ -492,7 +490,7 @@ void WaveTable::ReadDir(FATFileInfo* dirEntry, uint32_t dirIndex)
 	// Store contents of a directory into the wavetable and directory lists
 	while (dirEntry->name[0] != 0 && wavetableCount < maxWavetable) {
 		const bool isValidDir = dirEntry->name[0] != '.' &&	(dirEntry->attr & AM_DIR) && (dirEntry->attr & AM_HID) == 0 && (dirEntry->attr & AM_SYS) == 0;
-		const bool isValidWav = (dirEntry->attr & AM_DIR) == 0 && strncmp(&(dirEntry->name[8]), "WAV", 3) == 0;
+		const bool isValidWav = (dirEntry->attr & AM_DIR) == 0 && strncmp(&(dirEntry->name[8]), "WAV", 3) == 0 && dirEntry->firstClusterLow;
 
 		if (dirEntry->name[0] != FATFileInfo::fileDeleted && dirEntry->attr == FATFileInfo::LONG_NAME) {
 			// Store long file name in temporary buffer
