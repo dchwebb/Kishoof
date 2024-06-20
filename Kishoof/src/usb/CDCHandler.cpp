@@ -65,7 +65,9 @@ void CDCHandler::ProcessCommand()
 				"calib       -  Start calibration\r\n"
 				"dfu         -  USB firmware upgrade\r\n"
 				"wavetables  -  Print list of wavetables\r\n"
+				"dirdetails  -  Print detailed FAT directory info\r\n"
 				"add:XXXXXXXX   Channel B additive waves. Type 'help add' for details\r\n"
+				"dispmark:X  -  CV markers in display. N - none, L - line, P - pointer\r\n"
 				"clearconfig -  Erase configuration and restart\r\n"
 				"\r\n"
 				"Flash Tools:\r\n"
@@ -158,6 +160,15 @@ void CDCHandler::ProcessCommand()
 			usb->SendString("Invalid data\r\n");
 		}
 
+	} else if (cmd.compare(0, 9, "dispmark:") == 0) {			// CV markers in display. N - none, L - line, P - pointer
+		char option = cmd[9];
+		if (option == 'N' || option == 'L' || option == 'P') {
+			ui.cfg.displayPos = (option == 'N') ? UI::DisplayPos::off : (option == 'L') ? UI::DisplayPos::line : UI::DisplayPos::pointer;
+			config.ScheduleSave();
+			usb->SendString("Updated\r\n");
+		} else {
+			usb->SendString("Invalid data\r\n");
+		}
 
 	} else if (cmd.compare(0, 11, "eraseblock:") == 0) {		// Erase sector
 		uint32_t addr;

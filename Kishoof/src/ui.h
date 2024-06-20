@@ -22,10 +22,14 @@ public:
 	static constexpr uint16_t waveDrawWidth = 200;
 	static constexpr uint16_t waveDrawHeight = 120;
 
-	enum class DisplayWave {channelA, channelB, Both};
+	enum class DisplayWave : uint8_t {channelA, channelB, Both};
+	enum class DisplayPos : uint8_t {off, line, pointer};
 	struct {
 		DisplayWave displayWave = DisplayWave::Both;
+		DisplayPos displayPos = DisplayPos::line;
 	} cfg;
+
+
 
 	ConfigSaver configSaver = {
 		.settingsAddress = &cfg,
@@ -36,6 +40,7 @@ public:
 private:
 	uint32_t WavetablePicker(int32_t upDown);
 	void DrawWaveTable();
+	void DrawPositionMarker(uint32_t yPos, bool dirUp, float xPos, RGBColour drawColour);
 
 	// Variables to handle info display changes
 	uint32_t oldWavetable = 0xFFFFFFFF;

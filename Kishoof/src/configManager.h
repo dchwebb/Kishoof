@@ -15,7 +15,7 @@ struct ConfigSaver {
 class Config {
 	friend class CDCHandler;					// Allow the serial handler access to private data for printing
 public:
-	static constexpr uint8_t configVersion = 9;
+	static constexpr uint8_t configVersion = 10;
 	
 	// STM32H7B0 has 128k Flash in 16 sectors of 8192k
 	static constexpr uint32_t flashConfigSector = 14;		// Allow 3 sectors for config giving a config size of 24k before erase needed

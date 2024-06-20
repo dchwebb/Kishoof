@@ -57,9 +57,19 @@ void UI::DrawWaveTable()
 		lcd.DrawChar(172, 192, oldWarpBtn ? '<' : ' ', &lcd.Font_Large, RGBColour::Orange, RGBColour::Black);
 
 	} else {
+
+		// Set up positions for drawing markers representing the quantised wavetable position and warp amount
+		const float warpPos = (float)wavetable.warpAmt * (1.0f / 65535.0f);
+		const uint32_t bottomLine = (waveDrawHeight - 1);		// Pixel order is across then down
+		const uint32_t middleLine = ((waveDrawHeight / 2) - 1);
+		DrawPositionMarker(bottomLine, true, warpPos, RGBColour::LightGrey);
+
 		if (cfg.displayWave == DisplayWave::Both) {
 
 			for (uint32_t channel = 0; channel < 2; ++channel) {
+				const RGBColour drawColour = (channel == 0) ? RGBColour::LightBlue : RGBColour::Orange;
+				DrawPositionMarker(channel == 0 ? 0 : middleLine, false, wavetable.QuantisedWavetablePos(channel), drawColour);
+
 				uint8_t oldHeight = (channel ? 60 : 0) + wavetable.drawData[channel][0] / 2;
 				for (uint8_t i = 0; i < waveDrawWidth; ++i) {
 
@@ -77,18 +87,9 @@ void UI::DrawWaveTable()
 
 		} else {
 			const uint32_t channel = (cfg.displayWave == DisplayWave::channelA ? 0 : 1);
-			const uint32_t wavetablePos = waveDrawWidth * wavetable.QuantisedWavetablePos(channel);
-			const uint32_t warpPos = waveDrawWidth * ((float)wavetable.warpAmt * (1.0f / 65535.0f));
-			const uint32_t bottomLine = (waveDrawHeight - 1) * waveDrawWidth;		// Pixel order is across then down
 			const RGBColour drawColour = (channel == 0) ? RGBColour::LightBlue : RGBColour::Orange;
 
-			// Draw gradient lines representing the quantised wavetable position and warp amount
-			for (uint8_t i = 0; i < wavetablePos; ++i) {
-				lcd.drawBuffer[activeDrawBuffer][i] = RGBColour::InterpolateColour(RGBColour::Black, drawColour, (float)i / wavetablePos).colour;
-			}
-			for (uint8_t i = 0; i < warpPos; ++i) {
-				lcd.drawBuffer[activeDrawBuffer][bottomLine + i] = RGBColour::InterpolateColour(RGBColour::Black, RGBColour::Grey, (float)i / warpPos).colour;
-			}
+			DrawPositionMarker(0, false, wavetable.QuantisedWavetablePos(channel), drawColour);
 
 			uint8_t oldHeight = wavetable.drawData[channel][0];
 			for (uint8_t i = 0; i < waveDrawWidth; ++i) {
@@ -121,6 +122,39 @@ void UI::DrawWaveTable()
 
 	debugPin2.SetLow();			// Debug off
 
+}
+
+
+void UI::DrawPositionMarker(uint32_t yPos, bool dirUp, float xPos, RGBColour drawColour)
+{
+
+	xPos *= waveDrawWidth;
+	yPos *= waveDrawWidth;
+	switch (cfg.displayPos) {
+	case DisplayPos::line:
+		// Draw gradient lines representing the marker position
+		for (uint8_t i = 0; i < xPos; ++i) {
+			lcd.drawBuffer[activeDrawBuffer][yPos + i] = RGBColour::InterpolateColour(RGBColour::Black, drawColour, (float)i / xPos).colour;
+		}
+		break;
+	case DisplayPos::pointer:
+		for (int i = - 2; i < 3; ++i) {
+			uint32_t top = xPos + yPos + (dirUp ? -2 : 0) * waveDrawWidth;
+
+			if (i + xPos >= 0 && i + xPos < waveDrawWidth) {
+				lcd.drawBuffer[activeDrawBuffer][i + top + (dirUp ? (2 * waveDrawWidth) : 0)] = drawColour.colour;
+				if (i > -2 && i < 2) {
+					lcd.drawBuffer[activeDrawBuffer][i + top + waveDrawWidth] = drawColour.colour;
+				}
+				if (i == 0) {
+					lcd.drawBuffer[activeDrawBuffer][i + top + (dirUp ? 0 : (2 * waveDrawWidth))] = drawColour.colour;
+				}
+			}
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 
