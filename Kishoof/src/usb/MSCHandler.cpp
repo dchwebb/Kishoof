@@ -236,6 +236,11 @@ int8_t MSCHandler::SCSI_Inquiry()
 		}
 	} else {
 		bot_data_length = std::min((uint8_t)sizeof(STORAGE_Inquirydata_FS), cbw.CB[4]);
+
+		// If device not working disable through peripheral qualifier and peripheral device type fields
+		if (extFlash.flashCorrupt || fatTools.noFileSystem) {
+			STORAGE_Inquirydata_FS[0] = 0x3F;
+		}
 		botBuff = STORAGE_Inquirydata_FS;
 	}
 

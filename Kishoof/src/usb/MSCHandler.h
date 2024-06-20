@@ -193,8 +193,8 @@ private:
 	};
 
 	// USB Mass storage Standard Inquiry Data (See p144 of SPC-3)
-	constexpr static uint8_t STORAGE_Inquirydata_FS[] = {
-			0x00,							// Peripheral qualifier and device type (0 = Direct access block device)
+	uint8_t STORAGE_Inquirydata_FS[36] = {
+			0x00,							// Peripheral qualifier and device type (0 = Direct access block device) [set to 0x3F to disable device]
 			0x80,							// RMB (Removable media bit) 1= media removable
 			0x02,							// Version (2 = obsolete??)
 			0x02,							// RESPONSE DATA FORMAT
