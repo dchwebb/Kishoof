@@ -37,16 +37,29 @@ private:
 	uint32_t WavetablePicker(int32_t upDown);
 	void DrawWaveTable();
 
+	// Variables to handle info display changes
 	uint32_t oldWavetable = 0xFFFFFFFF;
 	uint32_t activeWaveTable = 0;
-	uint32_t fileinfoStart = 0;		// Timer to allow file info to be temporarily displayed on opening new wavetable
-	bool fileinfo = false;			// Set to true to tell draw routine show/clear file info
-	bool pickerDir = false;			// True if picker is currently selecting a directory
+	bool pickerDir = false;					// True if picker is currently selecting a directory
 
-	bool oldWarpBtn = false;
+	uint32_t fileinfoStart = 0;				// Timer to allow file info to be temporarily displayed on opening new wavetable
+	enum class TimedInfo {none, showFileInfo, clearFileInfo};
+	TimedInfo timedInfo = TimedInfo::none;	// Temporary info about files
+
+	uint32_t oldWarpType = 0xFFFFFFFF;
+	bool oldWarpBtn = false;				// Shows if channel B is reversed
 
 	char charBuff[100];
 	bool activeDrawBuffer = true;
+
+	// text drawing positions for upper/wide (wavetable name) and lower/narrow (warp type/file info) text
+	static constexpr uint32_t narrowTextLeft = 80;
+	static constexpr uint32_t narrowTextWidth = LCD::width - (2 * narrowTextLeft);			// Allows for 7 chars wide
+	static constexpr uint32_t lowerTextTop = 192;
+	static constexpr uint32_t wideTextLeft = 54;
+	static constexpr uint32_t wideTextWidth = LCD::width - (2 * wideTextLeft);			// Allows for 12 chars wide
+	static constexpr uint32_t uppertextTop = 35;
+
 
 	// Struct to manage buttons with debounce and GPIO management
 	struct Btn {

@@ -12,43 +12,31 @@ void UI::DrawWaveTable()
 	// Populate a frame buffer to display the wavetable values (full screen refresh)
 	debugPin2.SetHigh();			// Debug
 
-	if (fileinfo || (fileinfoStart > 0 && SysTickVal > fileinfoStart + 3000)) {
-		constexpr uint32_t textLeft = 54;
-		constexpr uint32_t textWidth = LCD::width - (2 * textLeft);			// Allows for 12 chars wide
-		constexpr uint32_t textTop = 192;
+	if (timedInfo == TimedInfo::showFileInfo) {
+		timedInfo = TimedInfo::none;
 
-		if (fileinfo) {			// Display file info
-			fileinfo = false;
+		snprintf(charBuff, 13, "Frames %d", wavetable.wavList[activeWaveTable].tableCount);
 
-			char buff[11];
-			snprintf(buff, 11, "Frames %d", wavetable.wavList[activeWaveTable].tableCount);
+		lcd.DrawStringMemCenter(0, 0, wideTextWidth, lcd.drawBuffer[activeDrawBuffer], charBuff, &lcd.Font_Large, RGBColour::LightGrey, RGBColour::Black);
+		lcd.PatternFill(wideTextLeft, lowerTextTop, wideTextLeft - 1 + wideTextWidth, lowerTextTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
-			lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], buff, &lcd.Font_Large, RGBColour::LightGrey, RGBColour::Black);
-			lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
+	} else if (timedInfo == TimedInfo::clearFileInfo) {
+		oldWarpType = 0xFFFFFFFF;								// Force redraw of warp type
+		oldWarpBtn = !oldWarpBtn;								// Force redraw of channel B reverse
+		timedInfo = TimedInfo::none;
 
-		} else {
-			wavetable.oldWarpType = WaveTable::Warp::count;			// Force redraw
-			oldWarpBtn = !oldWarpBtn;
-			fileinfoStart = 0;
+		// Will just blank the screen
+		lcd.PatternFill(wideTextLeft, lowerTextTop, wideTextLeft - 1 + wideTextWidth, lowerTextTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
-			// Will just blank the screen
-			lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
-		}
-
-	} else if (wavetable.warpType != wavetable.oldWarpType) {
-		wavetable.oldWarpType = wavetable.warpType;
+	} else if ((uint32_t)wavetable.warpType != oldWarpType) {
+		oldWarpType = (uint32_t)wavetable.warpType;
 		std::string_view s = wavetable.warpNames[(uint8_t)wavetable.warpType];
 
-		constexpr uint32_t textLeft = 80;
-		constexpr uint32_t textWidth = LCD::width - (2 * textLeft);			// Allows for 12 chars wide
-		constexpr uint32_t textTop = 192;
-		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, wavetable.warpType == WaveTable::Warp::none ? RGBColour::Grey : RGBColour::White, RGBColour::Black);
-		lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
+		lcd.DrawStringMemCenter(0, 0, narrowTextWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, wavetable.warpType == WaveTable::Warp::none ? RGBColour::Grey : RGBColour::White, RGBColour::Black);
+		lcd.PatternFill(narrowTextLeft, lowerTextTop, narrowTextLeft - 1 + narrowTextWidth, lowerTextTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
 	} else if (activeWaveTable != oldWavetable) {
 		oldWavetable = activeWaveTable;
-		fileinfoStart = SysTickVal;											// Store time opened to display file info
-		fileinfo = true;
 
 		std::string_view s;
 		if (wavetable.wavList[activeWaveTable].lfn[0]) {
@@ -58,13 +46,9 @@ void UI::DrawWaveTable()
 			s = std::string_view(wavetable.wavList[activeWaveTable].name, std::min(8UL, space));		// Replace spaces with 0 for length finding
 		}
 
-		constexpr uint32_t textLeft = 54;
-		constexpr uint32_t textWidth = LCD::width - (2 * textLeft);			// Allows for 12 chars wide
-		constexpr uint32_t textTop = 35;
 		const uint16_t colour = pickerDir ? RGBColour::Yellow : wavetable.wavList[activeWaveTable].valid ? RGBColour::White : RGBColour::Grey;
-		lcd.DrawStringMemCenter(0, 0, textWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, colour, RGBColour::Black);
-		lcd.PatternFill(textLeft, textTop, textLeft - 1 + textWidth, textTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
-
+		lcd.DrawStringMemCenter(0, 0, wideTextWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, colour, RGBColour::Black);
+		lcd.PatternFill(wideTextLeft, uppertextTop, wideTextLeft - 1 + wideTextWidth, uppertextTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
 
 	} else if (wavetable.cfg.warpButton != oldWarpBtn) {
@@ -97,11 +81,9 @@ void UI::DrawWaveTable()
 			const uint32_t warpPos = waveDrawWidth * ((float)wavetable.warpAmt * (1.0f / 65535.0f));
 			const uint32_t bottomLine = (waveDrawHeight - 1) * waveDrawWidth;		// Pixel order is across then down
 			const RGBColour drawColour = (channel == 0) ? RGBColour::LightBlue : RGBColour::Orange;
-			//const RGBColour darkColour = drawColour.DarkenColour(30);
 
 			// Draw gradient lines representing the quantised wavetable position and warp amount
 			for (uint8_t i = 0; i < wavetablePos; ++i) {
-				//lcd.drawBuffer[activeDrawBuffer][i] = RGBColour::InterpolateColour(darkColour, drawColour, (float)i / wavetablePos).colour;
 				lcd.drawBuffer[activeDrawBuffer][i] = RGBColour::InterpolateColour(RGBColour::Black, drawColour, (float)i / wavetablePos).colour;
 			}
 			for (uint8_t i = 0; i < warpPos; ++i) {
@@ -178,6 +160,12 @@ void UI::Update()
 		WavetablePicker(v);
 
 		TIM8->CNT -= TIM8->CNT > 32000 ? 4 : -4;
+
+		// If selected wavetable has changed, show frame count etc
+		if (!pickerDir) {
+			fileinfoStart = SysTickVal;											// Store time opened to display file info
+			timedInfo = TimedInfo::showFileInfo;
+		}
 	}
 
 	if (buttons.encoder.Pressed()) {
@@ -207,6 +195,16 @@ void UI::Update()
 
 	if (buttons.warp.Pressed()) {
 		wavetable.WarpButton(true);
+	}
+
+	// Clear timed file info data after 3 seconds or if warp type is changed
+	if (fileinfoStart > 0 &&
+			(SysTickVal > fileinfoStart + 3000 ||
+			(uint32_t)wavetable.warpType != oldWarpType ||
+			wavetable.cfg.warpButton != oldWarpBtn ||
+			pickerDir)) {
+		timedInfo = TimedInfo::clearFileInfo;
+		fileinfoStart = 0;
 	}
 
 	if (!(SPI_DMA_Working)) {

@@ -113,7 +113,6 @@ private:
 
 	bool stepped = false;						// Store Stepped/Smooth switch position
 	int32_t warpTypeVal = 0;					// Used for setting hysteresis on warp type
-	Warp oldWarpType = Warp::count;				// To tell UI when screen update is needed
 	float warpAmt = 0.0f;						// Used for smoothing control values
 
 	char longFileName[100];						// Holds long file name as it is made from multiple fat entries

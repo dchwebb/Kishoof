@@ -104,7 +104,9 @@ void WaveTable::CalcSample()
 float WaveTable::QuantisedWavetablePos(uint8_t chn)
 {
 	// For drawing wavetable position: return quantised x position of current wavetable
-	if (chn == 1 && !stepped) {
+	if (!stepped) {
+		return wavetablePos[chn].pos;
+	} else if (chn == 1) {
 		return std::round(wavetablePos[chn].pos * harmonicSets) / (float)harmonicSets;
 	} else {
 		return std::round(wavetablePos[chn].pos * wavList[activeWaveTable].tableCount) / (float)wavList[activeWaveTable].tableCount;
