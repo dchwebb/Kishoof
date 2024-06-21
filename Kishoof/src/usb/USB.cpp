@@ -30,7 +30,7 @@ void USB::EP0In(const uint8_t* buff, const uint32_t size)
 }
 
 
-void USB::InterruptHandler()					// In Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_pcd.c
+void USB::InterruptHandler()					// In Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_pcd.c
 {
 	uint32_t epnum, ep_intr, epint;
 
@@ -273,10 +273,12 @@ void USB::InterruptHandler()					// In Drivers\STM32F4xx_HAL_Driver\Src\stm32f4x
 	if (ReadInterrupts(USB_OTG_GINTSTS_USBRST))	{
 		USBx_DEVICE->DCTL &= ~USB_OTG_DCTL_RWUSIG;
 
-		// Flush Tx Fifo
-		while ((USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0U);
-		USB_OTG_HS->GRSTCTL = (USB_OTG_GRSTCTL_TXFFLSH | (0x10 << 6));
-		while ((USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_TXFFLSH) == USB_OTG_GRSTCTL_TXFFLSH);
+		volatile uint32_t count = 0;
+		while (count++ < 0xF000000 && (USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0);		// Wait for AHB master IDLE state.
+
+		count = 0;
+		USB_OTG_HS->GRSTCTL = (USB_OTG_GRSTCTL_TXFFLSH | (0x10 << USB_OTG_GRSTCTL_TXFNUM_Pos));			// Flush all TX Fifos
+		while (count++ < 0xF000000 && (USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_TXFFLSH) == USB_OTG_GRSTCTL_TXFFLSH);
 
 		for (int i = 0; i < 6; i++) {				// FIXME - 6 is number of endpoints (in/out pairs)
 			USBx_INEP(i)->DIEPINT = 0xFB7FU;		// see p1177 for explanation: based on datasheet should be more like 0b10100100111011

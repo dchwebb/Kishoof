@@ -393,7 +393,7 @@ bool WaveTable::GetWavInfo(Wav& wav)
 	// Follow cluster chain and store last cluster if not contiguous to tell playback engine when to do a fresh address lookup
 	uint32_t cluster = wav.cluster;
 	wav.lastCluster = 0xFFFFFFFF;
-	while (fatTools.clusterChain[cluster] != 0xFFFF) {
+	while (fatTools.clusterChain[cluster] != 0xFFFF && fatTools.clusterChain[cluster] != 0) {
 		if (fatTools.clusterChain[cluster] != cluster + 1 && wav.lastCluster == 0xFFFFFFFF) {		// Store cluster at first discontinuity of chain
 			wav.lastCluster = cluster;
 		}
