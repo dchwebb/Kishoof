@@ -118,15 +118,16 @@ void FatTools::CheckCache()
 	// If dirty buffers and sufficient time has elapsed since cache updated flush the cache to Flash
 	if ((dirtyCacheBlocks || writeCacheDirty) && cacheUpdated > 0 && ((int32_t)SysTickVal - (int32_t)cacheUpdated) > 100)	{
 
-		// Update the sample list to check if any meaningful data has changed (ignores Windows disk spam, assuming this occurs in the header cache)
-		if (dirtyCacheBlocks) {
+		const bool refreshWavetable = dirtyCacheBlocks;
+
+		usb.PauseEndpoint(usb.msc);				// Sends NAKs from the msc endpoint whilst the Flash device is unavailable
+		FlushCache();
+		// Update the sample list
+		if (refreshWavetable) {
 			flushCacheBusy = true;				// To block wavetable output whilst list is changed
 			wavetable.UpdateWavetableList();
 			flushCacheBusy = false;
 		}
-
-		usb.PauseEndpoint(usb.msc);				// Sends NAKs from the msc endpoint whilst the Flash device is unavailable
-		FlushCache();
 		usb.ResumeEndpoint(usb.msc);
 		cacheUpdated = 0;
 	}
@@ -295,6 +296,7 @@ void FatTools::PrintFatInfo()
 			fatSectorSize * fatFs.dirbase,
 			fatSectorSize * fatFs.database);
 }
+
 
 std::string FatTools::FileDate(const uint16_t date)
 {

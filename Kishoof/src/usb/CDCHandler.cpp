@@ -69,6 +69,7 @@ void CDCHandler::ProcessCommand()
 				"add:XXXXXXXX   Channel B additive waves. Type 'help add' for details\r\n"
 				"dispmark:X  -  CV markers in display. N - none, L - line, P - pointer\r\n"
 				"clearconfig -  Erase configuration and restart\r\n"
+				"saveconfig  -  Immediately save config\r\n"
 				"\r\n"
 				"Flash Tools:\r\n"
 				"------------\r\n"
@@ -122,13 +123,11 @@ void CDCHandler::ProcessCommand()
 		calib.Calibrate('s');
 
 	} else if (cmd.compare("wavetables") == 0) {				// Prints wavetable list
-		uint32_t pos = 0;
-
-		printf("Num Name       Bytes    Data Bits Channels Valid Address    Metadata Frames\r\n");
+		printf("Num Name       Bytes    Data Bits Channels Valid Address    Metadata Frames Frag\r\n");
 
 		for (uint32_t i = 0; i < wavetable.wavetableCount; ++i) {
-			printf("%3lu %.8s %7lu %7lu %3u%1s %8u %s     %p %08lu %3d \r\n",
-					pos,
+			printf("%3lu %8.8s %7lu %7lu %3u%1s %8u %s     %10p %08lu %6d %s \r\n",
+					i,
 					wavetable.wavList[i].name,
 					wavetable.wavList[i].size,
 					wavetable.wavList[i].dataSize,
@@ -138,7 +137,8 @@ void CDCHandler::ProcessCommand()
 					wavetable.wavList[i].valid ? "Y" : " ",
 					wavetable.wavList[i].startAddr,
 					wavetable.wavList[i].metadata,
-					wavetable.wavList[i].tableCount
+					wavetable.wavList[i].tableCount,
+					wavetable.wavList[i].fragmented ? "Y" : " "
 					);
 		}
 		printf("\r\n");
@@ -148,6 +148,9 @@ void CDCHandler::ProcessCommand()
 		config.EraseConfig();
 		DelayMS(10);
 		Reboot();
+
+	} else if (cmd.compare("saveconfig") == 0) {				// Immediate config save
+		config.SaveConfig(true);
 
 	} else if (cmd.compare(0, 4, "add:") == 0) {				// configure channel B additive waves
 		uint32_t val;

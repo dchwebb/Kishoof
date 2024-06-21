@@ -320,9 +320,26 @@ void WaveTable::Init()
 void WaveTable::ChangeWaveTable(int32_t index)
 {
 	// Called by UI when changing wavetable
+	Wav& wav = wavList[index];
 	activeWaveTable = index;
-	strncpy(cfg.wavetable, wavList[activeWaveTable].name, 8);
+	strncpy(cfg.wavetable, wav.name, 8);
 	crossfade = 1.0f;
+
+	if (wav.fragmented) {
+		fragChain[0].startAddr = wav.startAddr;
+		uint32_t cluster = wav.lastCluster;
+		uint32_t i = 1;
+		while (i < 16 && fatTools.clusterChain[cluster] != 0xFFFF) {
+			if (fatTools.clusterChain[cluster] != cluster + 1) {
+				fragChain[i - 1].endAddr = fatTools.GetClusterAddr(cluster, true);
+				fragChain[i].startAddr = fatTools.GetClusterAddr(fatTools.clusterChain[cluster], true);
+				++i;
+			}
+			cluster = fatTools.clusterChain[cluster];
+		}
+
+	}
+
 	config.ScheduleSave();
 }
 
@@ -396,10 +413,11 @@ bool WaveTable::GetWavInfo(Wav& wav)
 	while (fatTools.clusterChain[cluster] != 0xFFFF && fatTools.clusterChain[cluster] != 0) {
 		if (fatTools.clusterChain[cluster] != cluster + 1 && wav.lastCluster == 0xFFFFFFFF) {		// Store cluster at first discontinuity of chain
 			wav.lastCluster = cluster;
+			wav.fragmented = true;
+			break;
 		}
 		cluster = fatTools.clusterChain[cluster];
 	}
-	wav.endAddr = fatTools.GetClusterAddr(cluster);
 
 	return (wav.sampleType != SampleType::Unsupported && wav.channels == 1 && wav.dataSize < wav.size);
 }

@@ -13382,7 +13382,7 @@
 	)
 	(text "(-5*-47/75) + (cv*-47/82): 0V > 3.13V; 5.46V > 0V\n"
 		(exclude_from_sim no)
-		(at 300.228 132.842 0)
+		(at 337.566 130.81 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -13463,6 +13463,17 @@
 			(justify left bottom)
 		)
 		(uuid "e903be0e-863a-40d7-94ff-c2638b16bf37")
+	)
+	(text "Bipolar: (-5*-47/150) + (cv*-47/150): -5V > 3.13V; 0V > 1.57V; 5V > 0V\n"
+		(exclude_from_sim no)
+		(at 328.676 135.382 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f0cf2de8-cfaf-4162-9901-5b178b3bfde0")
 	)
 	(text "Microcontroller"
 		(exclude_from_sim no)

@@ -72,7 +72,6 @@ private:
 		uint32_t cluster;					// Starting cluster
 		uint32_t lastCluster;				// If file spans multiple clusters store last cluster before jump - if 0xFFFFFFFF then clusters are contiguous
 		const uint8_t* startAddr;			// Address of data section
-		const uint8_t* endAddr;				// End Address of data section
 		union {
 			uint32_t dataSize;				// Size of data section in bytes
 			uint32_t firstWav;				// For directories holds the index of the first file
@@ -86,7 +85,14 @@ private:
 		SampleType sampleType;
 		bool valid;							// false if header cannot be processed
 		bool isDir;
+		bool fragmented;
 	} wavList[maxWavetable];
+
+	// In case file is fragmented store cluster chain on loading
+	struct clusterList {
+		const uint8_t* startAddr;			// Address of data section
+		const uint8_t* endAddr;				// End Address of data section
+	} fragChain[16];
 
 
 	void OutputSample(uint8_t channel, float ratio);
