@@ -63,6 +63,8 @@ private:
 	static constexpr size_t lfnSize = 12;							// Widest string that can be displayed
 	static constexpr float scaleOutput = -std::pow(2.0f, 31.0f);	// Multiple to convert -1.0 - 1.0 float to 32 bit int and invert
 	static constexpr float scaleVCAOutput = scaleOutput / 65536.0f;	// To scale when VCA is used
+	enum Invalid : uint8_t {OK = 0, Fragmented, HeaderCorrupt, SampleFormat, ChannelCount, EmptyFolder, End};
+	const char* InvalidText[Invalid::End] {"OK", "Frag", "Corrupt", "Format", "Channels", "Empty"};
 
 	struct Wav {
 		char name[8];
@@ -83,7 +85,7 @@ private:
 		uint16_t tableCount;				// Number of 2048 sample wavetables in file
 		uint32_t metadata;					// Serum metadata
 		SampleType sampleType;
-		bool valid;							// false if header cannot be processed
+		Invalid invalid;					// Code indicating why wav is invalid
 		bool isDir;
 		bool fragmented;
 	} wavList[maxWavetable];
@@ -99,11 +101,11 @@ private:
 	float FastTanh(float x);
 	float CalcWarp();
 	void AdditiveWave();
-	int32_t ParseInt(const std::string_view cmd, const std::string_view precedingChar, const int32_t low, const int32_t high);
-	bool GetWavInfo(Wav& wav);
+	void GetWavInfo(Wav& wav);
 	void ReadDir(FATFileInfo* dirEntry, uint32_t dirIndex);
 	void CleanLFN(char* storeName);
 	static bool WavetableSorter(Wav const& lhs, Wav const& rhs);
+	void FragChain();
 
 	float defaultWavetable[4096];				// Built-in wavetable
 	float outputSamples[2] = {0.0f, 0.0f};		// Preprepared samples sent to DAC on interrupt

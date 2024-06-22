@@ -46,7 +46,7 @@ void UI::DrawWaveTable()
 			s = std::string_view(wavetable.wavList[activeWaveTable].name, std::min(8UL, space));		// Replace spaces with 0 for length finding
 		}
 
-		const uint16_t colour = pickerDir ? RGBColour::Yellow : wavetable.wavList[activeWaveTable].valid ? RGBColour::White : RGBColour::Grey;
+		const uint16_t colour = pickerDir ? RGBColour::Yellow : wavetable.wavList[activeWaveTable].invalid ? RGBColour::Grey : RGBColour::White;
 		lcd.DrawStringMemCenter(0, 0, wideTextWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, colour, RGBColour::Black);
 		lcd.PatternFill(wideTextLeft, uppertextTop, wideTextLeft - 1 + wideTextWidth, uppertextTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
@@ -178,7 +178,7 @@ uint32_t UI::WavetablePicker(int32_t upDown)
 	if (nextWavetable >= 0 && nextWavetable < (int32_t)wavetable.wavetableCount && nextWT.dir == currentWT.dir) {
 		activeWaveTable = nextWavetable;
 		pickerDir = nextWT.isDir;
-		if (!pickerDir && nextWT.valid) {
+		if (!pickerDir && !nextWT.invalid) {
 			wavetable.ChangeWaveTable(nextWavetable);
 		}
 	}

@@ -123,10 +123,10 @@ void CDCHandler::ProcessCommand()
 		calib.Calibrate('s');
 
 	} else if (cmd.compare("wavetables") == 0) {				// Prints wavetable list
-		printf("Num Name       Bytes    Data Bits Channels Valid Address    Metadata Frames Frag\r\n");
+		printf("Num Name       Bytes    Data Bits Channels Invalid Address    Metadata Frames\r\n");
 
 		for (uint32_t i = 0; i < wavetable.wavetableCount; ++i) {
-			printf("%3lu %8.8s %7lu %7lu %3u%1s %8u %s     %10p %08lu %6d %s \r\n",
+			printf("%3lu %8.8s %7lu %7lu %3u%1s %8u %9s %10p %08lu %6d\r\n",
 					i,
 					wavetable.wavList[i].name,
 					wavetable.wavList[i].size,
@@ -134,11 +134,10 @@ void CDCHandler::ProcessCommand()
 					wavetable.wavList[i].byteDepth * 8,
 					wavetable.wavList[i].dataFormat == 3 ? "f" : " ",	// floating point format
 					wavetable.wavList[i].channels,
-					wavetable.wavList[i].valid ? "Y" : " ",
+					wavetable.InvalidText[wavetable.wavList[i].invalid],
 					wavetable.wavList[i].startAddr,
 					wavetable.wavList[i].metadata,
-					wavetable.wavList[i].tableCount,
-					wavetable.wavList[i].fragmented ? "Y" : " "
+					wavetable.wavList[i].tableCount
 					);
 		}
 		printf("\r\n");
