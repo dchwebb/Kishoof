@@ -73,7 +73,7 @@ private:
 	static constexpr std::string_view USBD_CDC_STRING = "Mountjoy Kishoof Serial";
 	static constexpr std::string_view USBD_MIDI_STRING	= "Mountjoy Kishoof MIDI";
 	static constexpr uint8_t usbSerialNoSize = 24;
-
+	static constexpr uint32_t usbTimeout = 0xF000000;
 
 	void ActivateEndpoint(uint8_t endpoint, const Direction direction, const EndPointType eptype);
 	void DeactivateEndpoint(uint8_t endpoint, const Direction direction);

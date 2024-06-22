@@ -19,8 +19,6 @@ extern bool vcaConnected;			// Temporary hack as current hardware does not have 
 
 void WaveTable::CalcSample()
 {
-	debugPin1.SetHigh();		// Debug
-
 	// If crossfading (when switching warp type) blend from old sample to new sample
 	if (crossfade > 0.0f) {
 		outputSamples[0] = crossfade * oldOutputSamples[0] + (1.0f - crossfade) * outputSamples[0];
@@ -41,8 +39,12 @@ void WaveTable::CalcSample()
 
 	if (fatTools.Busy() && activeWaveTable > 0) {			// If using built-in wavetable don't need flash memory
 		++flashBusy;
+		debugPin1.SetLow();		// Debug
+		debugPin2.SetHigh();			// Debug
 		return;
 	}
+	debugPin1.SetHigh();		// Debug
+	debugPin2.SetLow();			// Debug
 
 
 	// Pitch calculations

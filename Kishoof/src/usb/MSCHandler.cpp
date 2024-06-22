@@ -428,7 +428,6 @@ void MSCHandler::DMATransferDone()
 	SCB_InvalidateDCache_by_Addr((uint32_t*)bot_data, inBuffSize);		// Ensure cache is refreshed after write or erase
 	inBuff = bot_data;
 	ReadReady();
-	fatTools.mdmaBusy = false;
 }
 
 

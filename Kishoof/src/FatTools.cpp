@@ -81,6 +81,7 @@ void FatTools::Read(uint8_t* writeAddress, const uint32_t readSector, const uint
 
 void FatTools::Write(const uint8_t* readBuff, const uint32_t writeSector, const uint32_t sectorCount)
 {
+	writingWait = SysTickVal + writingWaitSet;
 	if (writeSector < fatCacheSectors) {
 		// Update the bit array of dirty blocks [There are 2 x 8 x 512 byte sectors in a block (8192)]
 		dirtyCacheBlocks |= (1 << (writeSector / fatEraseSectors));
@@ -118,18 +119,21 @@ void FatTools::CheckCache()
 	// If dirty buffers and sufficient time has elapsed since cache updated flush the cache to Flash
 	if ((dirtyCacheBlocks || writeCacheDirty) && cacheUpdated > 0 && ((int32_t)SysTickVal - (int32_t)cacheUpdated) > 100)	{
 
-		const bool refreshWavetable = dirtyCacheBlocks;
+		if (dirtyCacheBlocks) {
+			updateWavetables = true;			// Will trigger a wavetable update when writes have finished
+		}
 
 		usb.PauseEndpoint(usb.msc);				// Sends NAKs from the msc endpoint whilst the Flash device is unavailable
 		FlushCache();
-		// Update the sample list
-		if (refreshWavetable) {
-			flushCacheBusy = true;				// To block wavetable output whilst list is changed
-			wavetable.UpdateWavetableList();
-			flushCacheBusy = false;
-		}
 		usb.ResumeEndpoint(usb.msc);
 		cacheUpdated = 0;
+	}
+
+	if (!Busy() && updateWavetables) {
+		updateWavetables = false;
+		flushCacheBusy = true;				// To block wavetable output whilst list is changed
+		wavetable.UpdateWavetableList();
+		flushCacheBusy = false;
 	}
 }
 
@@ -189,15 +193,6 @@ const uint8_t* FatTools::GetSectorAddr(const uint32_t sector, const uint8_t* buf
 	} else {
 		const uint8_t* sectorAddress = flashAddress + (sector * fatSectorSize);
 		return sectorAddress;
-		/*
-		if (buffer == nullptr) {
-			return sectorAddress;
-		} else {
-			mdmaBusy = true;
-			MDMATransfer(MDMA_Channel1, sectorAddress, buffer, bufferSize);
-			return nullptr;
-		}
-		*/
 	}
 }
 
@@ -234,7 +229,7 @@ void FatTools::PrintDirInfo(const uint32_t cluster)
 		} else {
 			printf("%c %s %8i %7lu %10s %10s %-14s",
 					(cluster == 0 ? ' ' : '>'),
-					(fatInfo->name[0] == 0xE5 ? "*Del*" : GetAttributes(fatInfo).c_str()),
+					(fatInfo->name[0] == FATFileInfo::fileDeleted ? "*Del*" : GetAttributes(fatInfo).c_str()),
 					fatInfo->firstClusterLow,
 					fatInfo->fileSize,
 					FileDate(fatInfo->createDate).c_str(),
@@ -249,7 +244,7 @@ void FatTools::PrintDirInfo(const uint32_t cluster)
 				uint32_t cluster = fatInfo->firstClusterLow;
 				printf("%lu", cluster);
 
-				while (clusterChain[cluster] != 0xFFFF) {
+				while (clusterChain[cluster] != 0xFFFF && clusterChain[cluster] != 0) {
 					if (clusterChain[cluster] == cluster + 1) {
 						if (!seq) {
 							printf("-");
@@ -269,7 +264,7 @@ void FatTools::PrintDirInfo(const uint32_t cluster)
 		}
 
 		// Recursively call function to print sub directory details (ignoring directories '.' and '..' which hold current and parent directory clusters
-		if ((fatInfo->attr & AM_DIR) && (fatInfo->name[0] != '.') && (fatInfo->firstClusterLow < fatMaxCluster)) {
+		if ((fatInfo->attr & AM_DIR) && (fatInfo->name[0] != '.') && (fatInfo->name[0] != FATFileInfo::fileDeleted) && (fatInfo->firstClusterLow < fatMaxCluster)) {
 			PrintDirInfo(fatInfo->firstClusterLow);
 		}
 		fatInfo++;

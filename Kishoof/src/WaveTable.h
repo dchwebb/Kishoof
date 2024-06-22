@@ -64,7 +64,7 @@ private:
 	static constexpr float scaleOutput = -std::pow(2.0f, 31.0f);	// Multiple to convert -1.0 - 1.0 float to 32 bit int and invert
 	static constexpr float scaleVCAOutput = scaleOutput / 65536.0f;	// To scale when VCA is used
 	enum Invalid : uint8_t {OK = 0, Fragmented, HeaderCorrupt, SampleFormat, ChannelCount, EmptyFolder, End};
-	const char* InvalidText[Invalid::End] {"OK", "Frag", "Corrupt", "Format", "Channels", "Empty"};
+	const char* InvalidText[Invalid::End] {"OK", "Fragged", "Corrupt", "Format", "Channels", "Empty"};
 
 	struct Wav {
 		char name[8];

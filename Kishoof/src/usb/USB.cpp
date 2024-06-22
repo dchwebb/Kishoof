@@ -274,11 +274,11 @@ void USB::InterruptHandler()					// In Drivers\STM32H7xx_HAL_Driver\Src\stm32h7x
 		USBx_DEVICE->DCTL &= ~USB_OTG_DCTL_RWUSIG;
 
 		volatile uint32_t count = 0;
-		while (count++ < 0xF000000 && (USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0);		// Wait for AHB master IDLE state.
+		while (count++ < usbTimeout && (USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0);		// Wait for AHB master IDLE state.
 
 		count = 0;
 		USB_OTG_HS->GRSTCTL = (USB_OTG_GRSTCTL_TXFFLSH | (0x10 << USB_OTG_GRSTCTL_TXFNUM_Pos));			// Flush all TX Fifos
-		while (count++ < 0xF000000 && (USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_TXFFLSH) == USB_OTG_GRSTCTL_TXFFLSH);
+		while (count++ < usbTimeout && (USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_TXFFLSH) == USB_OTG_GRSTCTL_TXFFLSH);
 
 		for (int i = 0; i < 6; i++) {				// FIXME - 6 is number of endpoints (in/out pairs)
 			USBx_INEP(i)->DIEPINT = 0xFB7FU;		// see p1177 for explanation: based on datasheet should be more like 0b10100100111011
@@ -360,12 +360,13 @@ void USB::InterruptHandler()					// In Drivers\STM32H7xx_HAL_Driver\Src\stm32h7x
 }
 
 
-
 void USB::Init(bool softReset)
 {
+	volatile uint32_t count = 0;
+
 	if (!softReset) {
 		RCC->CR |= RCC_CR_HSI48ON;						// Enable Internal High Speed oscillator for USB
-		while ((RCC->CR & RCC_CR_HSI48RDY) == 0);		// Wait till internal USB oscillator is ready
+		while (count++ < usbTimeout && (RCC->CR & RCC_CR_HSI48RDY) == 0);		// Wait till internal USB oscillator is ready
 		RCC->CDCCIP2R |= RCC_CDCCIP2R_USBSEL;			// Set the USB CLock MUX to RC48
 		PWR->CR3 |= PWR_CR3_USB33DEN;					// Enable VDD33USB supply level detector
 
@@ -383,13 +384,17 @@ void USB::Init(bool softReset)
 	USB_OTG_HS->GUSBCFG |= USB_OTG_GUSBCFG_PHYSEL;		// Select FS Embedded PHY
 
 	// Reset the core (needed after clock change) - NB removed delays
-	while ((USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0);
+	count = 0;
+	while (count++ < 0xF000000 && (USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0);		// Wait for AHB master IDLE state.
 	USB_OTG_HS->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
-	while ((USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_CSRST) == USB_OTG_GRSTCTL_CSRST);
+	count = 0;
+	while (count++ < 0xF000000 && ((USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_CSRST) == USB_OTG_GRSTCTL_CSRST));
 
 	USB_OTG_HS->GCCFG |= USB_OTG_GCCFG_PWRDWN;			// Activate the transceiver in transmission/reception. When reset, the transceiver is kept in power-down. 0 = USB FS transceiver disabled; 1 = USB FS transceiver enabled
 	USB_OTG_HS->GUSBCFG |= USB_OTG_GUSBCFG_FDMOD;		// Force USB device mode
-	while (USB_OTG_HS->GINTSTS & USB_OTG_GINTSTS_CMOD);	// CMOD = 0 is device mode
+
+	count = 0;
+	while (count++ < 0xF000000 && (USB_OTG_HS->GINTSTS & USB_OTG_GINTSTS_CMOD));	// CMOD = 0 is device mode
 
 	// Clear all transmit FIFO address and data lengths - these will be set to correct values below for endpoints 0,1 and 2
 	for (uint8_t i = 0; i < 15; ++i) {
@@ -403,10 +408,12 @@ void USB::Init(bool softReset)
 
 	USB_OTG_HS->GRSTCTL |= USB_OTG_GRSTCTL_TXFNUM_4;	// Select buffers to flush. 10000: Flush all the transmit FIFOs in device or host mode
 	USB_OTG_HS->GRSTCTL |= USB_OTG_GRSTCTL_TXFFLSH;		// Flush the TX buffers
-	while ((USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_TXFFLSH) == USB_OTG_GRSTCTL_TXFFLSH);
+	count = 0;
+	while (count++ < 0xF000000 && ((USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_TXFFLSH) == USB_OTG_GRSTCTL_TXFFLSH));
 
 	USB_OTG_HS->GRSTCTL = USB_OTG_GRSTCTL_RXFFLSH;		// Flush the RX buffers
-	while ((USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_RXFFLSH) == USB_OTG_GRSTCTL_RXFFLSH);
+	count = 0;
+	while (count++ < 0xF000000 && ((USB_OTG_HS->GRSTCTL & USB_OTG_GRSTCTL_RXFFLSH) == USB_OTG_GRSTCTL_RXFFLSH));
 
 	// Clear all pending Device Interrupts
 	USBx_DEVICE->DIEPMSK = 0U;

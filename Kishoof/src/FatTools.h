@@ -70,10 +70,11 @@ class FatTools
 {
 	friend class CDCHandler;
 public:
-	bool mdmaBusy = false;
 	bool flushCacheBusy = false;
 	bool writeBusy = false;
-
+	static constexpr uint32_t writingWaitSet = 30;		// Default to 30 ms
+	uint32_t writingWait = 0;			// Time to block sample output since a write last reported
+	bool updateWavetables = false;		// Set during write so that updates to wavetables can be batched
 
 	bool noFileSystem = true;
 	uint16_t* clusterChain;				// Pointer to beginning of cluster chain (AKA FAT)
@@ -91,7 +92,7 @@ public:
 	uint8_t FlushCache();
 	void InvalidateFatFSCache();
 	bool Format();
-	bool Busy() { return mdmaBusy | flushCacheBusy | writeBusy; }
+	bool Busy() { return flushCacheBusy | writeBusy | (writingWait > SysTickVal); }
 private:
 	FATFS fatFs;						// File system object for RAM disk logical drive
 	const char fatPath[4] = "0:/";		// Logical drive path for FAT File system

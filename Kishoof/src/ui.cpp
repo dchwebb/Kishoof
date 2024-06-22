@@ -9,15 +9,25 @@ uint32_t blankData;			// Used to transfer zeros into frame buffer by MDMA
 
 void UI::DrawWaveTable()
 {
+	if (fatTools.Busy()) {
+		return;
+	}
+
 	// Populate a frame buffer to display the wavetable values (full screen refresh)
-	debugPin2.SetHigh();			// Debug
+	//debugPin2.SetHigh();			// Debug
 
 	if (timedInfo == TimedInfo::showFileInfo) {
 		timedInfo = TimedInfo::none;
 
-		snprintf(charBuff, 13, "Frames %d", wavetable.wavList[activeWaveTable].tableCount);
+		const char* buff;
+		if (wavetable.wavList[activeWaveTable].invalid) {
+			buff = wavetable.InvalidText[wavetable.wavList[activeWaveTable].invalid];
+		} else {
+			snprintf(charBuff, 13, "Frames %d", wavetable.wavList[activeWaveTable].tableCount);
+			buff = charBuff;
+		}
 
-		lcd.DrawStringMemCenter(0, 0, wideTextWidth, lcd.drawBuffer[activeDrawBuffer], charBuff, &lcd.Font_Large, RGBColour::LightGrey, RGBColour::Black);
+		lcd.DrawStringMemCenter(0, 0, wideTextWidth, lcd.drawBuffer[activeDrawBuffer], buff, &lcd.Font_Large, RGBColour::LightGrey, RGBColour::Black);
 		lcd.PatternFill(wideTextLeft, lowerTextTop, wideTextLeft - 1 + wideTextWidth, lowerTextTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
 	} else if (timedInfo == TimedInfo::clearFileInfo) {
@@ -46,7 +56,7 @@ void UI::DrawWaveTable()
 			s = std::string_view(wavetable.wavList[activeWaveTable].name, std::min(8UL, space));		// Replace spaces with 0 for length finding
 		}
 
-		const uint16_t colour = pickerDir ? RGBColour::Yellow : wavetable.wavList[activeWaveTable].invalid ? RGBColour::Grey : RGBColour::White;
+		const uint16_t colour = pickerDir ? RGBColour::Yellow : wavetable.wavList[activeWaveTable].invalid ? RGBColour::LightGrey : RGBColour::White;
 		lcd.DrawStringMemCenter(0, 0, wideTextWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, colour, RGBColour::Black);
 		lcd.PatternFill(wideTextLeft, uppertextTop, wideTextLeft - 1 + wideTextWidth, uppertextTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
@@ -120,7 +130,7 @@ void UI::DrawWaveTable()
 	bufferClear = false;
 
 
-	debugPin2.SetLow();			// Debug off
+	//debugPin2.SetLow();			// Debug off
 
 }
 
