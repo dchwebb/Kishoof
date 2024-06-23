@@ -18,9 +18,12 @@ Blocks    Bytes			Description
 0           0 -   511	Boot Sector (AKA Reserved): 1 sector
 0-7       512 - 32767	FAT (holds cluster linked list): 123 sectors - 31250 entries each 16 bit
 8       32768 - 36863	Root Directory: 8 sectors - 128 root directory entries at 32 bytes each (32 * 128 = 4096)
-5-      36864 - 		Data section: 7803 clusters = 31,212 sectors
+9       36864 - 40959	Cluster 2 - contains 'System Volume Information' directory
+10      40960 - 45055	Cluster 3 - contains 'IndexerVolume' file
+11      45056 - 49151	Cluster 4 - contains 'WPSettings.dat' file
+12..    49152 - 		Cluster 5 etc contains sample data
+.. Data section: 7803 clusters = 31,212 sectors
 
-Cluster 2: 20480, Cluster 3: 22528, Cluster 4: 24576, Cluster 5: 26624, Cluster 6: 28672
 */
 
 static constexpr uint32_t fatSectorSize = 512;										// Sector size used by FAT
@@ -28,7 +31,7 @@ static constexpr uint32_t fatSectorCount = 125000;									// 125000 sectors of 
 static constexpr uint32_t fatClusterSize = 4096;									// Cluster size used by FAT (ie block size in data section)
 static constexpr uint32_t fatMaxCluster = (fatSectorSize * fatSectorCount) / fatClusterSize;		// Store largest cluster number
 static constexpr uint32_t fatEraseSectors = 8;										// Number of sectors in an erase block (4096 bytes per device)
-static constexpr uint32_t fatCacheSectors = 128;									// 72 in Header + extra for testing NB - must be divisible by 16 (fatEraseSectors)
+static constexpr uint32_t fatCacheSectors = 128;									// 72 in Header + extra for testing NB - must be divisible by 8 (fatEraseSectors)
 
 extern uint8_t headerCacheDebug[fatSectorSize * fatCacheSectors];
 
@@ -100,7 +103,7 @@ private:
 	// Create cache for header part of FAT [Header consists of 1 sector boot sector; 31 sectors FAT; 8 sectors Root Directory + extra]
 	uint32_t cacheUpdated = 0;			// Store the systick time the cache was last updated so separate timer can periodically clean up cache
 	uint8_t headerCache[fatSectorSize * fatCacheSectors];	// Cache for storing the header section of the Flash FAT drive
-	uint64_t dirtyCacheBlocks = 0;		// Bit array containing dirty blocks in header cache
+	uint64_t dirtyCacheBlocks = 0;		// Bit array containing dirty blocks in header cache (block = erasesector)
 
 	// Initialise Write Cache - this is used to cache write data into blocks for safe erasing when overwriting existing data
 	uint8_t writeBlockCache[fatSectorSize * fatEraseSectors];

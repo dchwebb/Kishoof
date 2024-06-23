@@ -4,7 +4,6 @@
 #include "WaveTable.h"
 
 FatTools fatTools;
-//uint8_t __attribute__((section (".ram_d1_data"))) headerCacheDebug[fatSectorSize * fatCacheSectors];
 
 bool FatTools::InitFatFS()
 {
@@ -35,7 +34,11 @@ bool FatTools::InitFatFS()
 
 bool FatTools::Format()
 {
-	//extFlash.FullErase();
+	// If in safe mode, copy the header data into the cache so the cached writes work correctly
+	if (SafeMode) {
+		printf("Creating header cache ...\r\n");
+		memcpy(headerCache, flashAddress, fatSectorSize * fatCacheSectors);
+	}
 
 	printf("Mounting File System ...\r\n");
 	uint8_t fsWork[fatSectorSize];							// Work buffer for the f_mkfs()
@@ -83,7 +86,7 @@ void FatTools::Write(const uint8_t* readBuff, const uint32_t writeSector, const 
 {
 	writingWait = SysTickVal + writingWaitSet;
 	if (writeSector < fatCacheSectors) {
-		// Update the bit array of dirty blocks [There are 2 x 8 x 512 byte sectors in a block (8192)]
+		// Update the bit array of dirty blocks [There are 8 x 512 = 4096 byte sectors in a block]
 		dirtyCacheBlocks |= (1 << (writeSector / fatEraseSectors));
 
 		uint8_t* writeAddress = &(headerCache[writeSector * fatSectorSize]);
@@ -118,6 +121,13 @@ void FatTools::CheckCache()
 {
 	// If dirty buffers and sufficient time has elapsed since cache updated flush the cache to Flash
 	if ((dirtyCacheBlocks || writeCacheDirty) && cacheUpdated > 0 && ((int32_t)SysTickVal - (int32_t)cacheUpdated) > 100)	{
+
+		// Windows will access index information setting the last accessed time stamp - if this is the only write do not save
+		// A write may set blocks 0, 9, 10, 11: ClnShutBitMask, 'System Volume Information' dir, 'IndexerVolume' file,  'WPSettings.dat' file
+		if (!writeCacheDirty && (dirtyCacheBlocks & ~0b1110'0000'0001) == 0) {
+			cacheUpdated = 0;
+			return;
+		}
 
 		if (dirtyCacheBlocks) {
 			updateWavetables = true;			// Will trigger a wavetable update when writes have finished
