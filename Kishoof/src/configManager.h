@@ -41,7 +41,7 @@ public:
 	void RestoreConfig();				// gets config from Flash, checks and updates settings accordingly
 
 private:
-	static constexpr uint32_t flashAllErrors = FLASH_SR_WRPERR | FLASH_SR_PGSERR | FLASH_SR_STRBERR | FLASH_SR_INCERR | FLASH_SR_RDPERR | FLASH_SR_RDSERR | FLASH_SR_SNECCERR | FLASH_SR_DBECCERR | FLASH_SR_CRCRDERR;
+	static constexpr uint32_t flashAllErrors = FLASH_CCR_CLR_WRPERR | FLASH_CCR_CLR_PGSERR | FLASH_CCR_CLR_STRBERR | FLASH_CCR_CLR_INCERR | FLASH_CCR_CLR_RDPERR | FLASH_CCR_CLR_RDSERR | FLASH_CCR_CLR_SNECCERR | FLASH_CCR_CLR_DBECCERR | FLASH_CCR_CLR_CRCEND | FLASH_CCR_CLR_CRCRDERR;
 
 	const std::vector<ConfigSaver*> configSavers;
 	uint32_t settingsSize = 0;			// Size of all settings from each config saver module + size of config header

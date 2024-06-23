@@ -58,11 +58,12 @@ bool FatTools::Format()
 	printf("Flushing cache ...\r\n");
 	FlushCache();
 
+	SafeMode = false;										// Disable safe mode before mounting file system
 	if (InitFatFS()) {										// Mount FAT file system and initialise directory pointers
 		printf("Successfully formatted drive\r\n");
 		return true;
 	} else {
-		printf("Failed to format drive\r\n");
+		printf("Failed to mount drive\r\n");
 		return false;
 	}
 }

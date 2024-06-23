@@ -33,7 +33,6 @@ static constexpr uint32_t fatMaxCluster = (fatSectorSize * fatSectorCount) / fat
 static constexpr uint32_t fatEraseSectors = 8;										// Number of sectors in an erase block (4096 bytes per device)
 static constexpr uint32_t fatCacheSectors = 128;									// 72 in Header + extra for testing NB - must be divisible by 8 (fatEraseSectors)
 
-extern uint8_t headerCacheDebug[fatSectorSize * fatCacheSectors];
 
 // Struct to hold regular 32 byte directory entries (SFN)
 struct FATFileInfo {
@@ -53,6 +52,7 @@ struct FATFileInfo {
 	uint16_t firstClusterLow;			// Low word of this entry’s first cluster number
 	uint32_t fileSize;					// File size in bytes
 };
+
 
 // Long File Name (LFN) directory entries
 struct FATLongFilename {
@@ -75,7 +75,7 @@ class FatTools
 public:
 	bool flushCacheBusy = false;
 	bool writeBusy = false;
-	static constexpr uint32_t writingWaitSet = 30;		// Default to 30 ms
+	static constexpr uint32_t writingWaitSet = 80;		// Block sample output for at least X ms after a write
 	uint32_t writingWait = 0;			// Time to block sample output since a write last reported
 	bool updateWavetables = false;		// Set during write so that updates to wavetables can be batched
 
@@ -118,23 +118,6 @@ private:
 
 };
 
-
-// Create struct to hold wav file header
-struct WavFile {
-	char id[4];					// 'RIFF'
-	uint32_t chunkSize;			// Size of the entire file in bytes minus 8 bytes
-	char format[4];        		// 'WAVE'
-	char Subchunk1ID[4];   		// 'fmt '
-	uint32_t subChunk1Size;		// Sub chunk 1 size (ie 16) -effectively  header size
-	uint16_t audioFormat;  		// 1 = PCM format
-	uint16_t numChannels;  		// Number of channels = 1
-	uint32_t sampleRate;   		// sample rate
-	uint32_t byteRate;     		// byte rate (ie 1 channels, 8 bit = 1 bytes per sample)
-	uint16_t blockAlign;   		// Block align = 4
-	uint16_t bitsPerSample;		// Bits per sample = 8
-	char subChunk2ID[4];   		// 'data'
-	uint32_t subChunk2Size;		// subchunk 2 = number of bytes in the data. NumSamples * NumChannels * BitsPerSample/8
-};
 
 extern FatTools fatTools;
 

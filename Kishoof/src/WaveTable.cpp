@@ -37,10 +37,10 @@ void WaveTable::CalcSample()
 		SPI2->TXDR = (int32_t)(outputSamples[1] * scaleOutput);
 	}
 
-	if (fatTools.Busy() && activeWaveTable > 0) {			// If using built-in wavetable don't need flash memory
+	if (fatTools.Busy()) {
 		++flashBusy;
 		debugPin1.SetLow();		// Debug
-		debugPin2.SetHigh();			// Debug
+		debugPin2.SetHigh();	// Debug
 		return;
 	}
 	debugPin1.SetHigh();		// Debug

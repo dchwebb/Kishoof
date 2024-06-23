@@ -49,7 +49,7 @@ bool Config::SaveConfig(bool forceSave)
 		}
 
 		FlashUnlock();										// Unlock Flash memory for writing
-		FLASH->SR1 = flashAllErrors;						// Clear error flags in Status Register
+		FLASH->CCR1 = flashAllErrors;						// Clear error flags in Status Register
 		result = FlashProgram(flashPos, reinterpret_cast<uint32_t*>(&configBuffer), settingsSize);
 		FlashLock();										// Lock Flash
 
@@ -63,7 +63,7 @@ bool Config::SaveConfig(bool forceSave)
 	return result;
 }
 
-volatile int susp = 0;
+
 void Config::RestoreConfig()
 {
 	// Initialise sector array - used to manage which sector contains current config, and which sectors are available for writing when current sector full
@@ -82,7 +82,7 @@ void Config::RestoreConfig()
 		// Check if there is a config block at the start of the sector and read the index number if so
 		sectors[i].index = (addr[0] == *(uint32_t*)ConfigHeader) ? (uint8_t)addr[1] : 255;
 	}
-++susp;
+
 	// Work out which is the active config sector: will be the highest index from the bottom before the sequence jumps
 	std::sort(sectors.begin(), sectors.end(), [](const CfgSector& l, const CfgSector& r) { return l.index < r.index; });
 	uint32_t index = sectors[0].index;
@@ -179,7 +179,7 @@ void Config::FlashLock()
 void Config::FlashEraseSector(uint8_t sector)
 {
 	FlashUnlock();										// Unlock Flash memory for writing
-	FLASH->SR1 = flashAllErrors;						// Clear error flags in Status Register
+	FLASH->CCR1 = flashAllErrors;						// Clear error flags in Status Register
 
 	FLASH->CR1 &= ~FLASH_CR_SNB_Msk;
 	FLASH->CR1 |= (sector - 1) << FLASH_CR_SNB_Pos;		// Sector number selection
@@ -195,7 +195,7 @@ void Config::FlashEraseSector(uint8_t sector)
 bool Config::FlashWaitForLastOperation()
 {
 	if (FLASH->SR1 & flashAllErrors) {					// If any error occurred abort
-		FLASH->SR1 = flashAllErrors;					// Clear all errors
+		FLASH->CCR1 = flashAllErrors;					// Clear error flags in Status Register
 		return false;
 	}
 
@@ -211,31 +211,32 @@ bool Config::FlashWaitForLastOperation()
 
 bool Config::FlashProgram(uint32_t* dest_addr, uint32_t* src_addr, size_t size)
 {
-	if (FlashWaitForLastOperation()) {
-		FLASH->CR1 |= FLASH_CR_PG;
+	if (!FlashWaitForLastOperation()) {
+		return false;
+	}
+	FLASH->CR1 |= FLASH_CR_PG;
 
-		__ISB();
-		__DSB();
+	__ISB();
+	__DSB();
 
-		// Each write block is up to 128 bits
-		for (uint16_t b = 0; b < std::ceil(static_cast<float>(size) / 16); ++b) {
-			for (uint8_t i = 0; i < 4; ++i) {
-				*dest_addr = *src_addr;
-				++dest_addr;
-				++src_addr;
-			}
-
-			if (!FlashWaitForLastOperation()) {
-				FLASH->CR1 &= ~FLASH_CR_PG;				// Clear programming flag
-				return false;
-			}
+	// Each write block is up to 128 bits
+	for (uint16_t b = 0; b < std::ceil(static_cast<float>(size) / 16); ++b) {
+		for (uint8_t i = 0; i < 4; ++i) {
+			*dest_addr = *src_addr;
+			++dest_addr;
+			++src_addr;
 		}
 
-		__ISB();
-		__DSB();
-
-		FLASH->CR1 &= ~FLASH_CR_PG;						// Clear programming flag
+		if (!FlashWaitForLastOperation()) {
+			FLASH->CR1 &= ~FLASH_CR_PG;				// Clear programming flag
+			return false;
+		}
 	}
+
+	__ISB();
+	__DSB();
+
+	FLASH->CR1 &= ~FLASH_CR_PG;						// Clear programming flag
 	return true;
 }
 

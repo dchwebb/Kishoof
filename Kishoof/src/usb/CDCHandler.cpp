@@ -51,7 +51,7 @@ void CDCHandler::ProcessCommand()
 				calib.cfg.vcaNormal,
 				wavetable.cfg.additiveWaves,
 				config.currentSector,
-				config.flashConfigAddr,
+				config.flashConfigAddr + config.currentSettingsOffset / 4,
 				underrun,
 				flashBusy
 				);
@@ -70,6 +70,7 @@ void CDCHandler::ProcessCommand()
 				"dispmark:X  -  CV markers in display. N - none, L - line, P - pointer\r\n"
 				"clearconfig -  Erase configuration and restart\r\n"
 				"saveconfig  -  Immediately save config\r\n"
+				"fatinfo     -  Print fat file system details\r\n"
 				"\r\n"
 				"Flash Tools:\r\n"
 				"------------\r\n"
@@ -123,7 +124,7 @@ void CDCHandler::ProcessCommand()
 		calib.Calibrate('s');
 
 	} else if (cmd.compare("wavetables") == 0) {				// Prints wavetable list
-		printf("Num Name       Bytes    Data Bits Channels Invalid Address    Metadata Frames\r\n");
+		printf("Num Name       Bytes    Data Bits Channels Invalid   Address    Metadata Frames\r\n");
 
 		for (uint32_t i = 0; i < wavetable.wavetableCount; ++i) {
 			printf("%3lu %8.8s %7lu %7lu %3u%1s %8u %9s %10p %08lu %6d\r\n",
