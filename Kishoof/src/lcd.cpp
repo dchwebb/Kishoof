@@ -77,7 +77,7 @@ void LCD::Init()
 
 	Rotate(LCD_Portrait);
 
-
+// LCD Test pattern
 //	ColourFill(50, 50, 57, 57, LCD_YELLOW);
 //	ColourFill(90, 90, 97, 97, LCD_RED);
 //	ColourFill(130, 130, 137, 137, LCD_BLUE);
@@ -238,19 +238,19 @@ void LCD::DrawRect(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, const uin
 }
 
 
-void LCD::DrawChar(uint16_t x, uint16_t y, char c, const FontData* font, const uint32_t& foreground, const uint16_t background)
+void LCD::DrawChar(uint16_t x, uint16_t y, char c, const FontData& font, const uint32_t& foreground, const uint16_t background)
 {
 	// If at the end of a line of display, go to new line and set x to 0 position
-	if ((x + font->Width) > width) {
-		y += font->Height;
+	if ((x + font.Width) > width) {
+		y += font.Height;
 		x = 0;
 	}
 
 	// Write character colour data to array
 	uint16_t px, py, i = 0;
-	for (py = 0; py < font->Height; ++py) {
-		const uint16_t fontRow = font->data[(c - 32) * font->Height + py];
-		for (px = 0; px < font->Width; ++px) {
+	for (py = 0; py < font.Height; ++py) {
+		const uint16_t fontRow = font.data[(c - 32) * font.Height + py];
+		for (px = 0; px < font.Width; ++px) {
 			if ((fontRow << (px)) & 0x8000) {			// for one byte characters use if ((fontRow << px) & 0x200) {
 				charBuffer[currentCharBuffer][i] = foreground;
 			} else {
@@ -261,24 +261,23 @@ void LCD::DrawChar(uint16_t x, uint16_t y, char c, const FontData* font, const u
 	}
 
 	// Send array of data to SPI/DMA to draw
-	PatternFill(x, y, x + font->Width - 1, y + font->Height - 1, charBuffer[currentCharBuffer]);
+	PatternFill(x, y, x + font.Width - 1, y + font.Height - 1, charBuffer[currentCharBuffer]);
 
 	// alternate between the two character buffers so that the next character can be prepared whilst the last one is being copied to the LCD
 	currentCharBuffer = currentCharBuffer == 1 ? 0 : 1;
 }
 
 
-// writes a character to an existing display array
-void LCD::DrawCharMem(const uint16_t x, const uint16_t y, const uint16_t memWidth, uint16_t* memBuffer, char c, const FontData* font, const uint16_t foreground, const uint16_t background)
+void LCD::DrawCharMem(const uint16_t x, const uint16_t y, const uint16_t memWidth, uint16_t* memBuffer, char c, const FontData& font, const uint16_t foreground, const uint16_t background)
 {
 	// Write character colour data to array
 	uint16_t px, py, i;
 
-	for (py = 0; py < font->Height; py++) {
+	for (py = 0; py < font.Height; py++) {
 		i = (memWidth * (y + py)) + x;
 
-		const uint16_t fontRow = font->data[(c - 32) * font->Height + py];
-		for (px = 0; px < font->Width; ++px) {
+		const uint16_t fontRow = font.data[(c - 32) * font.Height + py];
+		for (px = 0; px < font.Width; ++px) {
 			if ((fontRow << px) & 0x8000) {
 				memBuffer[i] = foreground;
 			} else {
@@ -290,34 +289,34 @@ void LCD::DrawCharMem(const uint16_t x, const uint16_t y, const uint16_t memWidt
 }
 
 
-void LCD::DrawString(uint16_t x0, const uint16_t y0, const std::string_view s, const FontData* font, const uint16_t foreground, const uint16_t background)
+void LCD::DrawString(uint16_t x0, const uint16_t y0, const std::string_view s, const FontData& font, const uint16_t foreground, const uint16_t background)
 {
 	for (const char& c : s) {
 		DrawChar(x0, y0, c, font, foreground, background);
-		x0 += font->Width;
+		x0 += font.Width;
 	}
 }
 
 
-void LCD::DrawStringMem(uint16_t x0, const uint16_t y0, uint16_t const memWidth, uint16_t* memBuffer, std::string_view s, const FontData* font, const uint16_t foreground, const uint16_t background) {
+void LCD::DrawStringMem(uint16_t x0, const uint16_t y0, uint16_t const memWidth, uint16_t* memBuffer, std::string_view s, const FontData& font, const uint16_t foreground, const uint16_t background) {
 	for (const char& c : s) {
 		DrawCharMem(x0, y0, memWidth, memBuffer, c, font, foreground, background);
-		x0 += font->Width;
+		x0 += font.Width;
 	}
 }
 
 
-void LCD::DrawStringMemCenter(uint16_t x0, const uint16_t y0, const size_t width, uint16_t* memBuffer, std::string_view s, const FontData* font, const uint16_t foreground, const uint16_t background) {
+void LCD::DrawStringMemCenter(uint16_t x0, const uint16_t y0, const size_t width, uint16_t* memBuffer, std::string_view s, const FontData& font, const uint16_t foreground, const uint16_t background) {
 	// If string width is less than width of draw buffer move x0 so that text will be centered
-	const uint32_t strWidth = std::min(font->Width * s.length(), width);
+	const uint32_t strWidth = std::min(font.Width * s.length(), width);
 	if (strWidth < width) {
 		x0 = (width - strWidth) / 2;
 	}
 
 	for (const char& c : s) {
 		DrawCharMem(x0, y0, width, memBuffer, c, font, foreground, background);
-		x0 += font->Width;
-		if (x0 > width - font->Width) {
+		x0 += font.Width;
+		if (x0 > width - font.Width) {
 			break;
 		}
 	}
@@ -357,7 +356,6 @@ void LCD::Command(const uint8_t cmd)
 void LCD::Command(const cmdGC9A01A cmd)
 {
 	while (SPI_DMA_Working);
-//	SPI3->CFG1 &= ~SPI_CFG1_TXDMAEN;
 	DCPin.SetLow();
 	SPISendByte(static_cast<uint8_t>(cmd));
 }
@@ -383,9 +381,9 @@ void LCD::SPISetDataSize(const SPIDataSize_t& Mode)
 	SPI3->CR1 &= ~SPI_CR1_SPE;
 	SPI3->CFG1 &= ~SPI_CFG1_DSIZE;
 	if (Mode == SPIDataSize_16b) {
-		SPI3->CFG1 |= 15 << SPI_CFG1_DSIZE_Pos;				// Data size (N-1 bits)
+		SPI3->CFG1 |= 15 << SPI_CFG1_DSIZE_Pos;		// Data size (N-1 bits)
 	} else {
-		SPI3->CFG1 |= 7 << SPI_CFG1_DSIZE_Pos;				// Data size (N-1 bits)
+		SPI3->CFG1 |= 7 << SPI_CFG1_DSIZE_Pos;		// Data size (N-1 bits)
 	}
 	SPI3->CR1 |= SPI_CR1_SPE;
 }
@@ -406,7 +404,7 @@ inline void LCD::SPISendByte(const uint8_t data)
 }
 
 
-void LCD::Delay(volatile uint32_t delay)		// delay must be declared volatile or will be optimised away
+void LCD::Delay(volatile uint32_t delay)			// delay must be declared volatile or will be optimised away
 {
 	for (; delay != 0; delay--);
 }

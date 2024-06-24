@@ -30,6 +30,29 @@ void CDCHandler::ProcessCommand()
 			usb->SendString("Upgrade cancelled\r\n");
 		}
 
+	} else if (state == serialState::formatConfirm) {
+		if (cmd.compare("y") == 0 || cmd.compare("Y") == 0) {
+			usb->SendString("Formatting flash:\r\n");
+			fatTools.Format();
+			usb->SendString("Restarting ...\r\n");
+			uint32_t old = SysTickVal;
+			while (SysTickVal < old + 100) {};		// Give enough time to send the message
+			Reboot();
+		} else {
+			state = serialState::pending;
+			usb->SendString("Format cancelled\r\n");
+		}
+
+	} else if (state == serialState::eraseConfirm) {
+		if (cmd.compare("y") == 0 || cmd.compare("Y") == 0) {
+			printf("Erasing flash. Please wait (slow) ...\r\n");
+			extFlash.FullErase();
+			printf("Flash erased\r\n");
+		} else {
+			state = serialState::pending;
+			usb->SendString("Erase cancelled\r\n");
+		}
+
 	} else if (calib.calibrating) {						// Send command to calibration process
 		calib.Calibrate(cmd[0]);
 
@@ -71,6 +94,7 @@ void CDCHandler::ProcessCommand()
 				"clearconfig -  Erase configuration and restart\r\n"
 				"saveconfig  -  Immediately save config\r\n"
 				"fatinfo     -  Print fat file system details\r\n"
+				"reboot      -  Reboot module\r\n"
 				"\r\n"
 				"Flash Tools:\r\n"
 				"------------\r\n"
@@ -117,11 +141,30 @@ void CDCHandler::ProcessCommand()
 #endif
 
 	} else if (cmd.compare("dfu") == 0) {						// USB DFU firmware upgrade
-		usb->SendString("Start DFU upgrade mode? Press 'y' to confirm.\r\n");
+		printf("Start DFU upgrade mode? Press 'y' to confirm.\r\n");
 		state = serialState::dfuConfirm;
+
+
+	} else if (cmd.compare("format") == 0) {					// Format Flash storage with FAT
+		printf("Format internal storage? Press 'y' to confirm.\r\n");
+		state = serialState::formatConfirm;
+
+
+	} else if (cmd.compare("eraseflash") == 0) {				// Erase all flash memory
+		if (!SafeMode) {
+			printf("Enter safe mode first (hold encoder button whilst restarting module)\r\n");
+		} else {
+			printf("Erase all internal storage? Press 'y' to confirm.\r\n");
+			state = serialState::eraseConfirm;
+		}
+
+	} else if (cmd.compare("reboot") == 0) {					// Reboot module
+		Reboot();
+
 
 	} else if (cmd.compare("calib") == 0) {						// Start calibration process
 		calib.Calibrate('s');
+
 
 	} else if (cmd.compare("wavetables") == 0) {				// Prints wavetable list
 		printf("Num Name       Bytes    Data Bits Channels Invalid   Address    Metadata Frames\r\n");
@@ -143,14 +186,17 @@ void CDCHandler::ProcessCommand()
 		}
 		printf("\r\n");
 
+
 	} else if (cmd.compare("clearconfig") == 0) {				// Erase config from internal flash
 		printf("Clearing config and restarting ...\r\n");
 		config.EraseConfig();
 		DelayMS(10);
 		Reboot();
 
+
 	} else if (cmd.compare("saveconfig") == 0) {				// Immediate config save
 		config.SaveConfig(true);
+
 
 	} else if (cmd.compare(0, 4, "add:") == 0) {				// configure channel B additive waves
 		uint32_t val;
@@ -163,6 +209,7 @@ void CDCHandler::ProcessCommand()
 			usb->SendString("Invalid data\r\n");
 		}
 
+
 	} else if (cmd.compare(0, 9, "dispmark:") == 0) {			// CV markers in display. N - none, L - line, P - pointer
 		char option = cmd[9];
 		if (option == 'N' || option == 'L' || option == 'P') {
@@ -173,7 +220,8 @@ void CDCHandler::ProcessCommand()
 			usb->SendString("Invalid data\r\n");
 		}
 
-	} else if (cmd.compare(0, 11, "eraseblock:") == 0) {		// Erase sector
+
+	} else if (cmd.compare(0, 11, "eraseblock:") == 0) {		// Erase sector on external flash
 		uint32_t addr;
 		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);
 		if (res.ec == std::errc()) {
@@ -183,17 +231,6 @@ void CDCHandler::ProcessCommand()
 			usb->SendString("Invalid address\r\n");
 		}
 
-
-	} else if (cmd.compare("eraseflash") == 0) {				// Erase all flash memory
-		printf("Erasing flash. Please wait ...\r\n");
-		extFlash.FullErase();
-		printf("Flash erased\r\n");
-
-
-	} else if (cmd.compare("format") == 0) {					// Format Flash storage with FAT
-		printf("Formatting flash:\r\n");
-		fatTools.Format();
-		extFlash.MemoryMapped();
 
 	} else if (cmd.compare("octo") == 0) {						// Switch Flash to octal mode
 		extFlash.SetOctoMode();
@@ -251,7 +288,7 @@ void CDCHandler::ProcessCommand()
 			usb->SendString("Invalid address\r\n");
 		}
 
-	} else if (cmd.compare(0, 5, "wmem:") == 0) {				// Write Memory Page
+	} else if (cmd.compare(0, 5, "wmem:") == 0) {				// Write Memory Page with test data
 		uint32_t addr;
 		auto res = std::from_chars(cmd.data() + cmd.find(":") + 1, cmd.data() + cmd.size(), addr, 16);
 		if (res.ec == std::errc()) {			// no error
@@ -272,8 +309,7 @@ void CDCHandler::ProcessCommand()
 	} else if (extFlash.flashCorrupt) {
 		printf("** Flash Corrupt **\r\n");
 
-
-	} else if (cmd.compare("fatinfo") == 0) {						// Get basic FAT directory list
+	} else if (cmd.compare("fatinfo") == 0) {					// Get basic FAT directory list
 		fatTools.PrintFatInfo();
 
 	} else if (cmd.compare("dir") == 0) {						// Get basic FAT directory list
@@ -291,7 +327,7 @@ void CDCHandler::ProcessCommand()
 		fatTools.PrintDirInfo();
 
 
-	} else if (cmd.compare("clusterchain") == 0) {			// Print used clusters with links from FAT area
+	} else if (cmd.compare("clusterchain") == 0) {				// Print used clusters with links from FAT area
 		printf("Cluster | Link\r\n");
 		uint32_t cluster = 0;
 		while (fatTools.clusterChain[cluster]) {

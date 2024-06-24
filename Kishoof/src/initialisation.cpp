@@ -599,6 +599,22 @@ void Reboot()
 {
 	__disable_irq();
 	__DSB();
+
+	SysTick->CTRL = 0;							// Disable Systick timer
+
+	// Disable all peripheral clocks
+	RCC->APB1LENR = 0;
+	RCC->APB4ENR = 0;
+	RCC->AHB1ENR = 0;
+	RCC->APB2ENR = 0;
+	RCC->AHB3ENR = 0;
+	RCC->AHB4ENR = 0;
+
+	for (uint32_t i = 0; i < 5; ++i) {			// Clear Interrupt Enable Register & Interrupt Pending Register
+		NVIC->ICER[i] = 0xFFFFFFFF;
+		NVIC->ICPR[i] = 0xFFFFFFFF;
+	}
+
 	NVIC_SystemReset();
 }
 

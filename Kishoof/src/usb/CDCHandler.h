@@ -41,7 +41,7 @@ private:
 	uint32_t buffPos = 0;
 
 	// State machine for multi-stage commands
-	enum class serialState {pending, dfuConfirm, calibConfirm};
+	enum class serialState {pending, dfuConfirm, formatConfirm, eraseConfirm, calibConfirm};
 	serialState state = serialState::pending;
 
 	static const uint8_t Descriptor[];

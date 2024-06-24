@@ -304,7 +304,7 @@ void WaveTable::CalcAdditive()
 void WaveTable::Init()
 {
 	CalcAdditive();
-	wavetable.UpdateWavetableList();							// Update list of samples on flash
+	wavetable.UpdateWavetableList();	// Update list of samples on flash
 }
 
 
@@ -530,7 +530,8 @@ void WaveTable::GetWavInfo(Wav& wav)
 }
 
 
-bool WaveTable::WavetableSorter(Wav const& lhs, Wav const& rhs) {
+bool WaveTable::WavetableSorter(Wav const& lhs, Wav const& rhs)
+{
 	// Sort wavetables with sub-folders first followed by short file name
 	if (lhs.isDir != rhs.isDir) {
 		return lhs.isDir;
@@ -597,7 +598,7 @@ void WaveTable::WarpButton(const bool change)
 
 void WaveTable::FragChain()
 {
-	// Build lookup table of fragmented memory addresses
+	// Build lookup table of fragmented memory addresses (not currently supporting fragmented wavetable lookup)
 	Wav& wav = wavList[activeWaveTable];
 
 	if (wav.fragmented) {

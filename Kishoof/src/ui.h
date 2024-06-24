@@ -10,11 +10,11 @@
 class UI {
 public:
 	void Update();
-	void SetWavetable(int32_t index);
+	void SetWavetable(const int32_t index);
 
-	std::string_view FloatToString(float f, bool smartFormat);
+	std::string_view FloatToString(const float f, const bool smartFormat);
 	std::string_view IntToString(const int32_t v);
-	RGBColour DarkenColour(const RGBColour colour, uint16_t amount);
+	RGBColour DarkenColour(const RGBColour colour, const uint16_t amount);
 	RGBColour InterpolateColour(const RGBColour colour1, const RGBColour colour2, const float ratio);
 
 	bool bufferClear = true;				// Used to manage blanking draw buffers using DMA
@@ -37,7 +37,7 @@ public:
 	};
 
 private:
-	uint32_t WavetablePicker(int32_t upDown);
+	uint32_t WavetablePicker(const int32_t upDown);
 	void DrawWaveTable();
 	void DrawPositionMarker(uint32_t yPos, bool dirUp, float xPos, RGBColour drawColour);
 

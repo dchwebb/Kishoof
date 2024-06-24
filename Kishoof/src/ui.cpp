@@ -13,10 +13,9 @@ void UI::DrawWaveTable()
 		return;
 	}
 
-	// Populate a frame buffer to display the wavetable values (full screen refresh)
-	//debugPin2.SetHigh();			// Debug
+	// Populate a frame buffer to display either text portion of screen or wavetables
 
-	if (timedInfo == TimedInfo::showFileInfo) {
+	if (timedInfo == TimedInfo::showFileInfo) {		// Show frame count or error type when trying to load a wavetable
 		timedInfo = TimedInfo::none;
 
 		const char* buff;
@@ -27,10 +26,10 @@ void UI::DrawWaveTable()
 			buff = charBuff;
 		}
 
-		lcd.DrawStringMemCenter(0, 0, wideTextWidth, lcd.drawBuffer[activeDrawBuffer], buff, &lcd.Font_Large, RGBColour::LightGrey, RGBColour::Black);
+		lcd.DrawStringMemCenter(0, 0, wideTextWidth, lcd.drawBuffer[activeDrawBuffer], buff, lcd.Font_Large, RGBColour::LightGrey, RGBColour::Black);
 		lcd.PatternFill(wideTextLeft, lowerTextTop, wideTextLeft - 1 + wideTextWidth, lowerTextTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
-	} else if (timedInfo == TimedInfo::clearFileInfo) {
+	} else if (timedInfo == TimedInfo::clearFileInfo) {			// Clear wavetable loading info after timeout
 		oldWarpType = 0xFFFFFFFF;								// Force redraw of warp type
 		oldWarpBtn = !oldWarpBtn;								// Force redraw of channel B reverse
 		timedInfo = TimedInfo::none;
@@ -42,7 +41,7 @@ void UI::DrawWaveTable()
 		oldWarpType = (uint32_t)wavetable.warpType;
 		std::string_view s = wavetable.warpNames[(uint8_t)wavetable.warpType];
 
-		lcd.DrawStringMemCenter(0, 0, narrowTextWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, wavetable.warpType == WaveTable::Warp::none ? RGBColour::Grey : RGBColour::White, RGBColour::Black);
+		lcd.DrawStringMemCenter(0, 0, narrowTextWidth, lcd.drawBuffer[activeDrawBuffer], s, lcd.Font_Large, wavetable.warpType == WaveTable::Warp::none ? RGBColour::Grey : RGBColour::White, RGBColour::Black);
 		lcd.PatternFill(narrowTextLeft, lowerTextTop, narrowTextLeft - 1 + narrowTextWidth, lowerTextTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
 	} else if (activeWaveTable != oldWavetable) {
@@ -57,14 +56,14 @@ void UI::DrawWaveTable()
 		}
 
 		const uint16_t colour = pickerDir ? RGBColour::Yellow : wavetable.wavList[activeWaveTable].invalid ? RGBColour::LightGrey : RGBColour::White;
-		lcd.DrawStringMemCenter(0, 0, wideTextWidth, lcd.drawBuffer[activeDrawBuffer], s, &lcd.Font_Large, colour, RGBColour::Black);
+		lcd.DrawStringMemCenter(0, 0, wideTextWidth, lcd.drawBuffer[activeDrawBuffer], s, lcd.Font_Large, colour, RGBColour::Black);
 		lcd.PatternFill(wideTextLeft, uppertextTop, wideTextLeft - 1 + wideTextWidth, uppertextTop - 1 + lcd.Font_Large.Height, lcd.drawBuffer[activeDrawBuffer]);
 
 
 	} else if (wavetable.cfg.warpButton != oldWarpBtn) {
 		oldWarpBtn = wavetable.cfg.warpButton;
-		lcd.DrawChar(55, 192, oldWarpBtn ? '<' : ' ', &lcd.Font_Large, RGBColour::Orange, RGBColour::Black);
-		lcd.DrawChar(172, 192, oldWarpBtn ? '<' : ' ', &lcd.Font_Large, RGBColour::Orange, RGBColour::Black);
+		lcd.DrawChar(55, 192, oldWarpBtn ? '<' : ' ', lcd.Font_Large, RGBColour::Orange, RGBColour::Black);
+		lcd.DrawChar(172, 192, oldWarpBtn ? '<' : ' ', lcd.Font_Large, RGBColour::Orange, RGBColour::Black);
 
 	} else {
 
@@ -124,20 +123,16 @@ void UI::DrawWaveTable()
 	}
 	activeDrawBuffer = !activeDrawBuffer;
 
-	// Trigger MDMA frame buffer blanking
+	// Trigger MDMA frame buffer blanking (memset very slow and MDMA does not require processor)
 	blankData = 0;
 	MDMATransfer(MDMA_Channel0, (const uint8_t*)&blankData, (const uint8_t*)lcd.drawBuffer[activeDrawBuffer], sizeof(lcd.drawBuffer[0]) / 2);
 	bufferClear = false;
-
-
-	//debugPin2.SetLow();			// Debug off
-
 }
 
 
 void UI::DrawPositionMarker(uint32_t yPos, bool dirUp, float xPos, RGBColour drawColour)
 {
-
+	// Display the wavetable position and warp amount markers as lines or triangles according to config
 	xPos *= waveDrawWidth;
 	yPos *= waveDrawWidth;
 	switch (cfg.displayPos) {
@@ -149,7 +144,7 @@ void UI::DrawPositionMarker(uint32_t yPos, bool dirUp, float xPos, RGBColour dra
 		break;
 	case DisplayPos::pointer:
 		for (int i = - 2; i < 3; ++i) {
-			uint32_t top = xPos + yPos + (dirUp ? -2 : 0) * waveDrawWidth;
+			const uint32_t top = xPos + yPos + (dirUp ? -2 : 0) * waveDrawWidth;
 
 			if (i + xPos >= 0 && i + xPos < waveDrawWidth) {
 				lcd.drawBuffer[activeDrawBuffer][i + top + (dirUp ? (2 * waveDrawWidth) : 0)] = drawColour.colour;
@@ -168,7 +163,7 @@ void UI::DrawPositionMarker(uint32_t yPos, bool dirUp, float xPos, RGBColour dra
 }
 
 
-void UI::SetWavetable(int32_t index)
+void UI::SetWavetable(const int32_t index)
 {
 	// Allows wavetable class to set current wavetable at Init
 	oldWavetable = 0xFFFFFFFF;
@@ -178,7 +173,7 @@ void UI::SetWavetable(int32_t index)
 }
 
 
-uint32_t UI::WavetablePicker(int32_t upDown)
+uint32_t UI::WavetablePicker(const int32_t upDown)
 {
 	// Selects next/previous wavetable, unless directory in which case it can be opened
 	const int32_t nextWavetable = (int32_t)activeWaveTable + upDown;
@@ -200,7 +195,7 @@ void UI::Update()
 {
 	// encoders count in fours with the zero point set to 32000; test for values greater than 3 as sometimes miscounts
 	if (std::abs((int16_t)32000 - (int16_t)TIM8->CNT) > 2) {
-		int8_t v = TIM8->CNT > 32000 ? 1 : -1;
+		const int8_t v = TIM8->CNT > 32000 ? 1 : -1;
 		WavetablePicker(v);
 
 		TIM8->CNT -= TIM8->CNT > 32000 ? 4 : -4;
@@ -257,7 +252,7 @@ void UI::Update()
 }
 
 
-std::string_view UI::FloatToString(float f, bool smartFormat)
+std::string_view UI::FloatToString(const float f, const bool smartFormat)
 {
 	if (smartFormat && f > 10000) {
 		sprintf(charBuff, "%.1fk", std::round(f / 100.0f) / 10.0f);
