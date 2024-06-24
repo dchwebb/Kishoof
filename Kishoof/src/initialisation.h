@@ -11,14 +11,10 @@ extern bool SafeMode;
 
 static constexpr uint32_t sysTickInterval = 1000;					// Set in uS so 1000uS = 1ms
 constexpr uint32_t sampleRate = 48000;
-constexpr float intToFloatMult = 1.0f / std::pow(2.0f, 31.0f);		// Multiple to convert 32 bit int to -1.0 - 1.0 float
-constexpr float floatToIntMult = std::pow(2.0f, 31.0f);				// Multiple to convert -1.0 - 1.0 float to 32 bit int
-constexpr float pi = std::numbers::pi;
+enum class SampleType {Unsupported, Float32, PCM16};
 
 static constexpr uint32_t ADC1_BUFFER_LENGTH = 6;
 static constexpr uint32_t ADC2_BUFFER_LENGTH = 6;
-
-enum class SampleType {Unsupported, Float32, PCM16};
 
 struct ADCValues {
 	uint16_t Wavetable_Pos_B_Pot;
@@ -48,9 +44,6 @@ void InitADC();
 void InitADC1();
 void InitADC2();
 void InitI2S();
-void StartI2STimer();
-uint32_t ReadI2STimer();
-void InitI2STimer();
 void InitDebugTimer();
 void StartDebugTimer();
 float StopDebugTimer();

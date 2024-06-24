@@ -1,10 +1,9 @@
 #include "configManager.h"
-#include <cmath>
 #include <cstring>
 #include <cstdio>
 
 
-bool Config::SaveConfig(bool forceSave)
+bool Config::SaveConfig(const bool forceSave)
 {
 	bool result = true;
 	if (forceSave || (scheduleSave && SysTickVal > saveBooked + 60000)) {			// 60 seconds between saves

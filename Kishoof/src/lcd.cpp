@@ -186,8 +186,8 @@ void LCD::DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, const uin
 	if (x0 > x1) 		std::swap(x0, x1);
 	if (y0 > y1) 		std::swap(y0, y1);
 
-	int16_t dx = x1 - x0;
-	int16_t dy = y1 - y0;
+	const int16_t dx = x1 - x0;
+	const int16_t dy = y1 - y0;
 
 	// Vertical or horizontal line
 	if (dx == 0 || dy == 0) {

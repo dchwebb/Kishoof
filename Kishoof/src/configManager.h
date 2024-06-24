@@ -36,7 +36,7 @@ public:
 	}
 
 	void ScheduleSave();				// called whenever a config setting is changed to schedule a save after waiting to see if any more changes are being made
-	bool SaveConfig(bool forceSave = false);
+	bool SaveConfig(const bool forceSave = false);
 	void EraseConfig();					// Erase flash page containing config
 	void RestoreConfig();				// gets config from Flash, checks and updates settings accordingly
 

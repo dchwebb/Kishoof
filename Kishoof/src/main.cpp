@@ -13,8 +13,7 @@ volatile uint32_t SysTickVal;
 extern uint32_t SystemCoreClock;
 bool SafeMode = false;				// Disables file system mounting, USB MSC drive is disabled, don't load config
 
-// Store buffers that need to live in special memory areas
-volatile ADCValues __attribute__((section (".dma_buffer"))) adc;
+volatile ADCValues __attribute__((section (".dma_buffer"))) adc;	// Store adc buffer in non-cached memory area
 
 Config config{&wavetable.configSaver, &calib.configSaver, &ui.configSaver};		// Construct config handler with list of configSavers
 
@@ -35,7 +34,7 @@ int main(void) {
 
 	lcd.Init();
 	extFlash.Init();
-	filter.Init();					// Initialise filter coefficients, windows etc
+	filter.Init();					// Initialise look up table of filter coefficients, windows etc
 	if (!SafeMode) {
 		config.RestoreConfig();
 	}

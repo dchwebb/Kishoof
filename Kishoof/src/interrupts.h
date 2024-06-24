@@ -23,13 +23,6 @@ void MDMA_IRQHandler()
 		MDMA_Channel0->CIFCR |= MDMA_CIFCR_CBTIF;		// Clear transfer complete interrupt flag
 		ui.bufferClear = true;
 	}
-
-	// fires when MDMA Flash to memory transfer has completed
-	if (MDMA->GISR0 & MDMA_GISR0_GIF1) {
-		MDMA_Channel1->CIFCR |= MDMA_CIFCR_CBTIF;		// Clear transfer complete interrupt flag
-		usb.msc.DMATransferDone();
-
-	}
 }
 
 // System interrupts

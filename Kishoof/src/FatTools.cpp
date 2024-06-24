@@ -1,7 +1,7 @@
 #include "FatTools.h"
-#include <cstring>
 #include "usb.h"
 #include "WaveTable.h"
+#include <cstring>
 
 FatTools fatTools;
 
@@ -44,7 +44,7 @@ bool FatTools::Format()
 	uint8_t fsWork[fatSectorSize];							// Work buffer for the f_mkfs()
 	MKFS_PARM parms;										// Create parameter struct
 	parms.fmt = FM_FAT | FM_SFD;							// format as FAT12/16 using SFD (Supper Floppy Drive)
-	parms.n_root = 128;										// Number of root directory entries (each uses 32 bytes of storage)
+	parms.n_root = fatDirectoryEntries;						// Number of root directory entries (each uses 32 bytes of storage)
 	parms.align = 0;										// Default initialise remaining values
 	parms.au_size = 0;
 	parms.n_fat = 0;
@@ -69,17 +69,17 @@ bool FatTools::Format()
 }
 
 
-void FatTools::Read(uint8_t* writeAddress, const uint32_t readSector, const uint32_t sectorCount)
+void FatTools::Read(uint8_t* buffer, const uint32_t readSector, const uint32_t sectorCount)
 {
-	// If reading header data return from cache
+	// Used by diskio to copy flash data into buffer
 	const uint8_t* readAddress;
 	if (readSector < fatCacheSectors) {
-		readAddress = &(headerCache[readSector * fatSectorSize]);
+		readAddress = &(headerCache[readSector * fatSectorSize]);	// If reading header data return from cache
 	} else {
 		readAddress = flashAddress + (readSector * fatSectorSize);
 	}
 
-	memcpy(writeAddress, readAddress, fatSectorSize * sectorCount);
+	memcpy(buffer, readAddress, fatSectorSize * sectorCount);
 }
 
 
@@ -142,7 +142,7 @@ void FatTools::CheckCache()
 
 	if (!Busy() && updateWavetables) {
 		updateWavetables = false;
-		flushCacheBusy = true;				// To block wavetable output whilst list is changed
+		flushCacheBusy = true;					// To block wavetable output whilst list is changed
 		wavetable.UpdateWavetableList();
 		flushCacheBusy = false;
 	}
@@ -197,13 +197,19 @@ const uint8_t* FatTools::GetClusterAddr(const uint32_t cluster, const bool ignor
 
 const uint8_t* FatTools::GetSectorAddr(const uint32_t sector, const uint8_t* buffer, const uint32_t bufferSize)
 {
-	// If reading header data return cache address; if reading flash address and buffer passed trigger DMA transfer and return null pointer
-	// FIXME - take into account write cache??
+	// Used by MSC when reading: depending on sector return header or write cache; otherwise flash address
 	if (sector < fatCacheSectors) {
 		return &(headerCache[sector * fatSectorSize]);
 	} else {
-		const uint8_t* sectorAddress = flashAddress + (sector * fatSectorSize);
-		return sectorAddress;
+		// Check if using write cache
+		const int32_t block = sector / fatEraseSectors;
+		if (writeBlock == block && writeCacheDirty) {
+			const uint32_t byteOffset = (sector - (block * fatEraseSectors)) * fatSectorSize;		// Offset within currently block
+			return &(writeBlockCache[byteOffset]);
+		} else {
+			const uint8_t* sectorAddress = flashAddress + (sector * fatSectorSize);
+			return sectorAddress;
+		}
 	}
 }
 
@@ -229,7 +235,10 @@ void FatTools::PrintDirInfo(const uint32_t cluster)
 		return;
 	}
 
-	while (fatInfo->name[0] != 0) {
+	const uint8_t* endOfCluster = (uint8_t*)fatInfo + fatClusterSize;
+
+	while (fatInfo->name[0] != 0 && (uint8_t*)fatInfo < endOfCluster) {
+
 		if (fatInfo->attr == 0xF) {							// Long file name
 			const FATLongFilename* lfn = (FATLongFilename*)fatInfo;
 			printf("%c LFN %2i                                       %-14s [0x%02x]\r\n",
@@ -415,7 +424,7 @@ void FatTools::LFNDirEntries(uint8_t* writeAddress, const char* sfn, const char*
 
 void FatTools::MakeDummyFiles()
 {
-	// Kludgy code to create Windows spam folders/files to stop OS doing it where we don't want
+	// Kludgy code to create Windows indexer spam folders/files to stop OS doing it where we don't want
 
 	// create block of memory to hold three directory entries holding the 'System Volume Information' folder
 	uint8_t* writeAddress = &(headerCache[fatFs.dirbase * fatSectorSize]);		// do not use rootDirectory member as not yet initialised
@@ -480,7 +489,7 @@ void FatTools::PrintFiles(char* path)						// Start node to be scanned (also use
 				PrintFiles(path);							// Enter the directory
 				path[i] = 0;
 			} else {										// It is a file
-				printf("%s/%s %i bytes\n", path, fileInfo.fname, (int)fileInfo.fsize);
+				printf("%s/%s %lu bytes\n", path, fileInfo.fname, fileInfo.fsize);
 			}
 		}
 		f_closedir(&dirObj);

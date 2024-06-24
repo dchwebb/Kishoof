@@ -32,6 +32,7 @@ static constexpr uint32_t fatClusterSize = 4096;									// Cluster size used by
 static constexpr uint32_t fatMaxCluster = (fatSectorSize * fatSectorCount) / fatClusterSize;		// Store largest cluster number
 static constexpr uint32_t fatEraseSectors = 8;										// Number of sectors in an erase block (4096 bytes per device)
 static constexpr uint32_t fatCacheSectors = 128;									// 72 in Header + extra for testing NB - must be divisible by 8 (fatEraseSectors)
+static constexpr uint32_t fatDirectoryEntries = 128;								// Number of 32 byte directory items - limit to 128 to ensure directory fits in cluster
 
 
 // Struct to hold regular 32 byte directory entries (SFN)
@@ -84,7 +85,7 @@ public:
 	FATFileInfo* rootDirectory;			// Pointer to start of FAT directory listing
 
 	bool InitFatFS();
-	void Read(uint8_t* writeAddress, const uint32_t readSector, const uint32_t sectorCount);
+	void Read(uint8_t* buffAddress, const uint32_t readSector, const uint32_t sectorCount);
 	const uint8_t* GetSectorAddr(const uint32_t sector, const uint8_t* buffer, const uint32_t bufferSize);
 	const uint8_t* GetClusterAddr(const uint32_t cluster, const bool ignoreCache = false);
 	void Write(const uint8_t* readBuff, const uint32_t writeSector, const uint32_t sectorCount);

@@ -397,20 +397,9 @@ int8_t MSCHandler::SCSI_Read()
 	inBuffCount = 0;
 	csw.dDataResidue -= inBuffSize;
 
-	// Data may be read from cache or flash; if flash (signalled by nullptr), pass a buffer to be filled and wait for DMA transfer to complete
+	// Data may be read from cache or flash
 	inBuff = fatTools.GetSectorAddr(scsi_blk_addr, bot_data, inBuffSize);
 
-	if (inBuff != nullptr) {
-		ReadReady();
-	}
-
-	return 0;
-}
-
-
-void MSCHandler::ReadReady()
-{
-	// Once read data is ready (may be waiting for DMA) start endpoint transfer
 	EndPointTransfer(Direction::in, inEP, inBuffSize);
 
 	scsi_blk_addr += (inBuffSize / fatSectorSize);
@@ -419,15 +408,8 @@ void MSCHandler::ReadReady()
 	if (scsi_blk_len == 0) {
 		bot_state = BotState::LastDataIn;
 	}
-}
 
-
-void MSCHandler::DMATransferDone()
-{
-	// Triggered once data has been read from flash and copied to local buffer
-	SCB_InvalidateDCache_by_Addr((uint32_t*)bot_data, inBuffSize);		// Ensure cache is refreshed after write or erase
-	inBuff = bot_data;
-	ReadReady();
+	return 0;
 }
 
 
@@ -499,11 +481,6 @@ int8_t MSCHandler::SCSI_TestUnitReady()
 		SCSI_SenseCode(ILLEGAL_REQUEST, INVALID_CDB);
 		return -1;
 	}
-
-//	if (extFlash.flashCorrupt || fatTools.noFileSystem) {
-//		SCSI_SenseCode(HARDWARE_ERROR, MEDIUM_NOT_PRESENT);
-//		return -1;
-//	}
 
 	bot_data_length = 0;
 	return 0;

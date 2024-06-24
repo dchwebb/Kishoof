@@ -29,7 +29,7 @@ void Filter::BuildLUT()
 }
 
 
-float Filter::Sinc(float x)
+float Filter::Sinc(const float x)
 {
 	if (x > -1.0E-5 && x < 1.0E-5) {
 		return 1.0f;
@@ -49,12 +49,12 @@ void Filter::FIRFilterWindow()
 
 
 // Used for Kaiser window calculations
-float Filter::Bessel(float x)
+float Filter::Bessel(const float x)
 {
 	float sum = 0.0f;
 
 	for (uint8_t i = 1; i < 10; ++i) {
-		float xPower = pow(x / 2.0f, static_cast<float>(i));
+		const float xPower = pow(x / 2.0f, static_cast<float>(i));
 		int factorial = 1;
 		for (uint8_t j = 1; j <= i; ++j) {
 			factorial *= j;

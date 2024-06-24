@@ -114,7 +114,6 @@ private:
 	int8_t SCSI_ModeSense10();
 	int8_t SCSI_ModeSense6();
 	int8_t SCSI_Read();
-	void ReadReady();
 	int8_t SCSI_Write();
 	int8_t SCSI_CheckAddressRange(uint32_t blk_offset, uint32_t blk_nbr);
 	int8_t SCSI_TestUnitReady();

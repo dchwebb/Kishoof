@@ -1,7 +1,6 @@
 #pragma once
 
 #include "initialisation.h"
-#include "GpioPin.h"
 #include "configManager.h"
 #include "lcd.h"
 #include <vector>

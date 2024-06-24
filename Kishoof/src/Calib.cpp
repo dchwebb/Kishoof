@@ -78,7 +78,6 @@ void Calib::Calibrate(char key)
 		calibrating = false;
 	}
 
-
 }
 
 

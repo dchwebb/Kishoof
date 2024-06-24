@@ -4,7 +4,6 @@
 
 #include "initialisation.h"
 #include "Filter.h"
-#include "GpioPin.h"
 #include "FatTools.h"
 #include "configManager.h"
 #include "UI.h"
@@ -21,10 +20,10 @@ public:
 	bool LoadWaveTable(uint32_t* startAddr);
 	void Draw();
 	void UpdateWavetableList();
-	void ChangeWaveTable(int32_t index);
+	void ChangeWaveTable(const int32_t index);
 	void ChannelBOctave(bool change = false);	// Called when channel B octave button is pressed
 	void WarpButton(bool change);				// Called when warp button is pressed
-	float QuantisedWavetablePos(uint8_t chn);	// For drawing: return quantised wavetable position
+	float QuantisedWavetablePos(const uint8_t chn);	// For drawing: return quantised wavetable position
 	static void UpdateConfig();
 
 	struct {
@@ -97,17 +96,17 @@ private:
 	} fragChain[16];
 
 
-	void OutputSample(uint8_t channel, float ratio);
-	float FastTanh(float x);
+	void OutputSample(const uint8_t channel, const float ratio);
+	float FastTanh(const float x);
 	float CalcWarp();
 	void AdditiveWave();
 	void GetWavInfo(Wav& wav);
-	void ReadDir(FATFileInfo* dirEntry, uint32_t dirIndex);
+	void ReadDir(const FATFileInfo* dirEntry, const uint32_t dirIndex);
 	void CleanLFN(char* storeName);
 	static bool WavetableSorter(Wav const& lhs, Wav const& rhs);
 	void FragChain();
 
-	float defaultWavetable[4096];				// Built-in wavetable
+	float defaultWavetable[3 * 2048];			// Built-in wavetables
 	float outputSamples[2] = {0.0f, 0.0f};		// Preprepared samples sent to DAC on interrupt
 	float oldOutputSamples[2] = {0.0f, 0.0f};	// Previous output samples used for cross-fading
 	float crossfade = 0.0f;						// Amount of cross-fade

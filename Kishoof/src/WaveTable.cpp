@@ -1,9 +1,7 @@
 #include "WaveTable.h"
 #include "Filter.h"
-#include "GpioPin.h"
 #include "Calib.h"
 
-#include <cmath>
 #include <cstring>
 
 WaveTable wavetable;
@@ -19,6 +17,18 @@ extern bool vcaConnected;			// Temporary hack as current hardware does not have 
 
 void WaveTable::CalcSample()
 {
+	if (fatTools.Busy()) {
+		SPI2->TXDR = (int32_t)0;
+		SPI2->TXDR = (int32_t)0;
+		++flashBusy;
+		debugPin1.SetLow();		// Debug
+		debugPin2.SetHigh();	// Debug
+		return;
+	}
+	debugPin1.SetHigh();		// Debug
+	debugPin2.SetLow();			// Debug
+
+
 	// If crossfading (when switching warp type) blend from old sample to new sample
 	if (crossfade > 0.0f) {
 		outputSamples[0] = crossfade * oldOutputSamples[0] + (1.0f - crossfade) * outputSamples[0];
@@ -36,16 +46,6 @@ void WaveTable::CalcSample()
 		SPI2->TXDR = (int32_t)(outputSamples[0] * scaleOutput);
 		SPI2->TXDR = (int32_t)(outputSamples[1] * scaleOutput);
 	}
-
-	if (fatTools.Busy()) {
-		++flashBusy;
-		debugPin1.SetLow();		// Debug
-		debugPin2.SetHigh();	// Debug
-		return;
-	}
-	debugPin1.SetHigh();		// Debug
-	debugPin2.SetLow();			// Debug
-
 
 	// Pitch calculations
 	const float octave = octaveUp.IsHigh() ? 2.0f : octaveDown.IsHigh() ? 0.5 : 1.0f;
@@ -103,7 +103,7 @@ void WaveTable::CalcSample()
 }
 
 
-float WaveTable::QuantisedWavetablePos(uint8_t chn)
+float WaveTable::QuantisedWavetablePos(const uint8_t chn)
 {
 	// For drawing wavetable position: return quantised x position of current wavetable
 	if (!stepped) {
@@ -116,11 +116,11 @@ float WaveTable::QuantisedWavetablePos(uint8_t chn)
 }
 
 
-inline void WaveTable::OutputSample(uint8_t chn, float readPos)
+inline void WaveTable::OutputSample(const uint8_t chn, const float readPos)
 {
 	// Get location of current wavetable frame in wavetable
 	const Wav wav = wavList[activeWaveTable];
-	float pos = std::clamp(wavetablePos[chn].Val() * (wavList[activeWaveTable].tableCount - 1), 0.0f, (float)(wavList[activeWaveTable].tableCount - 1));
+	const float pos = std::clamp(wavetablePos[chn].Val() * (wavList[activeWaveTable].tableCount - 1), 0.0f, (float)(wavList[activeWaveTable].tableCount - 1));
 	const uint32_t sampleOffset = 2048 * (stepped ? std::round(pos) : std::floor(pos));			// get sample position of wavetable frame
 
 	// Interpolate between samples
@@ -253,14 +253,10 @@ inline void WaveTable::AdditiveWave()
 	for (uint32_t i = 0; i < harmonicCount; ++i) {
 		pos += readPos[1];
 		revPos -= readPos[1];
-		while (pos >= 2048.0f) {
-			pos -= 2048.0f;
-		}
-		while (revPos < 0.0f) {
-			revPos += 2048.0f;
-		}
+		while (pos >= 2048.0f) { pos -= 2048.0f; }
+		while (revPos < 0.0f) { revPos += 2048.0f; }
 
-		float harmonicLevel = std::lerp(additiveHarmonics[harmonicLow][i], additiveHarmonics[harmonicLow + 1][i], ratio);
+		const float harmonicLevel = std::lerp(additiveHarmonics[harmonicLow][i], additiveHarmonics[harmonicLow + 1][i], ratio);
 		sample += harmonicLevel * sineLUT[(uint32_t)pos];
 	}
 	outputSamples[1] = sample;
@@ -308,11 +304,11 @@ void WaveTable::CalcAdditive()
 void WaveTable::Init()
 {
 	CalcAdditive();
-	wavetable.UpdateWavetableList();							// Updated list of samples on flash
+	wavetable.UpdateWavetableList();							// Update list of samples on flash
 }
 
 
-void WaveTable::ChangeWaveTable(int32_t index)
+void WaveTable::ChangeWaveTable(const int32_t index)
 {
 	// Called by UI when changing wavetable
 	activeWaveTable = index;
@@ -330,16 +326,17 @@ void WaveTable::UpdateWavetableList()
 	wavList[0].dataFormat = 3;
 	wavList[0].channels   = 1;
 	wavList[0].byteDepth  = 4;
-	wavList[0].sampleCount = 4096;
-	wavList[0].tableCount = 2;
+	wavList[0].tableCount = 3;
+	wavList[0].sampleCount = wavList[0].sampleCount * 2048;
 	wavList[0].startAddr = (uint8_t*)&defaultWavetable;
 	wavList[0].sampleType = SampleType::Float32;
 	wavList[0].invalid = Invalid::OK;
 
 	// Generate test waves
 	for (uint32_t i = 0; i < 2048; ++i) {
-		defaultWavetable[i] = std::sin((float)i * M_PI * 2.0f / 2048.0f);
-		defaultWavetable[i + 2048] = (2.0f * i / 2048.0f) - 1.0f;
+		defaultWavetable[i] = sineLUT[i];		//std::sin((float)i * M_PI * 2.0f / 2048.0f);	// Sine
+		defaultWavetable[i + 2048] = 1.0f - (2.0f * i / 2048.0f);			// Saw
+		defaultWavetable[i + 4096] = (i < 1024) ? 1.0f : -1.0f;				// Square
 	}
 
 	// Updates list of wavetables from FAT root directory
@@ -385,7 +382,7 @@ void WaveTable::UpdateWavetableList()
 }
 
 
-void WaveTable::ReadDir(FATFileInfo* dirEntry, uint32_t dirIndex)
+void WaveTable::ReadDir(const FATFileInfo* dirEntry, const uint32_t dirIndex)
 {
 	if (fatTools.noFileSystem) {
 		return;
@@ -559,7 +556,7 @@ void WaveTable::CleanLFN(char* storeName)
 
 
 // Algorithm source: https://varietyofsound.wordpress.com/2011/02/14/efficient-tanh-computation-using-lamberts-continued-fraction/
-float WaveTable::FastTanh(float x)
+float WaveTable::FastTanh(const float x)
 {
 	const float x2 = x * x;
 	const float a = x * (135135.0f + x2 * (17325.0f + x2 * (378.0f + x2)));
@@ -574,7 +571,7 @@ void WaveTable::UpdateConfig()
 }
 
 
-void WaveTable::ChannelBOctave(bool change)
+void WaveTable::ChannelBOctave(const bool change)
 {
 	if (change) {
 		cfg.octaveChnB = !cfg.octaveChnB;
@@ -585,11 +582,10 @@ void WaveTable::ChannelBOctave(bool change)
 	} else {
 		octaveLED.SetLow();
 	}
-
 }
 
 
-void WaveTable::WarpButton(bool change)
+void WaveTable::WarpButton(const bool change)
 {
 	if (change) {
 		cfg.warpButton = !cfg.warpButton;

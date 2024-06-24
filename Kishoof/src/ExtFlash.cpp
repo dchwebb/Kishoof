@@ -18,7 +18,6 @@ static constexpr uint32_t octoCCR =
 		dtrCCR;								// Double data rate settings if configured
 
 
-
 void ExtFlash::Init()
 {
 	// In DTR mode, it is recommended to set DHQC of OCTOSPI_TCR, to shift the outputs by a quarter of cycle and avoid holding issues on the memory side.
@@ -27,12 +26,11 @@ void ExtFlash::Init()
 	SetOctoMode();
 	if (GetID() != 0x003a85c2 || ReadCfgReg(0x300) != 0b111) {
 		Reset();
-		DelayMS(2);		// FIXME - use better timing
+		DelayMS(2);
 		SetOctoMode();
 	}
 	MemoryMapped();
 	fatTools.InitFatFS();									// Initialise FatFS
-
 }
 
 
@@ -69,7 +67,6 @@ void ExtFlash::WriteCfg2(uint32_t address, uint32_t data)
 	OCTOSPI1->DR = data;
 	while (OCTOSPI1->SR & OCTOSPI_SR_BUSY) {};
 	OCTOSPI1->CR &= ~OCTOSPI_CR_EN;							// Disable OCTOSPI
-
 }
 
 
@@ -250,7 +247,6 @@ uint32_t ExtFlash::Read(uint32_t address)
 	OCTOSPI1->CR &= ~OCTOSPI_CR_EN;							// Disable OCTOSPI
 	OCTOSPI1->TCR &= ~OCTOSPI_TCR_DCYC_Msk;					// Clear number of dummy cycles
 	return ret;
-
 }
 
 

@@ -26,7 +26,7 @@ public:
 	ConfigSaver configSaver = {
 		.settingsAddress = &cfg,
 		.settingsSize = sizeof(cfg),
-		.validateSettings = nullptr	// &Calib::UpdateConfig
+		.validateSettings = nullptr
 	};
 
 	bool calibrating;			// Triggered by serial console

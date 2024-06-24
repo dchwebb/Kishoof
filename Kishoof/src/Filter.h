@@ -6,7 +6,6 @@
  */
 
 #include "initialisation.h"
-#include "GpioPin.h"
 #include <cmath>
 #include <complex>
 #include <array>
@@ -90,9 +89,9 @@ private:
 	static constexpr float lutLookupMult = (float)lutSize / (float)lutRange;
 
 	void BuildLUT();
-	float Sinc(float x);
+	float Sinc(const float x);
 	void FIRFilterWindow();
-	float Bessel(float x);
+	float Bessel(const float x);
 
 	float winCoeff[firTaps];
 

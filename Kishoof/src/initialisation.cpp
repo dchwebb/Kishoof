@@ -88,8 +88,6 @@ void InitClocks()
 }
 
 
-
-
 void InitHardware()
 {
 	InitSysTick();
@@ -97,7 +95,6 @@ void InitHardware()
 	InitMDMA();
 	InitADC();
 	InitDebugTimer();
-	InitI2STimer();
 	InitDisplaySPI();
 	InitEncoders();
 	InitOctoSPI();
@@ -406,8 +403,7 @@ void InitI2S()
 	*/
 
 	RCC->CDCCIP1R |= RCC_CDCCIP1R_SPI123SEL_0;		// 001: pll2_p_ck clock selected as SPI/I2S1,2 and 3 kernel clock
-	SPI2->I2SCFGR |= (10 << SPI_I2SCFGR_I2SDIV_Pos);	// Set I2SDIV to 2 with Odd factor prescaler
-	//SPI2->I2SCFGR |= SPI_I2SCFGR_ODD;
+	SPI2->I2SCFGR |= (10 << SPI_I2SCFGR_I2SDIV_Pos);	// Set I2SDIV to 10
 
 	SPI2->IER |= (SPI_IER_TXPIE | SPI_IER_UDRIE);	// Enable interrupt when FIFO has free slot or underrun occurs
 	NVIC_SetPriority(SPI2_IRQn, 2);					// Lower is higher priority
@@ -421,29 +417,6 @@ void InitI2S()
 	SPI2->TXDR = (int32_t)0;
 
 	SPI2->CR1 |= SPI_CR1_CSTART;					// Start I2S
-}
-
-
-void InitI2STimer()
-{
-	// Timer to try and control issues with I2S interrupt firing early
-	// Uses APB1 timer clock which is Main Clock / 2 [280MHz / 2 = 140MHz] Tick is 2 * 7.14nS = 14.28nS
-	RCC->APB1LENR |= RCC_APB1LENR_TIM4EN;
-	TIM4->ARR = 65535;
-	TIM4->PSC = 1;
-}
-
-
-void StartI2STimer()
-{
-	TIM4->EGR |= TIM_EGR_UG;
-	TIM4->CR1 |= TIM_CR1_CEN;
-}
-
-
-uint32_t ReadI2STimer()
-{
-	return TIM4->CNT;
 }
 
 
