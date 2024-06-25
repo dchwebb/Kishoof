@@ -103,9 +103,9 @@ void LCD::Rotate(const LCD_Orientation_t o)
 {
 	Command(cmdGC9A01A::MADCTL);
 	switch (o) {
-		case LCD_Portrait :				Data(MADCTL_MX | MADCTL_BGR); break;
+		case LCD_Portrait :				Data(MADCTL_MX | MADCTL_BGR); break;			// RIbbon cable on bottom
 		case LCD_Portrait_Flipped : 	Data(MADCTL_MV | MADCTL_BGR); break;
-		case LCD_Landscape : 			Data(MADCTL_MY | MADCTL_BGR); break;
+		case LCD_Landscape : 			Data(MADCTL_MY | MADCTL_BGR); break;			// Ribbon cable on top
 		case LCD_Landscape_Flipped :	Data(MADCTL_MX | MADCTL_MY | MADCTL_MV | MADCTL_BGR); break;
 	}
 

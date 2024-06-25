@@ -13,6 +13,8 @@ A circular TFT LCD display shows both or either channel's waveform with any warp
 
 The module was designed in conjunction with musician Tal Shoshani.
 
+[Manual](https://raw.githubusercontent.com/dchwebb/Kishoof/master/Kishoof_Manual.md)
+
 Technical
 ---------
 
@@ -22,14 +24,22 @@ A TI PCM5100APW audio DAC is used for wavetable playback, operating in stereo at
 
 The MCU's internal 12 bit ADCs receive potentiometer and scaled Control voltage inputs.
 
-Digital power is supplied through a TI TPS561201 3.3V switching power supply and analog power via a 3.3 linear regulator.
+Digital power is supplied through a TI TPS561201 3.3V switching power supply and analog power via a 3.3V linear regulator.
 
 The display is a circular 1.28 inch 240x240 IPS TFT LCD with GC9A01 Driver and is controlled via SPI.
 
 USB is connected via a front-panel USB C connector with ESD Protection.
 
+Circuit Design in Kicad v8:
 
-Errata
-------
+[Components schematic](https://raw.githubusercontent.com/dchwebb/Kishoof/master/Hardware/Kishoof_Components.pdf)
 
-VCA input should be normalised to a ~7V signal (currently bodged to 3.3B).
+[Controls schematic](https://raw.githubusercontent.com/dchwebb/Kishoof/master/Hardware/Kishoof_Controls.pdf)
+
+
+Hardware Errata
+---------------
+
+- VCA input should be normalised to a ~7V signal (currently bodged to 3.3V).
+- Improve ground return paths on LCD daughterboard
+- Invert LCD daughterboard to make orientation easier, and move pads towards cutout
