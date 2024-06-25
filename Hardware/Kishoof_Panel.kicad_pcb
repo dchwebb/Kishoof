@@ -1516,7 +1516,7 @@
 			(layers "*.Cu" "*.Mask")
 			(uuid "6d82e694-e782-44f9-846b-247ecc65365a")
 		)
-		(model "${CUSTOM_3D}/Sifam_Knob_Small_Skirted.wrl"
+		(model "${CUSTOM_3D}/Sifam_Knob_Large_Tall_Unskirted_Encoder.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -1524,7 +1524,7 @@
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz 0 0 180)
+				(xyz 0 0 0)
 			)
 		)
 	)
