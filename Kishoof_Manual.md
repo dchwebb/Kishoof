@@ -1,4 +1,6 @@
 # Kishoof Manual
 
-Kishoof
+Controls
 --------
+
+![Panel](Graphics/Panel_Annotated.png?raw=true "Title")
