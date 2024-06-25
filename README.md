@@ -1,6 +1,6 @@
 # Kishoof
 
-Kishoof
+Overview
 --------
 
 Kishoof is a Wavetable synthesizer designed for use in a Eurorack modular system. Wavetables are held in 64MB of internal flash storage which is exposed as a USB disk drive via a front-panel USB C connector.
@@ -13,7 +13,7 @@ A circular TFT LCD display shows both or either channel's waveform with any warp
 
 The module was designed in conjunction with musician Tal Shoshani.
 
-[Manual](Kishoof_Manual.md)
+[Manual](https://raw.githubusercontent.com/dchwebb/Kishoof/master/Kishoof_Manual.md)
 
 Technical
 ---------
@@ -32,9 +32,9 @@ USB is connected via a front-panel USB C connector with ESD Protection.
 
 Circuit Design in Kicad v8:
 
-[Components schematic](Hardware/Kishoof_Components.pdf)
+[Components schematic](https://raw.githubusercontent.com/dchwebb/Kishoof/master/Hardware/Kishoof_Components.pdf)
 
-[Controls schematic](Hardware/Kishoof_Controls.pdf)
+[Controls schematic](https://raw.githubusercontent.com/dchwebb/Kishoof/master/Hardware/Kishoof_Controls.pdf)
 
 
 Hardware Errata
