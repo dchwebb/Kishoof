@@ -14,7 +14,7 @@ A circular TFT LCD display shows both or either channel's waveform with any warp
 
 The module was designed in conjunction with musician Tal Shoshani.
 
-[Manual](Kishoof_Manual.md)
+- **[Operation Manual](Kishoof_Manual.md)**
 
 
 ## Technical

@@ -72,7 +72,7 @@ Wavetables are selected with the rotary encoder. If wavetables are stored in sub
 
 With the playback mode switch in the up position, Channel A will playback the selected wavetable smoothly interpolating between the frames as the wavetable position is moved.
 
-In this mode channel B plays a special internal wavetable which is user configurable via the console. This can contain up to 10 different wavetabhle frames chosen from: Sine at 1, 2, 3, 4, 5 or 6 times base frequency, Square, Saw, Triangle waves.
+In this mode channel B plays a special internal wavetable which is user configurable via the console. This can contain up to 10 different wavetabhle frames chosen from: Sine at 1, 2, 3, 4, 5 or 6 times base frequency, Square, Saw, Triangle waves. This is generated using additive synthesis and is configurable in the console - use the command **help add** for details.
 
 
 ### Stepped Playback Mode
@@ -113,7 +113,7 @@ Kishoof has a mechanism to store its current settings in the microcontroller's i
 - Channel B reverse wavetable playback state
 - UI wavetable display settings
 
-Changes are batched and are only written after 60 seconds since the last change has elapsed. Changes are stored sequentially over the internal Non-volatile memory to avoid excessive wear.
+Changes are batched and are only written after 60 seconds since the last change has elapsed. Changes are stored sequentially over the internal non-volatile memory to avoid excessive wear.
 
 So that configuration changes do not interfere with audio output there are a maximum number of changes that can be written in a single session, after which a restart is needed to free up additional memory. Total storage for config data is 24 kBytes and each configuration block is around 48 bytes so up to 512 configuration blocks can be saved per session.
 
@@ -181,7 +181,7 @@ Run the STM Cube Programmer software available here: [STM Cube Programmer](https
 
 ![Programmer2](Graphics/STMCubeProg2.png?raw=true)
 
-- Click 'Open file' and navigate the Kishoof.elf firmware file downloaded from Github.
+- Click 'Open file' and navigate to the Kishoof.elf firmware file downloaded from Github.
 
 ![Programmer3](Graphics/STMCubeProg3.png?raw=true)
 
