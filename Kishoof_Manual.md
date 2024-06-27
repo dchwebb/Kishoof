@@ -21,9 +21,9 @@
 
 ![Panel](Graphics/Panel_Annotated.png?raw=true)
 
-**1. LCD Screen** displays name of selected wavetable, waveforms, wavetable and warp positions and warp type
+**1. LCD Screen** Displays name of selected wavetable, waveforms, wavetable and warp positions and warp type
 
-**2. Encoder** selects wavetables; press to change display from both to either wavetable
+**2. Encoder** Selects wavetables; press to change display from both to either wavetable
 
 **3. Transpose**: 3 position control allowing octave up, down or normal for both channels
 
@@ -47,6 +47,8 @@
 
 **13. Pitch** Attach a 1 volt per octave CV to control pitch over 6 octaves
 
+<br />
+<br />
 
 ## Wavetables and Playback Mode
 
@@ -72,13 +74,15 @@ Wavetables are selected with the rotary encoder. If wavetables are stored in sub
 
 With the playback mode switch in the up position, Channel A will playback the selected wavetable smoothly interpolating between the frames as the wavetable position is moved.
 
-In this mode channel B plays a special internal wavetable which is user configurable via the console. This can contain up to 10 different wavetabhle frames chosen from: Sine at 1, 2, 3, 4, 5 or 6 times base frequency, Square, Saw, Triangle waves. This is generated using additive synthesis and is configurable in the console - use the command **help add** for details.
+In this mode channel B plays a special internal wavetable which is user configurable via the console. This can contain up to 10 different wavetable frames chosen from: Sine at 1, 2, 3, 4, 5 or 6 times base frequency, Square, Saw, Triangle waves. This is generated using additive synthesis and is configurable in the console - use the command **help add** for instructions.
 
 
 ### Stepped Playback Mode
 
 With the playback switch in the down position, wavetable frames are selected individually and not interpolated. In this mode both channel A and B can play any frame from the same wavetable.
 
+<br />
+<br />
 
 ## Warping and Modulation
 
@@ -102,6 +106,8 @@ Channel B can also be reversed by clicking the Warp Type button - orange arrows 
 
 Channel B can also be switched an octave down relative to channel A. This will affect channel A in TZFM mode, unlike the add/multiple modulations.
 
+<br />
+<br />
 
 ## Startup configuration
 
@@ -119,6 +125,8 @@ So that configuration changes do not interfere with audio output there are a max
 
 If the configuration becomes corrupt or does not write correctly even after restarting the command **clearconfig** from the console (see below) will blank the internal storage.
 
+<br />
+<br />
 
 ## Calibration Configuration and the Serial Console
 
@@ -164,6 +172,8 @@ This will not mount the USB drive, will not mount the flash storage, will not lo
 
 In safe mode to completely erase the internal flash storage type **eraseflash**.
 
+<br />
+<br />
 
 ## Firmware Upgrade
 
@@ -179,9 +189,15 @@ Run the STM Cube Programmer software available here: [STM Cube Programmer](https
 2. Click Refresh and select the appropriate USB port (USB1 here)
 3. Click Connect
 
+<br />
+<br />
+
 ![Programmer2](Graphics/STMCubeProg2.png?raw=true)
 
 - Click 'Open file' and navigate to the Kishoof.elf firmware file downloaded from Github.
+
+<br />
+<br />
 
 ![Programmer3](Graphics/STMCubeProg3.png?raw=true)
 
