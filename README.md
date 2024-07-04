@@ -12,7 +12,9 @@ A warp engine allows a range of warping effects to alter channel A's signal, wit
 
 A circular TFT LCD display shows both or either channel's waveform with any warping and modulation applied. A serial console available over a USB virtual COM port allows advanced configuration, calibration and trouble-shooting facilities.
 
-The module was designed in conjunction with musician Tal Shoshani.
+<iframe width="640" height="360" src="https://www.youtube.com/embed/ltlQT8CrSRk?si=NGSEGg0viXK6cc_J" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+The module was designed in conjunction with musician Tal Shoshani who produced the demonstration video linked above.
 
 - **[Operation Manual](Kishoof_Manual.md)**
 
@@ -57,3 +59,4 @@ Digital power is supplied through a TI TPS561201 3.3V switching power supply and
 - VCA input should be normalised to a ~7V signal (currently bodged to 3.3V).
 - Improve ground return paths on LCD daughterboard
 - Invert LCD daughterboard to make orientation easier, and move pads towards cutout
+- Fix footprint for switched potentiometer (Warp Type)
