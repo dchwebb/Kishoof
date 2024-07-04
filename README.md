@@ -12,9 +12,9 @@ A warp engine allows a range of warping effects to alter channel A's signal, wit
 
 A circular TFT LCD display shows both or either channel's waveform with any warping and modulation applied. A serial console available over a USB virtual COM port allows advanced configuration, calibration and trouble-shooting facilities.
 
-<iframe width="640" height="360" src="https://www.youtube.com/embed/ltlQT8CrSRk?si=NGSEGg0viXK6cc_J" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+The module was designed in conjunction with musician Tal Shoshani who produced the following demonstration video:
 
-The module was designed in conjunction with musician Tal Shoshani who produced the demonstration video linked above.
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/ltlQT8CrSRk/maxresdefault.jpg)](https://www.youtube.com/watch?v=ltlQT8CrSRk)
 
 - **[Operation Manual](Kishoof_Manual.md)**
 
