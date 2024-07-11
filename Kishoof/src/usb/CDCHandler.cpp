@@ -442,15 +442,27 @@ void CDCHandler::ProcessCommand()
 		}
 		printf("\r\n");
 
-	} else if (cmd.compare(0, 13, "printcluster:") == 0) {			// Flash: print 2048 words memory mapped data
+	} else if (cmd.compare(0, 13, "printcluster:") == 0) {			// Flash: print 4096 words memory mapped data
 		const int32_t cluster = ParseInt(cmd, ':', 2, 0xFFFFFF);
 		if (cluster >= 2) {
 			printf("Cluster %ld:\r\n", cluster);
 
-			const uint32_t* p = (uint32_t*)(fatTools.GetClusterAddr(cluster));
+			const uint32_t* p = (uint32_t*)(fatTools.GetClusterAddr(cluster, true));
 
-			for (uint32_t a = 0; a < 512; a += 4) {
+			for (uint32_t a = 0; a < 1024; a += 4) {
 				printf("0x%08lx: %#010lx %#010lx %#010lx %#010lx\r\n", (a * 4) + (uint32_t)p, p[a], p[a + 1], p[a + 2], p[a + 3]);
+			}
+		}
+
+	} else if (cmd.compare(0, 11, "printblock:") == 0) {			// Flash prints cluster with minimal text for automated debugging
+		const int32_t block = ParseInt(cmd, ':', 0, 0xFFFFFF);
+		if (block >= 0) {
+			printf("Block %ld:\n", block);
+
+			const uint32_t* p = (uint32_t*)(flashAddress + block * fatClusterSize);
+
+			for (uint32_t a = 0; a < 1024; a += 4) {
+				printf("%08lx %08lx %08lx %08lx\n", p[a], p[a + 1], p[a + 2], p[a + 3]);
 			}
 		}
 

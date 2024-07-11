@@ -11,12 +11,13 @@ Sector = 512 bytes
 Cluster = 8 * 512 bytes = 4096 bytes
 Block = 4096 bytes (minimum erase size)
 
-64 MBytes = 125,000 Sectors (31250 Clusters - data area is 7802 clusters after 10 clusters used for headers)
+Note that there are 8 blocks before the cluster counting system starts
+64 MBytes = 125,000 Sectors = 15625 Clusters
 
-Blocks    Bytes			Description
+Block    Bytes			Description
 ------------------------------------
 0           0 -   511	Boot Sector (AKA Reserved): 1 sector
-0-7       512 - 32767	FAT (holds cluster linked list): 123 sectors - 31250 entries each 16 bit
+0         512 - 32767	FAT (holds cluster linked list): 63 sectors - 15625 entries each 16 bit
 8       32768 - 36863	Root Directory: 8 sectors - 128 root directory entries at 32 bytes each (32 * 128 = 4096)
 9       36864 - 40959	Cluster 2 - contains 'System Volume Information' directory
 10      40960 - 45055	Cluster 3 - contains 'IndexerVolume' file

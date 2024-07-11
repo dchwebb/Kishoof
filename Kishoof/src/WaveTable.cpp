@@ -389,7 +389,7 @@ void WaveTable::ReadDir(const FATFileInfo* dirEntry, const uint32_t dirIndex)
 	}
 
 	// Store contents of a directory into the wavetable and directory lists
-	while (dirEntry->name[0] != 0 && wavetableCount < maxWavetable) {
+	while (dirEntry->name[0] != 0 && dirEntry->name[0] != 255 && wavetableCount < maxWavetable) {
 		const bool isValidDir = dirEntry->name[0] != '.' &&	(dirEntry->attr & AM_DIR) && (dirEntry->attr & AM_HID) == 0 && (dirEntry->attr & AM_SYS) == 0;
 		const bool isValidWav = (dirEntry->attr & AM_DIR) == 0 && strncmp(&(dirEntry->name[8]), "WAV", 3) == 0 && dirEntry->firstClusterLow;
 
