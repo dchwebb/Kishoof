@@ -202,7 +202,7 @@ private:
 			0x00,							// BQUE | ENCSERV | VS | MULTIP | MCHNGR | Obsolete | Obsolete | ADDR16
 			0x00,							// Obsolete | Obsolete | WBUS16 | SYNC | LINKED | Obsolete | CMDQUE | VS
 			'M', 'o', 'u', 'n', 't', 'j', 'o', 'y',		// Manufacturer : 8 bytes
-			'P', 'u', 'n', 'c', 'k', ' ', ' ', ' ',		// Product      : 16 Bytes
+			'K', 'i', 's', 'h', 'o', 'o', 'f', ' ',		// Product      : 16 Bytes
 			' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
 			'0', '.', '0' ,'1'							// Version      : 4 Bytes
 	};
