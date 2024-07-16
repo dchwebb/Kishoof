@@ -311,9 +311,9 @@ void WaveTable::Init()
 void WaveTable::ChangeWaveTable(const int32_t index)
 {
 	// Called by UI when changing wavetable
-	activeWaveTable = index;
 	strncpy(cfg.wavetable, wavList[index].name, 8);
 	crossfade = 1.0f;
+	activeWaveTable = index;
 
 	config.ScheduleSave();
 }
@@ -527,6 +527,8 @@ void WaveTable::GetWavInfo(Wav& wav)
 		wav.invalid = Invalid::HeaderCorrupt;
 	} else if (wav.fragmented) {
 		wav.invalid = Invalid::Fragmented;
+	} else if ((uint32_t)wav.startAddr & 0b11) {
+		wav.invalid = Invalid::Unaligned;
 	}
 }
 
