@@ -398,7 +398,7 @@ int8_t MSCHandler::SCSI_Read()
 	csw.dDataResidue -= inBuffSize;
 
 	// Data may be read from cache or flash
-	inBuff = fatTools.GetSectorAddr(scsi_blk_addr, bot_data, inBuffSize);
+	inBuff = fatTools.GetSectorAddr(scsi_blk_addr);
 
 	EndPointTransfer(Direction::in, inEP, inBuffSize);
 

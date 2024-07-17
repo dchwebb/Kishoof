@@ -25,6 +25,7 @@ public:
 	void WarpButton(bool change);				// Called when warp button is pressed
 	float QuantisedWavetablePos(const uint8_t chn);	// For drawing: return quantised wavetable position
 	static void UpdateConfig();
+	void FixUnaligned();
 
 	struct {
 		char wavetable[8];

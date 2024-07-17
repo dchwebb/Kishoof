@@ -98,6 +98,9 @@ void CDCHandler::ProcessCommand()
 				"\r\n"
 				"Flash Tools:\r\n"
 				"------------\r\n"
+				"eraseflash  -  Erase all sample storage flash data\r\n"
+				"format      -  Format sample storage flash\r\n"
+				"fixunaligned   Attempt to fix any wavetables with Unaligned errors\r\n"
 				"sreg        -  Print flash status register\r\n"
 				"flashid     -  Print flash manufacturer and device IDs\r\n"
 				"mem:A       -  Print 1024 bytes of flash (A = decimal address)\r\n"
@@ -106,8 +109,6 @@ void CDCHandler::ProcessCommand()
 				"cacheinfo   -  Summary of unwritten changes in header cache\r\n"
 				"cachechanges   Show all bytes changed in header cache\r\n"
 				"flushcache  -  Flush any changed data in cache to flash\r\n"
-				"eraseflash  -  Erase all sample storage flash data\r\n"
-				"format      -  Format sample storage flash\r\n"
 				"eraseblock:A   Erase block of memory (4096 bytes)\r\n"
 
 #if (USB_DEBUG)
@@ -231,6 +232,8 @@ void CDCHandler::ProcessCommand()
 			usb->SendString("Invalid address\r\n");
 		}
 
+	} else if (cmd.compare("fixunaligned") == 0) {				// Attempt to fix unaligned wavetable headers
+		wavetable.FixUnaligned();
 
 	} else if (cmd.compare("octo") == 0) {						// Switch Flash to octal mode
 		extFlash.SetOctoMode();

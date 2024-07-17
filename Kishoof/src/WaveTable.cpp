@@ -115,7 +115,6 @@ float WaveTable::QuantisedWavetablePos(const uint8_t chn)
 	}
 }
 
-
 inline void WaveTable::OutputSample(const uint8_t chn, const float readPos)
 {
 	// Get location of current wavetable frame in wavetable
@@ -618,3 +617,58 @@ void WaveTable::FragChain()
 		}
 	}
 }
+
+
+void WaveTable::FixUnaligned()
+{
+	uint8_t buffer[fatSectorSize + 4];								// Create buffer that can contain a sector plus one extra word
+	bool refresh = false;
+	for (uint32_t i = 0; i < wavetableCount; ++i) {
+		auto& wav = wavList[i];
+		if (wav.invalid == Invalid::Unaligned) {
+			const uint8_t* wavHeader = fatTools.GetClusterAddr(wav.cluster, true);
+
+			// Jump through chunks looking for 'fmt' chunk
+			uint32_t pos = 12;										// First chunk ID at 12 byte (4 word) offset
+			while (*(uint32_t*)&(wavHeader[pos]) != 0x20746D66) {	// Look for string 'fmt '
+				pos += (8 + *(uint32_t*)&(wavHeader[pos + 4]));		// Each chunk title is followed by the size of that chunk which can be used to locate the next one
+			}
+
+			uint32_t chunkSize = *(uint32_t*)&(wavHeader[pos + 4]);
+			if (chunkSize == 18) {
+				printf("Updating %8.8s...\r\n", wav.name);
+				DelayMS(2);
+
+				// Reconstruct the first sector of the file with a truncated fmt section
+				memcpy(buffer, wavHeader, 516);						// Fill the buffer with the fmt section with new size
+				buffer[pos + 4] = 16;								// Update the buffer size
+				for (uint32_t b = pos + 24; b < 512; ++b) {			// 24 = 4 (fmt) + 4 (size) + 16 (fmt data)
+					buffer[b] = buffer[b + 2];						// shuffle up remaing data in sector
+				}
+
+				uint32_t sector = (uint32_t)(wavHeader - flashAddress) / fatSectorSize;		// Calculate sector from address
+				fatTools.Write(buffer, sector, 1);
+
+				// Shuffle data down 2 bytes for the remaining sectors
+				pos = 514;
+				const uint32_t remainingSectors = sector + (wav.size / fatSectorSize) + 1;
+				for (uint32_t s = sector + 1; s < remainingSectors; ++s) {
+					memcpy(buffer, &wavHeader[pos], 512);
+					fatTools.Write(buffer, s, 1);
+					pos += 512;
+					if (pos > wav.size) {
+						break;
+					}
+				}
+				refresh = true;
+				printf("Updated %8.8s\r\n", wav.name);
+			}
+		}
+	}
+	if (refresh) {
+		wavetable.UpdateWavetableList();
+	} else {
+		printf("No suitable unaligned wavetables found\r\n");
+	}
+}
+

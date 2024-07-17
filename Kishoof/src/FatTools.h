@@ -87,7 +87,7 @@ public:
 
 	bool InitFatFS();
 	void Read(uint8_t* buffAddress, const uint32_t readSector, const uint32_t sectorCount);
-	const uint8_t* GetSectorAddr(const uint32_t sector, const uint8_t* buffer, const uint32_t bufferSize);
+	const uint8_t* GetSectorAddr(const uint32_t sector);
 	const uint8_t* GetClusterAddr(const uint32_t cluster, const bool ignoreCache = false);
 	void Write(const uint8_t* readBuff, const uint32_t writeSector, const uint32_t sectorCount);
 	void PrintDirInfo(uint32_t cluster = 0);
