@@ -630,19 +630,24 @@ void WaveTable::FixUnaligned()
 
 			// Jump through chunks looking for 'fmt' chunk
 			uint32_t pos = 12;										// First chunk ID at 12 byte (4 word) offset
-			while (*(uint32_t*)&(wavHeader[pos]) != 0x20746D66) {	// Look for string 'fmt '
+			uint32_t chunkSize = 0;
+			while (pos < 1000 && *(uint32_t*)&(wavHeader[pos]) != 0x61746164) {		// Check we haven't reached the data section
+				// Get size
+				chunkSize = *(uint32_t*)&(wavHeader[pos + 4]);
+				if ((chunkSize % 4) == 2) {							// Locate first chunk that is aligned to 16 bit (not 32 bit)
+					break;
+				}
 				pos += (8 + *(uint32_t*)&(wavHeader[pos + 4]));		// Each chunk title is followed by the size of that chunk which can be used to locate the next one
 			}
 
-			uint32_t chunkSize = *(uint32_t*)&(wavHeader[pos + 4]);
-			if (chunkSize == 18) {
+			if ((chunkSize % 4) == 2) {
 				printf("Updating %8.8s...\r\n", wav.name);
 				DelayMS(2);
 
 				// Reconstruct the first sector of the file with a truncated fmt section
 				memcpy(buffer, wavHeader, 516);						// Fill the buffer with the fmt section with new size
-				buffer[pos + 4] = 16;								// Update the buffer size
-				for (uint32_t b = pos + 24; b < 512; ++b) {			// 24 = 4 (fmt) + 4 (size) + 16 (fmt data)
+				buffer[pos + 4] = chunkSize - 2;					// Update the buffer size
+				for (uint32_t b = pos + 8 + (chunkSize - 2); b < 512; ++b) {	// 4 (fmt) + 4 (size) + new chunck size
 					buffer[b] = buffer[b + 2];						// shuffle up remaing data in sector
 				}
 

@@ -372,7 +372,7 @@ void USB::Init(bool softReset)
 
 		GpioPin::Init(GPIOA, 9, GpioPin::Type::Input);						// PA9: USB_OTG_HS_VBUS
 		GpioPin::Init(GPIOA, 11, GpioPin::Type::AlternateFunction, 10);		// PA11: USB_OTG_HS_DM
-		GpioPin::Init(GPIOA, 12, GpioPin::Type::AlternateFunction, 10);		// PA11: USB_OTG_HS_DP
+		GpioPin::Init(GPIOA, 12, GpioPin::Type::AlternateFunction, 10);		// PA12: USB_OTG_HS_DP
 
 		RCC->AHB1ENR |= RCC_AHB1ENR_USB1OTGHSEN;		// USB2OTG (OTG_HS1) Peripheral Clocks Enable
 
@@ -639,7 +639,7 @@ uint32_t USB::MakeConfigDescriptor()
 	for (auto c : classByEP) {
 		if (c != nullptr) {
 			const uint8_t* descBuff = nullptr;
-			uint32_t descSize = c-> GetInterfaceDescriptor(&descBuff);
+			uint32_t descSize = c->GetInterfaceDescriptor(&descBuff);
 			memcpy(&configDescriptor[descPos], descBuff, descSize);
 			descPos += descSize;
 		}
