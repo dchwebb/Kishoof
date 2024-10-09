@@ -52,7 +52,7 @@ void Calib::Calibrate(char key)
 			break;
 		case State::Waiting1:
 			state = State::Octave1;
-			adcOctave1 = (float)adc.VcaCV;
+			adcOctave1 = (float)adc.Pitch_CV;
 			calibCount = 1;
 			break;
 		case State::PendingSave: {
