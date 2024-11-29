@@ -81,3 +81,15 @@ void Calib::Calibrate(char key)
 }
 
 
+void Calib::UpdateConfig()
+{
+	if (calib.cfg.pitchBase == 0.0f) {
+		calib.cfg.pitchBase = pitchBaseDef;
+	}
+	if (calib.cfg.pitchMult == 0.0f) {
+		calib.cfg.pitchMult = pitchMultDef;
+	}
+	if (calib.cfg.vcaNormal == 0) {
+		calib.cfg.vcaNormal = vcaNormalDef;
+	}
+}
