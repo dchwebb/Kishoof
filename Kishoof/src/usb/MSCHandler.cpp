@@ -397,8 +397,8 @@ int8_t MSCHandler::SCSI_Read()
 	inBuffCount = 0;
 	csw.dDataResidue -= inBuffSize;
 
-	// Data may be read from cache or flash
-	inBuff = fatTools.GetSectorAddr(scsi_blk_addr);
+	// Data may be read from cache or flash - set block to true to prevent lock up when wavetable and USB are competing for Flash time
+	inBuff = fatTools.GetSectorAddr(scsi_blk_addr, true);
 
 	EndPointTransfer(Direction::in, inEP, inBuffSize);
 

@@ -79,6 +79,7 @@ public:
 	bool writeBusy = false;
 	static constexpr uint32_t writingWaitSet = 80;		// Block sample output for at least X ms after a write
 	uint32_t writingWait = 0;			// Time to block sample output since a write last reported
+	uint32_t readWait = 0;				// Time to block sample output since a read last reported
 	bool updateWavetables = false;		// Set during write so that updates to wavetables can be batched
 
 	bool noFileSystem = true;
@@ -87,7 +88,7 @@ public:
 
 	bool InitFatFS();
 	void Read(uint8_t* buffAddress, const uint32_t readSector, const uint32_t sectorCount);
-	const uint8_t* GetSectorAddr(const uint32_t sector);
+	const uint8_t* GetSectorAddr(const uint32_t sector, bool block);
 	const uint8_t* GetClusterAddr(const uint32_t cluster, const bool ignoreCache = false);
 	void Write(const uint8_t* readBuff, const uint32_t writeSector, const uint32_t sectorCount);
 	void PrintDirInfo(uint32_t cluster = 0);
@@ -97,7 +98,7 @@ public:
 	uint8_t FlushCache();
 	void InvalidateFatFSCache();
 	bool Format();
-	bool Busy() { return flushCacheBusy | writeBusy | (writingWait > SysTickVal); }
+	bool Busy() { return flushCacheBusy | writeBusy | (writingWait > SysTickVal) | (readWait > SysTickVal); }
 private:
 	FATFS fatFs;						// File system object for RAM disk logical drive
 	const char fatPath[4] = "0:/";		// Logical drive path for FAT File system

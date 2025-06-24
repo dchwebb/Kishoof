@@ -195,7 +195,7 @@ const uint8_t* FatTools::GetClusterAddr(const uint32_t cluster, const bool ignor
 }
 
 
-const uint8_t* FatTools::GetSectorAddr(const uint32_t sector)
+const uint8_t* FatTools::GetSectorAddr(const uint32_t sector, bool block)
 {
 	// Used by MSC when reading: depending on sector return header or write cache; otherwise flash address
 	if (sector < fatCacheSectors) {
@@ -207,6 +207,9 @@ const uint8_t* FatTools::GetSectorAddr(const uint32_t sector)
 			const uint32_t byteOffset = (sector - (block * fatEraseSectors)) * fatSectorSize;		// Offset within currently block
 			return &(writeBlockCache[byteOffset]);
 		} else {
+			if (block) {
+				readWait = SysTickVal + 300;
+			}
 			const uint8_t* sectorAddress = flashAddress + (sector * fatSectorSize);
 			return sectorAddress;
 		}
