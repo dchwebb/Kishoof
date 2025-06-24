@@ -208,7 +208,7 @@ const uint8_t* FatTools::GetSectorAddr(const uint32_t sector, bool block)
 			return &(writeBlockCache[byteOffset]);
 		} else {
 			if (block) {
-				readWait = SysTickVal + 300;
+				readWait = SysTickVal + readWaitSet;
 			}
 			const uint8_t* sectorAddress = flashAddress + (sector * fatSectorSize);
 			return sectorAddress;
