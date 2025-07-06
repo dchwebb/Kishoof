@@ -6,8 +6,8 @@
 	(paper "A4")
 	(title_block
 		(title "Kishoof Components")
-		(date "2024-04-24")
-		(rev "1.0")
+		(date "2025-07-06")
+		(rev "1.1")
 		(company "Mountjoy Modular")
 	)
 	(lib_symbols
@@ -2445,128 +2445,6 @@
 				)
 			)
 		)
-		(symbol "Device:R_Small"
-			(pin_numbers hide)
-			(pin_names
-				(offset 0.254) hide)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "R"
-				(at 0.762 0.508 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Value" "R_Small"
-				(at 0.762 -1.016 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" "~"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "Resistor, small symbol"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_keywords" "R resistor"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_fp_filters" "R_*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "R_Small_0_1"
-				(rectangle
-					(start -0.762 1.778)
-					(end 0.762 -1.778)
-					(stroke
-						(width 0.2032)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "R_Small_1_1"
-				(pin passive line
-					(at 0 2.54 270)
-					(length 0.762)
-					(name "~"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 0 -2.54 90)
-					(length 0.762)
-					(name "~"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "Device:RotaryEncoder_Switch"
 			(pin_names
 				(offset 0.254) hide)
@@ -4860,18 +4738,6 @@
 		(uuid "44de4db1-dfbf-4200-b22c-e4b8500bee2f")
 	)
 	(junction
-		(at 184.15 30.48)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "45c8825c-e17e-4230-972a-b8b72a4c65a1")
-	)
-	(junction
-		(at 34.29 111.76)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "66558490-d306-4a14-8fcc-433cc11a2a6e")
-	)
-	(junction
 		(at 34.29 91.44)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4922,12 +4788,20 @@
 		(uuid "8f693d42-ab1f-40c0-9cb9-5795eb17ae4a")
 	)
 	(no_connect
+		(at 171.45 30.48)
+		(uuid "930c29a8-3c11-4f82-89f6-2a32ceb56f8d")
+	)
+	(no_connect
 		(at 171.45 76.2)
 		(uuid "a398bb08-36fc-41c1-b188-ad39136bb19a")
 	)
 	(no_connect
 		(at 171.45 66.04)
 		(uuid "ab145fee-a4d5-4cc6-9a05-6c53d161bcdf")
+	)
+	(no_connect
+		(at 171.45 33.02)
+		(uuid "b161a6f1-cce8-4af0-9fa1-475013961eb9")
 	)
 	(no_connect
 		(at 31.75 134.62)
@@ -5089,7 +4963,7 @@
 	)
 	(wire
 		(pts
-			(xy 34.29 106.68) (xy 34.29 111.76)
+			(xy 34.29 106.68) (xy 34.29 114.3)
 		)
 		(stroke
 			(width 0)
@@ -5129,16 +5003,6 @@
 	)
 	(wire
 		(pts
-			(xy 179.07 33.02) (xy 184.15 33.02)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "2bd0b049-c943-4739-9007-321f8359c89c")
-	)
-	(wire
-		(pts
 			(xy 224.79 147.32) (xy 227.33 147.32)
 		)
 		(stroke
@@ -5157,6 +5021,16 @@
 		)
 		(uuid "3613a1c3-a6db-4576-a773-d740fbc6a013")
 	)
+	(wire
+		(pts
+			(xy 31.75 111.76) (xy 36.83 111.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "36244ca8-6674-446d-af60-3d8abc751f22")
+	)
 	(polyline
 		(pts
 			(xy 129.54 129.54) (xy 200.66 129.54)
@@ -5166,36 +5040,6 @@
 			(type dash)
 		)
 		(uuid "371d97c4-9168-4bf5-8290-7ca3ee5dff4f")
-	)
-	(wire
-		(pts
-			(xy 31.75 111.76) (xy 34.29 111.76)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3b71667a-f31f-45a6-8b5c-7bf87081ce2d")
-	)
-	(wire
-		(pts
-			(xy 179.07 30.48) (xy 184.15 30.48)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3c0ebe81-ed1f-4039-ae0b-da4898d7d004")
-	)
-	(wire
-		(pts
-			(xy 34.29 111.76) (xy 34.29 114.3)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3d447e75-4781-447d-bce9-763149c1ecc6")
 	)
 	(wire
 		(pts
@@ -5747,16 +5591,6 @@
 		)
 		(uuid "d4295cf7-00a7-47b9-852c-3a1578f7bc13")
 	)
-	(wire
-		(pts
-			(xy 187.96 30.48) (xy 184.15 30.48)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d60d9836-5460-476e-b714-58325f3eeca0")
-	)
 	(polyline
 		(pts
 			(xy 300.99 12.7) (xy 300.99 200.66)
@@ -5769,16 +5603,6 @@
 	)
 	(wire
 		(pts
-			(xy 171.45 33.02) (xy 173.99 33.02)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "db10b0fe-c525-4d9c-b61d-b35de4c7181c")
-	)
-	(wire
-		(pts
 			(xy 31.75 149.86) (xy 34.29 149.86)
 		)
 		(stroke
@@ -5786,16 +5610,6 @@
 			(type default)
 		)
 		(uuid "dc645104-4953-4fe2-add9-8797fb5ae013")
-	)
-	(wire
-		(pts
-			(xy 171.45 30.48) (xy 173.99 30.48)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "dc99ed89-ef93-40d9-ac87-11668e1d286c")
 	)
 	(wire
 		(pts
@@ -5839,16 +5653,6 @@
 	)
 	(wire
 		(pts
-			(xy 187.96 33.02) (xy 187.96 30.48)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e47ff186-4c20-4f76-bd57-8b4fa4d378f9")
-	)
-	(wire
-		(pts
 			(xy 31.75 109.22) (xy 36.83 109.22)
 		)
 		(stroke
@@ -5856,16 +5660,6 @@
 			(type default)
 		)
 		(uuid "e56febad-3f33-406d-af5c-5c5eb19ef33c")
-	)
-	(wire
-		(pts
-			(xy 184.15 30.48) (xy 184.15 33.02)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e6a2fdb7-e8a8-429b-8c05-fa9f0044183c")
 	)
 	(wire
 		(pts
@@ -6000,9 +5794,9 @@
 		)
 		(uuid "28986369-d442-43ac-a745-abdae76fd097")
 	)
-	(text "Errata: Warp Switched Pot has incorrect mounting hole sizes (now fixed in library)\nWarp should be normalised to 8V"
+	(text "Errata: Warp Switched Pot has incorrect mounting hole sizes (now fixed in library)\nVCA should be normalised to 8V\n\nv1.1 - normalise VCA to 3.3V\n- Remove unneccessary resistors on USB CC lines"
 		(exclude_from_sim no)
-		(at 182.118 171.704 0)
+		(at 184.15 171.958 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6091,7 +5885,6 @@
 	)
 	(label "Audio_Out_R"
 		(at 218.44 87.63 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6102,7 +5895,6 @@
 	)
 	(label "USB_D-"
 		(at 151.13 107.95 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6113,7 +5905,6 @@
 	)
 	(label "Octave_Up"
 		(at 255.27 25.4 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6124,7 +5915,6 @@
 	)
 	(label "LED_Oct_B_Out"
 		(at 218.44 48.26 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6135,7 +5925,6 @@
 	)
 	(label "Encoder_Btn"
 		(at 177.8 143.51 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6146,7 +5935,6 @@
 	)
 	(label "LCD_SPI3_SCK"
 		(at 58.42 177.8 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6157,7 +5945,6 @@
 	)
 	(label "Mode"
 		(at 252.73 124.46 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6168,7 +5955,6 @@
 	)
 	(label "LCD_SPI3_MOSI"
 		(at 218.44 22.86 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6179,7 +5965,6 @@
 	)
 	(label "Wavetable_Pos_A_Pot"
 		(at 99.06 25.4 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6190,7 +5975,6 @@
 	)
 	(label "Octave_Down"
 		(at 227.33 128.27 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6201,7 +5985,6 @@
 	)
 	(label "Wavetable_Pos_A_Trm"
 		(at 99.06 48.26 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6212,7 +5995,6 @@
 	)
 	(label "Warp_Type_Pot"
 		(at 218.44 90.17 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6223,7 +6005,6 @@
 	)
 	(label "Encoder_Up"
 		(at 153.67 143.51 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6234,7 +6015,6 @@
 	)
 	(label "LCD_RESET"
 		(at 58.42 182.88 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6245,7 +6025,6 @@
 	)
 	(label "LCD_Backlight"
 		(at 58.42 193.04 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6256,7 +6035,6 @@
 	)
 	(label "B_Octave_Btn"
 		(at 218.44 50.8 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6267,7 +6045,6 @@
 	)
 	(label "Wavetable_Pos_B_CV_In"
 		(at 36.83 46.99 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6278,7 +6055,6 @@
 	)
 	(label "ChB_Mix"
 		(at 227.33 147.32 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6289,7 +6065,6 @@
 	)
 	(label "LCD_SPI3_SS"
 		(at 58.42 185.42 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6300,7 +6075,6 @@
 	)
 	(label "VCA_CV_In"
 		(at 255.27 90.17 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6311,7 +6085,6 @@
 	)
 	(label "LCD_SPI3_SS"
 		(at 218.44 30.48 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6322,7 +6095,6 @@
 	)
 	(label "Encoder_Down"
 		(at 153.67 148.59 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6333,7 +6105,6 @@
 	)
 	(label "Warp_CV_In"
 		(at 255.27 74.93 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6344,7 +6115,6 @@
 	)
 	(label "Wavetable_Pos_A_Trm"
 		(at 255.27 67.31 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6355,7 +6125,6 @@
 	)
 	(label "Octave_Down"
 		(at 255.27 27.94 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6366,7 +6135,6 @@
 	)
 	(label "ChB_RM"
 		(at 227.33 152.4 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6377,7 +6145,6 @@
 	)
 	(label "Audio_Out_L"
 		(at 35.56 132.08 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6388,7 +6155,6 @@
 	)
 	(label "LCD_Backlight"
 		(at 255.27 22.86 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6399,7 +6165,6 @@
 	)
 	(label "Wavetable_Pos_B_Pot"
 		(at 255.27 50.8 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6410,7 +6175,6 @@
 	)
 	(label "Warp_Amt_Trm"
 		(at 255.27 45.72 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6421,7 +6185,6 @@
 	)
 	(label "Encoder_Down"
 		(at 218.44 43.18 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6432,7 +6195,6 @@
 	)
 	(label "USB_DP"
 		(at 218.44 33.02 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6443,7 +6205,6 @@
 	)
 	(label "Pitch_CV_In"
 		(at 36.83 88.9 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6454,7 +6215,6 @@
 	)
 	(label "Octave_Up"
 		(at 227.33 123.19 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6465,7 +6225,6 @@
 	)
 	(label "USB_D-"
 		(at 173.99 40.64 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6476,7 +6235,6 @@
 	)
 	(label "USB_D+"
 		(at 173.99 45.72 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6487,7 +6245,6 @@
 	)
 	(label "LED_Oct_B_Out"
 		(at 104.14 185.42 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6498,7 +6255,6 @@
 	)
 	(label "Warp_Type_Pot"
 		(at 97.79 147.32 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6509,7 +6265,6 @@
 	)
 	(label "Warp_Polarity_Btn"
 		(at 259.08 143.51 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6520,7 +6275,6 @@
 	)
 	(label "USB_DM"
 		(at 218.44 38.1 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6531,7 +6285,6 @@
 	)
 	(label "ChB_Mix"
 		(at 218.44 74.93 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6542,7 +6295,6 @@
 	)
 	(label "Wavetable_Pos_A_Pot"
 		(at 218.44 69.85 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6553,7 +6305,6 @@
 	)
 	(label "USB_DM"
 		(at 168.91 107.95 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6564,7 +6315,6 @@
 	)
 	(label "Encoder_Btn"
 		(at 255.27 43.18 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6575,7 +6325,6 @@
 	)
 	(label "LCD_DC"
 		(at 255.27 30.48 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6586,7 +6335,6 @@
 	)
 	(label "Wavetable_Pos_B_CV_In"
 		(at 255.27 87.63 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6597,7 +6345,6 @@
 	)
 	(label "Audio_Out_R"
 		(at 35.56 152.4 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6608,7 +6355,6 @@
 	)
 	(label "Ext_Audio_In"
 		(at 240.03 99.06 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6619,7 +6365,6 @@
 	)
 	(label "Warp_Amt_Trm"
 		(at 99.06 123.19 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6630,7 +6375,6 @@
 	)
 	(label "Wavetable_Pos_A_CV_In"
 		(at 255.27 80.01 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6641,7 +6385,6 @@
 	)
 	(label "USB_D+"
 		(at 151.13 104.14 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6652,7 +6395,6 @@
 	)
 	(label "Wavetable_Pos_B_Pot"
 		(at 99.06 72.39 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6663,7 +6405,6 @@
 	)
 	(label "LCD_DC"
 		(at 58.42 180.34 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6674,7 +6415,6 @@
 	)
 	(label "USB_VBUS"
 		(at 173.99 25.4 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6685,7 +6425,6 @@
 	)
 	(label "Wavetable_Pos_A_CV_In"
 		(at 36.83 25.4 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6696,7 +6435,6 @@
 	)
 	(label "VCA_CV_In"
 		(at 36.83 109.22 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6707,7 +6445,6 @@
 	)
 	(label "Pitch_CV_In"
 		(at 255.27 82.55 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6718,7 +6455,6 @@
 	)
 	(label "Warp_Amt_Pot"
 		(at 255.27 48.26 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6729,7 +6465,6 @@
 	)
 	(label "B_Octave_Btn"
 		(at 255.27 154.94 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6740,7 +6475,6 @@
 	)
 	(label "USB_DP"
 		(at 168.91 104.14 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6751,7 +6485,6 @@
 	)
 	(label "Warp_Amt_Pot"
 		(at 99.06 97.79 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6762,7 +6495,6 @@
 	)
 	(label "LCD_SPI3_MOSI"
 		(at 58.42 175.26 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6773,7 +6505,6 @@
 	)
 	(label "ChB_RM"
 		(at 218.44 67.31 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6784,7 +6515,6 @@
 	)
 	(label "Warp_CV_In"
 		(at 36.83 67.31 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6795,7 +6525,6 @@
 	)
 	(label "Ext_Audio_In"
 		(at 255.27 72.39 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6806,7 +6535,6 @@
 	)
 	(label "LCD_SPI3_SCK"
 		(at 218.44 27.94 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6817,7 +6545,6 @@
 	)
 	(label "Audio_Out_L"
 		(at 218.44 85.09 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6828,7 +6555,6 @@
 	)
 	(label "Warp_Polarity_Btn"
 		(at 255.27 40.64 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6839,7 +6565,6 @@
 	)
 	(label "USB_VBUS"
 		(at 218.44 40.64 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6850,7 +6575,6 @@
 	)
 	(label "USB_VBUS"
 		(at 181.61 111.76 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6861,7 +6585,6 @@
 	)
 	(label "LCD_RESET"
 		(at 255.27 33.02 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6872,7 +6595,6 @@
 	)
 	(label "Mode"
 		(at 255.27 35.56 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6883,7 +6605,6 @@
 	)
 	(label "Encoder_Up"
 		(at 218.44 45.72 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -8250,92 +7971,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small")
-		(at 176.53 30.48 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "33c1dc9f-d7e1-4feb-a1ca-8d260cd8f736")
-		(property "Reference" "R1"
-			(at 180.34 29.21 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "5k1"
-			(at 172.72 29.21 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 176.53 30.48 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 176.53 30.48 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small symbol"
-			(at 176.53 30.48 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Part_Number" "C23186"
-			(at 176.53 30.48 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Rotation" ""
-			(at 176.53 30.48 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "3b60c1ac-cf7e-49d0-9614-3d2ebfbee38b")
-		)
-		(pin "2"
-			(uuid "e5937b8b-fb84-456e-972d-5bfca31dad97")
-		)
-		(instances
-			(project "Kishoof_Controls"
-				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
-					(reference "R1")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:+3.3VA")
 		(at 218.44 80.01 270)
 		(unit 1)
@@ -8604,91 +8239,6 @@
 			(project "Kishoof_Controls"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "#FLG03")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small")
-		(at 176.53 33.02 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "44820d5e-0e38-4f43-a66e-d208ca184b49")
-		(property "Reference" "R2"
-			(at 180.34 34.29 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "5k1"
-			(at 172.72 34.29 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 176.53 33.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 176.53 33.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small symbol"
-			(at 176.53 33.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Part_Number" "C23186"
-			(at 176.53 33.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Rotation" ""
-			(at 176.53 33.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "39e74d87-7a3a-4080-9fb7-6cd0d08732fe")
-		)
-		(pin "2"
-			(uuid "594d0c71-491c-468c-b6e7-82259c234915")
-		)
-		(instances
-			(project "Kishoof_Controls"
-				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
-					(reference "R2")
 					(unit 1)
 				)
 			)
@@ -9143,73 +8693,6 @@
 			(project "Kishoof_Controls"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "#PWR036")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 187.96 33.02 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "527ef9e6-c97c-49dc-9c10-2b8da0541765")
-		(property "Reference" "#PWR026"
-			(at 187.96 39.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 190.5 34.2899 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" ""
-			(at 187.96 33.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 187.96 33.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 187.96 33.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "9e3123ee-24f0-4da0-b48a-b3faf088d9d2")
-		)
-		(instances
-			(project "Kishoof_Controls"
-				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
-					(reference "#PWR026")
 					(unit 1)
 				)
 			)
@@ -10754,6 +10237,72 @@
 			(project "Kishoof_Controls"
 				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
 					(reference "JP1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3.3V")
+		(at 36.83 111.76 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "93ca0266-e629-4d67-9859-08fbf0500485")
+		(property "Reference" "#PWR047"
+			(at 33.02 111.76 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3V"
+			(at 40.386 110.9979 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 36.83 111.76 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 36.83 111.76 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+			(at 36.83 111.76 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "943c0988-2f4d-4c67-987e-24590642b2e6")
+		)
+		(instances
+			(project "Kishoof_Controls"
+				(path "/00778401-a8b8-4a7c-bae7-c4fa7505df01"
+					(reference "#PWR047")
 					(unit 1)
 				)
 			)
