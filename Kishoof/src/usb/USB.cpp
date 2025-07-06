@@ -1,7 +1,6 @@
 #include "USB.h"
 #include "GpioPin.h"
 
-volatile bool debugStart = false;
 
 USB usb;
 
@@ -24,7 +23,7 @@ void USB::EP0In(const uint8_t* buff, const uint32_t size)
 	ep0.inBuff = buff;
 	ep0State = EP0State::DataIn;
 
-	USBUpdateDbg({}, {}, {}, ep0.inBuffSize, {}, (uint32_t*)ep0.inBuff);
+	USBUpdateDbg({}, {}, {}, ep0.inBuffSize, (uint32_t*)ep0.inBuff);
 
 	EPStartXfer(Direction::in, 0, ep0.inBuffSize);		// sends blank request back
 }
@@ -47,17 +46,17 @@ void USB::InterruptHandler()					// In Drivers\STM32H7xx_HAL_Driver\Src\stm32h7x
 		epnum = receiveStatus & USB_OTG_GRXSTSP_EPNUM;			// Get the endpoint number
 		const uint16_t packetSize = (receiveStatus & USB_OTG_GRXSTSP_BCNT) >> 4;
 
-		USBUpdateDbg(receiveStatus, {}, epnum, packetSize, {}, nullptr);
+		USBUpdateDbg(receiveStatus, {}, epnum, packetSize, nullptr);
 
 		if (((receiveStatus & USB_OTG_GRXSTSP_PKTSTS) >> 17) == OutDataReceived && packetSize != 0) {	// 2 = OUT data packet received
 			ReadPacket(classByEP[epnum]->outBuff, packetSize, classByEP[epnum]->outBuffOffset);
-			USBUpdateDbg({}, {}, {}, {}, {}, classByEP[epnum]->outBuff + classByEP[epnum]->outBuffOffset);
+			USBUpdateDbg({}, {}, {}, {}, classByEP[epnum]->outBuff + classByEP[epnum]->outBuffOffset);
 			if (classByEP[epnum]->outBuffPackets > 1) {
 				classByEP[epnum]->outBuffOffset += (packetSize / 4);			// When receiving multiple packets increase buffer offset (packet size in bytes -> 32 bit ints)
 			}
 		} else if (((receiveStatus & USB_OTG_GRXSTSP_PKTSTS) >> 17) == SetupDataReceived) {				// 6 = SETUP data packet received
 			ReadPacket(classByEP[epnum]->outBuff, 8U, 0);
-			USBUpdateDbg({}, {}, {}, {}, {}, classByEP[epnum]->outBuff);
+			USBUpdateDbg({}, {}, {}, {}, classByEP[epnum]->outBuff);
 		} else if (((receiveStatus & USB_OTG_GRXSTSP_PKTSTS) >> 17) == OutTransferCompleted) {			// 3 = transfer completed
 			classByEP[epnum]->outBuffOffset = 0;
 		}
@@ -80,7 +79,7 @@ void USB::InterruptHandler()					// In Drivers\STM32H7xx_HAL_Driver\Src\stm32h7x
 			if ((ep_intr & 1) != 0) {
 				epint = USBx_OUTEP(epnum)->DOEPINT & USBx_DEVICE->DOEPMSK;
 
-				USBUpdateDbg(epint, {}, epnum, {}, {}, nullptr);
+				USBUpdateDbg(epint, {}, epnum, {}, nullptr);
 
 				if ((epint & USB_OTG_DOEPINT_XFRC) == USB_OTG_DOEPINT_XFRC) {		// 0x01 Transfer completed
 
@@ -89,7 +88,7 @@ void USB::InterruptHandler()					// In Drivers\STM32H7xx_HAL_Driver\Src\stm32h7x
 					if (epnum == 0) {
 
 						if (devState == DeviceState::Configured && classPendingData) {
-							if ((req.RequestType & USB_REQ_TYPE_MASK) == RequestTypeClass) {
+							if ((req.RequestType & requestTypeMask) == RequestTypeClass) {
 								// Previous OUT interrupt contains instruction (eg host sending CDC LineCoding); next command sends data (Eg LineCoding data)
 								classesByInterface[req.Index]->ClassSetupData(req, (uint8_t*)ep0.outBuff);
 							}
@@ -112,7 +111,7 @@ void USB::InterruptHandler()					// In Drivers\STM32H7xx_HAL_Driver\Src\stm32h7x
 					// Parse Setup Request containing data in outBuff filled by RXFLVL interrupt
 					req.loadData((uint8_t*)classByEP[epnum]->outBuff);
 
-					USBUpdateDbg({}, req, {}, {}, {}, nullptr);
+					USBUpdateDbg({}, req, {}, {}, nullptr);
 
 					ep0State = EP0State::Setup;
 
@@ -122,7 +121,7 @@ void USB::InterruptHandler()					// In Drivers\STM32H7xx_HAL_Driver\Src\stm32h7x
 						break;
 
 					case RequestRecipientInterface:
-						if ((req.RequestType & USB_REQ_TYPE_MASK) == RequestTypeClass) {		// 0xA1 & 0x60 == 0x20
+						if ((req.RequestType & requestTypeMask) == RequestTypeClass) {		// 0xA1 & 0x60 == 0x20
 
 							// req.Index holds interface - locate which handler this relates to
 							if (req.Length > 0) {
@@ -171,12 +170,12 @@ void USB::InterruptHandler()					// In Drivers\STM32H7xx_HAL_Driver\Src\stm32h7x
 		while (ep_intr != 0) {
 			if ((ep_intr & 1) != 0) {
 
-				epint = USBx_INEP(epnum)->DIEPINT & (USBx_DEVICE->DIEPMSK | (((USBx_DEVICE->DIEPEMPMSK >> (epnum & EP_ADDR_MASK)) & 0x1U) << 7));
+				epint = USBx_INEP(epnum)->DIEPINT & (USBx_DEVICE->DIEPMSK | (((USBx_DEVICE->DIEPEMPMSK >> (epnum & epAddressMask)) & 0x1U) << 7));
 
-				USBUpdateDbg(epint, {}, epnum, {}, {}, nullptr);
+				USBUpdateDbg(epint, {}, epnum, {}, nullptr);
 
 				if ((epint & USB_OTG_DIEPINT_XFRC) == USB_OTG_DIEPINT_XFRC) {			// 0x1 Transfer completed interrupt
-					uint32_t fifoemptymsk = (0x1UL << (epnum & EP_ADDR_MASK));
+					uint32_t fifoemptymsk = (0x1UL << (epnum & epAddressMask));
 					USBx_DEVICE->DIEPEMPMSK &= ~fifoemptymsk;
 
 					USBx_INEP(epnum)->DIEPINT = USB_OTG_DIEPINT_XFRC;
@@ -189,18 +188,18 @@ void USB::InterruptHandler()					// In Drivers\STM32H7xx_HAL_Driver\Src\stm32h7x
 						} else if (ep0State == EP0State::DataIn && ep0.inBuffRem > 0) {		// For EP0 long packets are sent separately rather than streamed out of the FIFO
 							ep0.inBuffSize = ep0.inBuffRem;
 							ep0.inBuffRem = 0;
-							USBUpdateDbg({}, {}, {}, ep0.inBuffSize, {}, (uint32_t*)ep0.inBuff);
+							USBUpdateDbg({}, {}, {}, ep0.inBuffSize, (uint32_t*)ep0.inBuff);
 
 							EPStartXfer(Direction::in, 0, ep0.inBuffSize);
 						}
 					} else {
 						classByEP[epnum]->DataIn();
-						transmitting = false;
+						classByEP[epnum]->transmitting = false;
 					}
 				}
 
 				if ((epint & USB_OTG_DIEPINT_TXFE) == USB_OTG_DIEPINT_TXFE) {			// 0x80 Transmit FIFO empty
-					USBUpdateDbg({}, {}, {}, classByEP[epnum]->inBuffSize, {}, (uint32_t*)classByEP[epnum]->inBuff);
+					USBUpdateDbg({}, {}, {}, classByEP[epnum]->inBuffSize, (uint32_t*)classByEP[epnum]->inBuff);
 
 					if (epnum == 0) {
 						if (ep0.inBuffSize > ep_maxPacket) {
@@ -232,7 +231,7 @@ void USB::InterruptHandler()					// In Drivers\STM32H7xx_HAL_Driver\Src\stm32h7x
 						}
 
 						if (classByEP[epnum]->inBuffSize <= classByEP[epnum]->inBuffCount) {
-							const uint32_t fifoemptymsk = (0x1UL << (epnum & EP_ADDR_MASK));
+							const uint32_t fifoemptymsk = (0x1UL << (epnum & epAddressMask));
 							USBx_DEVICE->DIEPEMPMSK &= ~fifoemptymsk;
 						}
 					}
@@ -353,8 +352,6 @@ void USB::InterruptHandler()					// In Drivers\STM32H7xx_HAL_Driver\Src\stm32h7x
 		}
 
 		USB_OTG_HS->GOTGINT |= temp;
-
-		debugStart = true;
 	}
 
 }
@@ -365,6 +362,9 @@ void USB::Init(bool softReset)
 	volatile uint32_t count = 0;
 
 	if (!softReset) {
+#if (USB_DEBUG)
+		uart.Init();
+#endif
 		RCC->CR |= RCC_CR_HSI48ON;						// Enable Internal High Speed oscillator for USB
 		while (count++ < usbTimeout && (RCC->CR & RCC_CR_HSI48RDY) == 0);		// Wait till internal USB oscillator is ready
 		RCC->CDCCIP2R |= RCC_CDCCIP2R_USBSEL;			// Set the USB CLock MUX to RC48
@@ -696,7 +696,7 @@ void USB::SerialToUnicode()
 void USB::StdDevReq()
 {
 	uint8_t dev_addr;
-	switch (req.RequestType & USB_REQ_TYPE_MASK)
+	switch (req.RequestType & requestTypeMask)
 	{
 	case RequestTypeClass:
 	case RequestTypeVendor:
@@ -751,7 +751,7 @@ void USB::EPStartXfer(const Direction direction, uint8_t endpoint, uint32_t xfer
 
 	if (direction == Direction::in) {
 
-		endpoint = endpoint & EP_ADDR_MASK;					// Strip out 0x80 if endpoint passed eg as 0x81
+		endpoint = endpoint & epAddressMask;					// Strip out 0x80 if endpoint passed eg as 0x81
 
 		if (endpoint == 0 && xfer_len > ep_maxPacket) {		// If the transfer is larger than the maximum packet size send the maximum size and use the remaining flag to trigger a second send
 			ep0.inBuffRem = xfer_len - ep_maxPacket;
@@ -801,10 +801,9 @@ void USB::CtlError()
 bool USB::ReadInterrupts(const uint32_t interrupt)
 {
 #if (USB_DEBUG)
-	if (((USB_OTG_HS->GINTSTS & USB_OTG_HS->GINTMSK) & interrupt) == interrupt && usbDebugEvent < USB_DEBUG_COUNT && debugStart) {
-		usbDebugNo = usbDebugEvent % USB_DEBUG_COUNT;
-		usbDebug[usbDebugNo].eventNo = usbDebugEvent;
-		usbDebug[usbDebugNo].Interrupt = USB_OTG_HS->GINTSTS & USB_OTG_HS->GINTMSK;
+	if (((USB_OTG_HS->GINTSTS & USB_OTG_HS->GINTMSK) & interrupt) == interrupt) {
+		usbDebug[usbDebugEvent & usbDebugMask].eventNo = usbDebugEvent;
+		usbDebug[usbDebugEvent & usbDebugMask].Interrupt = USB_OTG_HS->GINTSTS & USB_OTG_HS->GINTMSK;
 		usbDebugEvent++;
 	}
 #endif
@@ -817,6 +816,7 @@ void USB::PauseEndpoint(USBHandler& handler)
 {
 	USBx_INEP(handler.inEP & 0xF)->DIEPCTL |= USB_OTG_DIEPCTL_SNAK;
 	USBx_OUTEP(handler.outEP)->DOEPCTL |= USB_OTG_DOEPCTL_SNAK;
+	DelayMS(2);
 }
 
 
@@ -829,9 +829,9 @@ void USB::ResumeEndpoint(USBHandler& handler)
 
 size_t USB::SendData(const uint8_t* data, const uint16_t len, uint8_t endpoint)
 {
-	endpoint &= EP_ADDR_MASK;
-	if (devState == DeviceState::Configured && !transmitting) {
-		transmitting = true;
+	endpoint &= epAddressMask;
+	if (devState == DeviceState::Configured && !classByEP[endpoint]->transmitting) {
+		classByEP[endpoint]->transmitting = true;
 		classByEP[endpoint]->inBuff = data;
 		classByEP[endpoint]->inBuffSize = len;
 		classByEP[endpoint]->inBuffCount = 0;
@@ -847,7 +847,7 @@ size_t USB::SendData(const uint8_t* data, const uint16_t len, uint8_t endpoint)
 void USB::SendString(const char* s)
 {
 	uint16_t counter = 0;
-	while (transmitting && counter < 10000) {
+	while (cdc.transmitting && counter < 10000) {
 		++counter;
 	}
 	SendData((uint8_t*)s, strlen(s), CDC_In);
@@ -863,7 +863,7 @@ void USB::SendString(const std::string s)
 size_t USB::SendString(const unsigned char* s, size_t len)
 {
 	uint16_t counter = 0;
-	while (transmitting && counter < 10000) {
+	while (cdc.transmitting && counter < 10000) {
 		++counter;
 	}
 	return SendData((uint8_t*)s, len, CDC_In);
@@ -902,12 +902,17 @@ std::string HexByte(const uint16_t& v) {
 }
 
 
-void USB::OutputDebug() {
-/*
-	uart.SendString("Event,Interrupt,Desc,Int Data,Desc,Endpoint,mRequest,Request,Value,Index,Length,Scsi,PacketSize,XferBuff\n");
-	uint16_t evNo = usbDebugEvent % USB_DEBUG_COUNT;
+void USB::OutputDebug()
+{
+	uart.SendString("Event,Interrupt,Desc,Int Data,Desc,Endpoint,mRequest,Request,Value,Index,Length,PacketSize,XferBuff\n");
 	std::string interrupt, subtype;
-	for (int i = 0; i < USB_DEBUG_COUNT; ++i) {
+
+	for (uint32_t i = 0; i < usbDebugCount; ++i) {
+
+		const uint16_t evNo = (usbDebugEvent + i) & usbDebugMask;
+
+		subtype = "";
+
 		switch (usbDebug[evNo].Interrupt) {
 		case USB_OTG_GINTSTS_RXFLVL:
 			interrupt = "RXFLVL";
@@ -987,16 +992,14 @@ void USB::OutputDebug() {
 					+ HexByte(usbDebug[evNo].Request.Value) + ", "
 					+ HexByte(usbDebug[evNo].Request.Index) + ", "
 					+ HexByte(usbDebug[evNo].Request.Length) + ", "
-					+ HexByte(usbDebug[evNo].scsiOpCode) + ", "
 					+ IntToString(usbDebug[evNo].PacketSize) + ", "
 					+ HexToString(usbDebug[evNo].xferBuff[0], true) + " "
 					+ HexToString(usbDebug[evNo].xferBuff[1], true) + " "
 					+ HexToString(usbDebug[evNo].xferBuff[2], true) + " "
 					+ HexToString(usbDebug[evNo].xferBuff[3], true) + "\n");
 		}
-		evNo = (evNo + 1) % USB_DEBUG_COUNT;
 	}
-*/
+
 }
 
 

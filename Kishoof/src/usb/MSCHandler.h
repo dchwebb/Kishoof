@@ -76,8 +76,6 @@
 
 
 
-
-
 class USB;
 
 class MSCHandler : public USBHandler {
@@ -85,6 +83,7 @@ public:
 	MSCHandler(USB* usb, uint8_t inEP, uint8_t outEP, int8_t interface) : USBHandler(usb, inEP, outEP, interface) {
 		outBuff = xfer_buff;
 	}
+	enum class BotState {Idle, DataOut, DataIn, LastDataIn, SendData, NoData};
 
 	void DataIn() override;
 	void DataOut() override;
@@ -92,13 +91,12 @@ public:
 	void ClassSetup(usbRequest& req) override;
 	void ClassSetupData(usbRequest& req, const uint8_t* data) override;
 	uint32_t GetInterfaceDescriptor(const uint8_t** buffer) override;
-
-	void DMATransferDone();
+	void PrintDebug();
 
 	static const uint8_t Descriptor[];
 
 private:
-	enum class BotState {Idle, DataOut, DataIn, LastDataIn, SendData, NoData};
+
 	enum CSWStatus {CSWCmdPassed = 0, CSWCmdFailed = 1, CSWCmdPhaseError = 2};
 	inline constexpr static uint32_t MediaPacket = 512;
 

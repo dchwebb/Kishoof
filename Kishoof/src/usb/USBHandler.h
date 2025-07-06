@@ -31,7 +31,6 @@ public:
 	uint8_t inEP;
 	uint8_t outEP;
 	int8_t interface;
-	//const uint8_t Descriptor[];
 
 	uint32_t* outBuff;			// Pointer to end point's OUT (receive from host) buffer [Previously xfer_buff]
 	uint32_t outBuffCount;		// Number of bytes received in OUT packet [Previously xfer_count]
@@ -42,6 +41,8 @@ public:
 	uint32_t inBuffSize;
 	uint32_t inBuffRem;			// If transfer is larger than maximum packet size store remaining byte count
 	uint32_t inBuffCount;		// Number of bytes already sent to host from a large packet
+
+	bool transmitting = false;
 
 	virtual void DataIn() = 0;
 	virtual void DataOut() = 0;

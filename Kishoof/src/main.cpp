@@ -8,6 +8,7 @@
 #include "lcd.h"
 #include "ExtFlash.h"
 #include "UI.h"
+#include "uartHandler.h"
 
 volatile uint32_t SysTickVal;
 extern uint32_t SystemCoreClock;
@@ -27,6 +28,7 @@ int main(void) {
 
 	InitClocks();					// Configure the clock and PLL
 	InitHardware();
+
 
 	if (GpioPin::IsLow(GPIOE, 4)) {	// If encoder button is pressed enter 'safe-mode'
 		SafeMode = true;
@@ -50,10 +52,7 @@ int main(void) {
 		CheckVCA();					// Bodge to check if VCA is normalled to 3.3v
 		calib.Calibrate();
 #if (USB_DEBUG)
-		if ((GPIOB->IDR & GPIO_IDR_ID4) == 0 && USBDebug) {
-			USBDebug = false;
-			usb.OutputDebug();
-		}
+		uart.ProcessCommand();
 #endif
 
 	}

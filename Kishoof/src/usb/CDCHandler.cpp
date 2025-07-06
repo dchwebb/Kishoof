@@ -150,7 +150,6 @@ void CDCHandler::ProcessCommand()
 		printf("Format internal storage? Press 'y' to confirm.\r\n");
 		state = serialState::formatConfirm;
 
-
 	} else if (cmd.compare("eraseflash") == 0) {				// Erase all flash memory
 		if (!SafeMode) {
 			printf("Enter safe mode first (hold encoder button whilst restarting module)\r\n");
@@ -510,7 +509,7 @@ void CDCHandler::ActivateEP()
 	EndPointActivate(USB::CDC_Out,  Direction::out, EndPointType::Bulk);			// Activate CDC out endpoint
 	EndPointActivate(USB::CDC_Cmd,  Direction::in,  EndPointType::Interrupt);		// Activate Command IN EP
 
-	EndPointTransfer(Direction::out, USB::CDC_Out, USB::ep_maxPacket);
+	EndPointTransfer(Direction::out, outEP, USB::ep_maxPacket);
 }
 
 

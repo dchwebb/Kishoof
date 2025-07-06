@@ -11,6 +11,9 @@ USBHandler::USBHandler(USB* usb, const uint8_t inEP, const uint8_t outEP, int8_t
 
 void USBHandler::EndPointTransfer(const Direction d, const uint8_t ep, const uint32_t len)
 {
+	if (d == Direction::in) {
+		transmitting = true;
+	}
 	usb->EPStartXfer(d, ep, len);
 }
 
@@ -19,6 +22,7 @@ void USBHandler::EndPointActivate(const uint8_t ep, const Direction d, const End
 {
 	usb->ActivateEndpoint(ep, d, static_cast<USB::EndPointType>(eptype));
 }
+
 
 void USBHandler::SetupIn(const uint32_t size, const uint8_t* buff)
 {

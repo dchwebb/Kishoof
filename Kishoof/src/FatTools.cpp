@@ -121,7 +121,8 @@ void FatTools::Write(const uint8_t* readBuff, const uint32_t writeSector, const 
 void FatTools::CheckCache()
 {
 	// If dirty buffers and sufficient time has elapsed since cache updated flush the cache to Flash
-	if ((dirtyCacheBlocks || writeCacheDirty) && cacheUpdated > 0 && ((int32_t)SysTickVal - (int32_t)cacheUpdated) > 100)	{
+	// Also added check on read blocks as there seems to be some interference between flushing the cache and USB MSC reads
+	if ((dirtyCacheBlocks || writeCacheDirty) && cacheUpdated > 0 && ((int32_t)SysTickVal - (int32_t)cacheUpdated) > 500  && (readWait <= SysTickVal))	{
 
 		// Windows will access index information setting the last accessed time stamp - if this is the only write do not save
 		// A write may set blocks 0, 9, 10, 11: ClnShutBitMask, 'System Volume Information' dir, 'IndexerVolume' file,  'WPSettings.dat' file
@@ -149,9 +150,15 @@ void FatTools::CheckCache()
 }
 
 
+uint32_t fatLastFlush = 0;						// For debugging
+
 uint8_t FatTools::FlushCache()
 {
 	flushCacheBusy = true;
+
+#if (USB_DEBUG)
+	fatLastFlush = usb.usbDebugEvent;
+#endif
 
 	// Writes any dirty data in the header cache to Flash
 	uint8_t blockPos = 0;
@@ -175,6 +182,7 @@ uint8_t FatTools::FlushCache()
 		}
 		writeCacheDirty = false;			// Indicates that write cache is clean
 	}
+
 	flushCacheBusy = false;
 
 	return count;
@@ -227,8 +235,8 @@ void FatTools::PrintDirInfo(const uint32_t cluster)
 
 	const FATFileInfo* fatInfo;
 	if (cluster == 0) {
-		printf("\r\n  Attrib Cluster   Bytes    Created   Accessed Name          Clusters\r\n"
-				   "  ------------------------------------------------------------------\r\n");
+		printf("\r\n  Attrib Address      Bytes    Created   Accessed Name          Clusters\r\n"
+				   "  ---------------------------------------------------------------------\r\n");
 		fatInfo = rootDirectory;
 	} else {
 		fatInfo = (FATFileInfo*)GetClusterAddr(cluster);
@@ -242,32 +250,36 @@ void FatTools::PrintDirInfo(const uint32_t cluster)
 
 	while (fatInfo->name[0] != 0 && (uint8_t*)fatInfo < endOfCluster) {
 
+		if (usb.cdc.transmitting) {		// Add delay so that output can catch up
+			DelayMS(2);
+		};
+
 		if (fatInfo->attr == 0xF) {							// Long file name
 			const FATLongFilename* lfn = (FATLongFilename*)fatInfo;
-			printf("%c LFN %2i                                       %-14s [0x%02x]\r\n",
+			printf("%c LFN %2i                                          %-14s[0x%02x]\r\n",
 					(cluster == 0 ? ' ' : '>'),
 					lfn->order & (~0x40),
 					GetFileName(fatInfo).c_str(),
 					lfn->checksum);
 		} else {
-			printf("%c %s %8i %7lu %10s %10s %-14s",
+			printf("%c %s  %p %7lu %10s %10s %-14s",
 					(cluster == 0 ? ' ' : '>'),
 					(fatInfo->name[0] == FATFileInfo::fileDeleted ? "*Del*" : GetAttributes(fatInfo).c_str()),
-					fatInfo->firstClusterLow,
+					GetClusterAddr(fatInfo->firstClusterLow, false),
 					fatInfo->fileSize,
 					FileDate(fatInfo->createDate).c_str(),
 					FileDate(fatInfo->accessedDate).c_str(),
 					GetFileName(fatInfo).c_str());
 
 			// Print cluster chain
-			if (fatInfo->name[0] != 0xE5 && fatInfo->fileSize > fatClusterSize) {
+			if (fatInfo->name[0] != 0xE5) {
 
 				bool seq = false;					// used to check for sequential blocks
 
 				uint32_t cluster = fatInfo->firstClusterLow;
 				printf("%lu", cluster);
 
-				while (clusterChain[cluster] != 0xFFFF && clusterChain[cluster] != 0) {
+				while (clusterChain[cluster] != 0xFFFF && clusterChain[cluster] != 0 && fatInfo->fileSize > fatClusterSize) {
 					if (clusterChain[cluster] == cluster + 1) {
 						if (!seq) {
 							printf("-");
@@ -298,6 +310,7 @@ void FatTools::PrintDirInfo(const uint32_t cluster)
 void FatTools::PrintFatInfo()
 {
 	printf("Sector size: %lu\r\n"
+			"Capacity: %lu sectors, %lu clusters\r\n"
 			"Cluster size %d sectors, %lu bytes\r\n"
 			"FAT size %lu sectors, %lu bytes\r\n"
 			"Root directory entries: %d\r\n"
@@ -305,6 +318,8 @@ void FatTools::PrintFatInfo()
 			"Root directory offset: %lu\r\n"
 			"Data section offset: %lu\r\n",
 			fatSectorSize,
+			fatSectorCount,
+			fatSectorCount / (fatClusterSize / fatSectorSize),
 			fatFs.csize,
 			fatSectorSize * fatFs.csize,
 			fatFs.fsize,

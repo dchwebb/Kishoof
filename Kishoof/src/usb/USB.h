@@ -11,7 +11,6 @@
 #define USB_DEBUG false
 #if (USB_DEBUG)
 #include "uartHandler.h"
-#define USB_DEBUG_COUNT 1000
 #endif
 
 
@@ -21,10 +20,6 @@
 #define USBx_INEP(i)	((USB_OTG_INEndpointTypeDef *)(USB_OTG_HS_PERIPH_BASE + USB_OTG_IN_ENDPOINT_BASE + ((i) * USB_OTG_EP_REG_SIZE)))
 #define USBx_OUTEP(i)	((USB_OTG_OUTEndpointTypeDef *)(USB_OTG_HS_PERIPH_BASE + USB_OTG_OUT_ENDPOINT_BASE + ((i) * USB_OTG_EP_REG_SIZE)))
 #define USBx_DFIFO(i)	*(uint32_t*)(USB_OTG_HS_PERIPH_BASE + USB_OTG_FIFO_BASE + ((i) * USB_OTG_FIFO_SIZE))
-
-#define EP_ADDR_MASK					0xFU
-#define USB_REQ_DIRECTION_MASK			0x80U
-#define USB_REQ_TYPE_MASK				0x60U
 
 #define LOBYTE(x)  ((uint8_t)(x & 0x00FFU))
 #define HIBYTE(x)  ((uint8_t)((x & 0xFF00U) >> 8U))
@@ -45,6 +40,9 @@ public:
 	enum StringIndex {LangId = 0, Manufacturer = 1, Product = 2, Serial = 3, Configuration = 4, MassStorageClass = 5,
 		CommunicationClass = 6, AudioClass = 7};
 
+	static constexpr uint32_t requestTypeMask = 0x60;
+	static constexpr uint32_t requestDirectionMask = 0x80;
+	static constexpr uint32_t epAddressMask = 0xF;
 	static constexpr uint8_t ep_maxPacket = 0x40;
 
 	void InterruptHandler();
@@ -92,7 +90,6 @@ private:
 	std::array<USBHandler*, interfaceCount>classesByInterface;		// Lookup tables to get appropriate class handlers (set in handler constructor)
 	std::array<USBHandler*, 3>classByEP;
 	EP0State ep0State;
-	bool transmitting;
 	usbRequest req;
 
 	uint8_t stringDescr[128];
@@ -164,8 +161,7 @@ private:
 
 public:
 #if (USB_DEBUG)
-	uint16_t usbDebugNo = 0;
-	uint16_t usbDebugEvent = 0;
+	uint32_t usbDebugEvent = 0;
 
 	struct usbDebugItem {
 		uint16_t eventNo;
@@ -173,32 +169,32 @@ public:
 		uint32_t IntData;
 		usbRequest Request;
 		uint8_t endpoint;
-		uint8_t scsiOpCode;
 		uint16_t PacketSize;
 		uint32_t xferBuff[4];
 	};
-	usbDebugItem usbDebug[USB_DEBUG_COUNT];
+	static constexpr uint32_t usbDebugCount = 1024;
+	static constexpr uint32_t usbDebugMask = usbDebugCount - 1;				// To allow wrapping
+
+	usbDebugItem usbDebug[usbDebugCount];
 	void OutputDebug();
 
 	// Update the current debug record
-	void USBUpdateDbg(uint32_t IntData, usbRequest request, uint8_t endpoint, uint16_t PacketSize, uint32_t scsiOpCode, uint32_t* xferBuff)
+	void USBUpdateDbg(uint32_t IntData, usbRequest request, uint8_t endpoint, uint16_t PacketSize, uint32_t* xferBuff)
 	{
-		if (usbDebugNo < USB_DEBUG_COUNT - 1) {
-			if (IntData) usbDebug[usbDebugNo].IntData = IntData;
-			if (((uint32_t*)&request)[0]) usbDebug[usbDebugNo].Request = request;
-			if (endpoint) usbDebug[usbDebugNo].endpoint = endpoint;
-			if (PacketSize) usbDebug[usbDebugNo].PacketSize = PacketSize;
-			if (scsiOpCode) usbDebug[usbDebugNo].scsiOpCode = scsiOpCode;
-			if (xferBuff != nullptr) {
-				usbDebug[usbDebugNo].xferBuff[0] = xferBuff[0];
-				usbDebug[usbDebugNo].xferBuff[1] = xferBuff[1];
-				usbDebug[usbDebugNo].xferBuff[2] = xferBuff[2];
-				usbDebug[usbDebugNo].xferBuff[3] = xferBuff[3];
-			}
+		if (IntData)					usbDebug[usbDebugEvent & usbDebugMask].IntData = IntData;
+		if (((uint32_t*)&request)[0])	usbDebug[usbDebugEvent & usbDebugMask].Request = request;
+		if (endpoint)					usbDebug[usbDebugEvent & usbDebugMask].endpoint = endpoint;
+		if (PacketSize)					usbDebug[usbDebugEvent & usbDebugMask].PacketSize = PacketSize;
+		if (xferBuff != nullptr) {
+//			usbDebug[usbDebugEvent & usbDebugMask].xferBuff[0] = xferBuff[0];
+//			usbDebug[usbDebugEvent & usbDebugMask].xferBuff[1] = xferBuff[1];
+//			usbDebug[usbDebugEvent & usbDebugMask].xferBuff[2] = xferBuff[2];
+//			usbDebug[usbDebugEvent & usbDebugMask].xferBuff[3] = xferBuff[3];
 		}
 	}
+
 #else
-#define USBUpdateDbg(IntData, request, endpoint, PacketSize, scsiOpCode, xferBuff)
+#define USBUpdateDbg(IntData, request, endpoint, PacketSize, xferBuff)
 #endif
 
 };

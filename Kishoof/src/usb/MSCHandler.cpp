@@ -3,12 +3,82 @@
 #include "FatTools.h"
 
 
+#if (USB_DEBUG)
+#include "uartHandler.h"
+
+static constexpr uint32_t scsiDebugSize = 1024;
+static constexpr uint32_t scsiDebugMask = scsiDebugSize - 1;
+uint32_t scsiDebugCnt = 0;
+char scsiDebugBuff[108];
+uint8_t oldScsiCmd = 0;
+
+struct ScsiDebug {
+	uint32_t idx;
+	uint32_t usbidx;
+	uint32_t memAddr;
+	uint32_t blk_addr;
+	uint32_t blk_len;
+	uint8_t cmd;
+	bool cache;
+	MSCHandler::BotState botState;
+	MSCHandler::BotState oldBotState;
+} scsiDebug[scsiDebugSize];
+
+void MSCHandler::PrintDebug()
+{
+	for (uint32_t i = 0; i < scsiDebugSize; ++i) {
+		uint32_t offset = (i + scsiDebugCnt + 1) & scsiDebugMask;
+
+		char strCmd = ' ';
+
+		switch (scsiDebug[offset].cmd) {
+			case SCSI_TEST_UNIT_READY:			strCmd = 't';	break;		// 0x00
+			case SCSI_INQUIRY:					strCmd = 'i';	break;		// 0x12
+			case SCSI_MODE_SENSE6:				strCmd = 's';	break;		// 0x1A
+			case SCSI_ALLOW_MEDIUM_REMOVAL:		strCmd = 'a';	break;		// 0x1E
+			case SCSI_MODE_SENSE10:				strCmd = 's';	break;		// 0x5A
+			case SCSI_READ_FORMAT_CAPACITIES:	strCmd = 'f';	break;		// 0x23
+			case SCSI_READ_CAPACITY10:			strCmd = 'c';	break;		// 0x25
+			case SCSI_READ10:					strCmd = 'r';	break;		// 0x28
+			case SCSI_READ12:					strCmd = 'r';	break;		// 0xA8 Untested but no obvious difference between Read10 and Read12
+			case SCSI_WRITE10:					strCmd = 'w';	break;		// 0x2A Same command for Write10 and Write16 as only minor difference
+			case SCSI_WRITE12:					strCmd = 'w';	break;		// 0xAA Untested
+			case SCSI_REQUEST_SENSE:			strCmd = 'q';	break;		// 0x03
+			case SCSI_READ_CAPACITY16:			strCmd = 'c';	break;		// 0x9E
+		}
+
+		// Address calulated here for speed as not directly known in write function
+		if (strCmd == 'w') {
+			scsiDebug[offset].memAddr = (uint32_t)fatTools.GetSectorAddr(scsiDebug[offset].blk_addr, false);
+		}
+
+		sprintf(scsiDebugBuff, "%lu: usb: %lu; %c; cmd: %02X; addr %#010lx blk: %lu; len %lu; state %d > %d; tr: %c\n",
+				scsiDebug[offset].idx,
+				scsiDebug[offset].usbidx,
+				strCmd,
+				scsiDebug[offset].cmd,
+				scsiDebug[offset].memAddr,
+				scsiDebug[offset].blk_addr,
+				scsiDebug[offset].blk_len,
+				(int)scsiDebug[offset].oldBotState,
+				(int)scsiDebug[offset].botState,
+				scsiDebug[offset].cache ? 'y' : ' '
+				);
+		if (scsiDebug[offset].idx) {
+			uart.SendString(scsiDebugBuff);
+		}
+	}
+}
+#endif
+
+
+
 void MSCHandler::ActivateEP()
 {
 	EndPointActivate(USB::MSC_In,   Direction::in,  EndPointType::Bulk);
 	EndPointActivate(USB::MSC_Out,  Direction::out, EndPointType::Bulk);
 
-	EndPointTransfer(Direction::out, USB::MSC_Out, USB::ep_maxPacket);
+	EndPointTransfer(Direction::out, outEP, USB::ep_maxPacket);
 }
 
 
@@ -133,7 +203,7 @@ void MSCHandler::MSC_BOT_SendCSW(uint8_t CSW_Status)
 void MSCHandler::MSC_BOT_Abort()
 {
 	// Stall the MSC endpoints
-	USBx_INEP(inEP)->DIEPCTL |= USB_OTG_DIEPCTL_STALL;
+	USBx_INEP(inEP & USB::epAddressMask)->DIEPCTL |= USB_OTG_DIEPCTL_STALL;
 	USBx_OUTEP(outEP)->DOEPCTL |= USB_OTG_DOEPCTL_STALL;
 }
 
@@ -141,8 +211,25 @@ void MSCHandler::MSC_BOT_Abort()
 int8_t MSCHandler::SCSI_ProcessCmd()
 {
 #if (USB_DEBUG)
-	usb->USBUpdateDbg({}, {}, {}, {}, cbw.CB[0], nullptr);
+
+	if (oldScsiCmd == 0 && cbw.CB[0] == 0) {		// only have a single row for repeating test unit ready commands
+		++scsiDebug[scsiDebugCnt & scsiDebugMask].blk_len;
+	} else {
+		++scsiDebugCnt;
+		scsiDebug[scsiDebugCnt & scsiDebugMask].cmd = cbw.CB[0];
+		scsiDebug[scsiDebugCnt & scsiDebugMask].memAddr = 0;
+		scsiDebug[scsiDebugCnt & scsiDebugMask].blk_addr = 0;
+		scsiDebug[scsiDebugCnt & scsiDebugMask].blk_len = 0;
+		scsiDebug[scsiDebugCnt & scsiDebugMask].botState = BotState::Idle;
+	}
+	scsiDebug[scsiDebugCnt & scsiDebugMask].oldBotState = bot_state;
+	scsiDebug[scsiDebugCnt & scsiDebugMask].idx = scsiDebugCnt;
+	scsiDebug[scsiDebugCnt & scsiDebugMask].usbidx = usb->usbDebugEvent;
+	scsiDebug[scsiDebugCnt & scsiDebugMask].cache = fatTools.flushCacheBusy;
+	oldScsiCmd = cbw.CB[0];
+
 #endif
+
 	switch (cbw.CB[0])
 	{
 	case SCSI_TEST_UNIT_READY:					// 0x00
@@ -400,6 +487,13 @@ int8_t MSCHandler::SCSI_Read()
 	// Data may be read from cache or flash - set block to true to prevent lock up when wavetable and USB are competing for Flash time
 	inBuff = fatTools.GetSectorAddr(scsi_blk_addr, true);
 
+#if (USB_DEBUG)
+	scsiDebug[scsiDebugCnt & scsiDebugMask].blk_addr = scsi_blk_addr;
+	scsiDebug[scsiDebugCnt & scsiDebugMask].memAddr = (uint32_t)inBuff;
+	scsiDebug[scsiDebugCnt & scsiDebugMask].blk_len = scsi_blk_len;
+	scsiDebug[scsiDebugCnt & scsiDebugMask].botState = bot_state;
+#endif
+
 	EndPointTransfer(Direction::in, inEP, inBuffSize);
 
 	scsi_blk_addr += (inBuffSize / fatSectorSize);
@@ -451,12 +545,20 @@ int8_t MSCHandler::SCSI_Write()
 		bot_state = BotState::DataOut;
 		EndPointTransfer(Direction::out, outEP, len);
 
+#if (USB_DEBUG)
+	scsiDebug[scsiDebugCnt & scsiDebugMask].blk_addr = scsi_blk_addr;
+#endif
+
 	} else {
 
 		// Write Process ongoing
 		uint32_t len = std::min(scsi_blk_len * fatSectorSize, MediaPacket);
 
 		fatTools.Write((uint8_t*)(outBuff), scsi_blk_addr, (len / fatSectorSize));
+
+#if (USB_DEBUG)
+	scsiDebug[scsiDebugCnt & scsiDebugMask].blk_addr = scsi_blk_addr;
+#endif
 
 		scsi_blk_addr += (len / fatSectorSize);
 		scsi_blk_len -= (len / fatSectorSize);
@@ -469,6 +571,11 @@ int8_t MSCHandler::SCSI_Write()
 			EndPointTransfer(Direction::out, outEP, len);				// Prepare EP to Receive next packet
 		}
 	}
+
+#if (USB_DEBUG)
+	scsiDebug[scsiDebugCnt & scsiDebugMask].blk_len = scsi_blk_len;
+	scsiDebug[scsiDebugCnt & scsiDebugMask].botState = bot_state;
+#endif
 
 	return 0;
 }

@@ -79,7 +79,7 @@ public:
 	bool writeBusy = false;
 	static constexpr uint32_t writingWaitSet = 80;		// Block sample output for at least X ms after a write
 	uint32_t writingWait = 0;			// Time to block sample output since a write last reported
-	static constexpr uint32_t readWaitSet = 300;		// Block sample output for at least X ms after a read
+	static constexpr uint32_t readWaitSet = 1000;		// Block sample output for at least X ms after a read
 	uint32_t readWait = 0;				// Time to block sample output since a read last reported
 	bool updateWavetables = false;		// Set during write so that updates to wavetables can be batched
 
